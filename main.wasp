@@ -1,0 +1,149 @@
+app unicon_schedule {
+  wasp: {
+    version: "^0.20.0"
+  },
+  title: "unicon_schedule",
+  head: [
+    "<link rel='icon' href='/favicon.ico' />",
+  ],
+  auth: {
+    userEntity: User,
+    methods: {
+      email: {
+        fromField: {
+          name: "Basic App",
+          email: "hello@example.com"
+        },
+        userSignupFields: import { userSignupFields } from "@src/auth/email/userSignupFields",
+        emailVerification: {
+          clientRoute: EmailVerificationRoute,
+        },
+        passwordReset: {
+          clientRoute: PasswordResetRoute,
+        }
+      },
+    },
+    onAuthSucceededRedirectTo: "/",
+    onAuthFailedRedirectTo: "/login",
+  },
+  emailSender: {
+    provider: Dummy,
+  },
+  client: {
+    rootComponent: import { App } from "@src/App",
+  }
+}
+
+// #region Auth
+route LoginRoute { path: "/login", to: LoginPage }
+page LoginPage {
+  component: import { LoginPage } from "@src/auth/email/LoginPage"
+}
+
+route SignupRoute { path: "/signup", to: SignupPage }
+page SignupPage {
+  component: import { SignupPage } from "@src/auth/email/SignupPage"
+}
+
+route RequestPasswordResetRoute { path: "/request-password-reset", to: RequestPasswordResetPage }
+page RequestPasswordResetPage {
+  component: import { RequestPasswordResetPage } from "@src/auth/email/RequestPasswordResetPage",
+}
+
+route PasswordResetRoute { path: "/password-reset", to: PasswordResetPage }
+page PasswordResetPage {
+  component: import { PasswordResetPage } from "@src/auth/email/PasswordResetPage",
+}
+
+route EmailVerificationRoute { path: "/email-verification", to: EmailVerificationPage }
+page EmailVerificationPage {
+  component: import { EmailVerificationPage } from "@src/auth/email/EmailVerificationPage",
+}
+// #endregion Auth
+
+// #region Logistics System
+
+// Ops Routes
+route OpsShipmentsRoute { path: "/", to: OpsShipmentsPage }
+page OpsShipmentsPage {
+  authRequired: true,
+  component: import { OpsShipmentsPage } from "@src/logistics/pages/OpsShipmentsPage"
+}
+
+route CreateShipmentRoute { path: "/ops/shipments/create", to: CreateShipmentPage }
+page CreateShipmentPage {
+  authRequired: true,
+  component: import { CreateShipmentPage } from "@src/logistics/pages/CreateShipmentPage"
+}
+
+route ShipmentDetailsRoute { path: "/ops/shipments/:id", to: ShipmentDetailsPage }
+page ShipmentDetailsPage {
+  authRequired: true,
+  component: import { ShipmentDetailsPage } from "@src/logistics/pages/ShipmentDetailsPage"
+}
+
+// Dispatcher Routes
+route DispatcherDashboardRoute { path: "/dispatcher", to: DispatcherDashboardPage }
+page DispatcherDashboardPage {
+  authRequired: true,
+  component: import { DispatcherDashboardPage } from "@src/logistics/pages/DispatcherDashboardPage"
+}
+
+// Shared Queries
+query getAllShipments {
+  fn: import { getAllShipments } from "@src/logistics/queries/shipments",
+  entities: [Shipment, ShipmentStop, Dispatch, Vehicle, Driver, ShipmentStatusEvent, POD]
+}
+
+query getShipment {
+  fn: import { getShipment } from "@src/logistics/queries/shipments",
+  entities: [Shipment, ShipmentStop, Dispatch, Vehicle, Driver, ShipmentStatusEvent, POD]
+}
+
+query getPendingShipments {
+  fn: import { getPendingShipments } from "@src/logistics/queries/dispatch",
+  entities: [Shipment, ShipmentStop]
+}
+
+query getAvailableVehicles {
+  fn: import { getAvailableVehicles } from "@src/logistics/queries/dispatch",
+  entities: [Vehicle]
+}
+
+query getAvailableDrivers {
+  fn: import { getAvailableDrivers } from "@src/logistics/queries/dispatch",
+  entities: [Driver, User]
+}
+
+query getAvailableOrders {
+  fn: import { getAvailableOrders } from "@src/logistics/queries/orders",
+  entities: [Order, Customer]
+}
+
+// Actions
+action createShipment {
+  fn: import { createShipment } from "@src/logistics/actions/shipments",
+  entities: [Shipment, ShipmentStop]
+}
+
+action updateShipment {
+  fn: import { updateShipment } from "@src/logistics/actions/shipments",
+  entities: [Shipment, ShipmentStop]
+}
+
+action createDispatch {
+  fn: import { createDispatch } from "@src/logistics/actions/dispatch",
+  entities: [Dispatch, Shipment, Vehicle, Driver]
+}
+
+action updateShipmentStatus {
+  fn: import { updateShipmentStatus } from "@src/logistics/actions/status",
+  entities: [Shipment, ShipmentStatusEvent, ShipmentStop]
+}
+
+action uploadPOD {
+  fn: import { uploadPOD } from "@src/logistics/actions/pods",
+  entities: [POD, Shipment]
+}
+
+// #endregion Logistics System

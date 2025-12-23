@@ -1,0 +1,284 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ============================================================================
+// ENUMS
+// ============================================================================
+
+enum OrderStatus {
+  DRAFT
+  CONFIRMED
+  CANCELLED
+}
+
+enum ShipmentStatus {
+  DRAFT
+  READY
+  ASSIGNED
+  IN_TRANSIT
+  COMPLETED
+  CANCELLED
+}
+
+enum Priority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum StopType {
+  PICKUP
+  DROPOFF
+  DEPOT
+  PORT
+}
+
+enum VehicleType {
+  TRUCK_1T
+  TRUCK_3T
+  TRUCK_5T
+  TRUCK_10T
+  CONTAINER_TRUCK
+}
+
+enum VehicleStatus {
+  AVAILABLE
+  IN_USE
+  MAINTENANCE
+  OUT_OF_SERVICE
+}
+
+enum DriverStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum EventType {
+  STATUS_CHANGE
+  EXCEPTION
+  NOTE
+}
+
+enum PODFileType {
+  IMAGE_JPG
+  IMAGE_PNG
+  DOCUMENT_PDF
+}
+
+enum UserRole {
+  OPS
+  DISPATCHER
+  ACCOUNTING
+  DRIVER
+  ADMIN
+}
+
+// ============================================================================
+// MODELS
+// ============================================================================
+
+model User {
+  id          String   @id @default(uuid())
+  email       String   @unique
+  password    String? // Wasp handles password hashing
+  fullName    String
+  role        UserRole @default(OPS)
+  isActive    Boolean  @default(true)
+  lastLogin   DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  driver                Driver?
+  createdDispatches     Dispatch[]     @relation("AssignedBy")
+  createdStatusEvents   ShipmentStatusEvent[]
+  uploadedPODs          POD[]
+
+  @@map("users")
+}
+
+model Customer {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  phone     String?
+  address   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  orders Order[]
+
+  @@map("customers")
+}
+
+model Order {
+  id                 String       @id @default(uuid())
+  customerId         String
+  orderNumber        String       @unique
+  description        String?
+  totalWeight        Decimal?     @db.Decimal(10, 2)
+  totalVolume        Decimal?     @db.Decimal(10, 2)
+  specialInstructions String?     @db.Text
+  status             OrderStatus  @default(DRAFT)
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+  deletedAt          DateTime? // Soft delete
+
+  // Relations
+  customer  Customer   @relation(fields: [customerId], references: [id])
+  shipments Shipment[]
+
+  @@map("orders")
+}
+
+model Shipment {
+  id                String         @id @default(uuid())
+  orderId           String
+  shipmentNumber    String         @unique
+  currentStatus     ShipmentStatus @default(DRAFT)
+  priority          Priority       @default(NORMAL)
+  plannedStartDate  DateTime
+  plannedEndDate    DateTime
+  actualStartDate   DateTime?
+  actualEndDate     DateTime?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  deletedAt         DateTime? // Soft delete
+
+  // Relations
+  order             Order                @relation(fields: [orderId], references: [id])
+  stops             ShipmentStop[]
+  dispatch          Dispatch?
+  statusEvents      ShipmentStatusEvent[]
+  pods              POD[]
+
+  @@map("shipments")
+  @@index([currentStatus, plannedStartDate])
+}
+
+model ShipmentStop {
+  id                  String     @id @default(uuid())
+  shipmentId          String
+  sequence            Int
+  stopType            StopType
+  locationName        String
+  address             String
+  contactPerson       String?
+  contactPhone        String?
+  plannedArrival      DateTime
+  plannedDeparture    DateTime
+  actualArrival       DateTime?
+  actualDeparture     DateTime?
+  specialInstructions String?    @db.Text
+  createdAt           DateTime   @default(now())
+
+  // Relations
+  shipment Shipment @relation(fields: [shipmentId], references: [id])
+  pods     POD[]
+
+  @@map("shipment_stops")
+  @@index([shipmentId, sequence])
+}
+
+model Vehicle {
+  id             String        @id @default(uuid())
+  licensePlate   String        @unique
+  vehicleType    VehicleType
+  capacityWeight Decimal?      @db.Decimal(10, 2)
+  capacityVolume Decimal?      @db.Decimal(10, 2)
+  status         VehicleStatus @default(AVAILABLE)
+  currentLocation String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  // Relations
+  dispatches Dispatch[]
+
+  @@map("vehicles")
+}
+
+model Driver {
+  id             String      @id @default(uuid())
+  userId         String      @unique
+  driverCode     String      @unique
+  fullName       String
+  phone          String
+  licenseNumber  String      @unique
+  licenseExpiry  DateTime
+  status         DriverStatus @default(ACTIVE)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  // Relations
+  user       User       @relation(fields: [userId], references: [id])
+  dispatches Dispatch[]
+
+  @@map("drivers")
+}
+
+model Dispatch {
+  id           String   @id @default(uuid())
+  shipmentId   String   @unique // 1 shipment = 1 dispatch
+  vehicleId    String
+  driverId     String
+  assignedAt   DateTime @default(now())
+  assignedById String
+  notes        String?  @db.Text
+  createdAt    DateTime @default(now())
+
+  // Relations
+  shipment   Shipment @relation(fields: [shipmentId], references: [id])
+  vehicle    Vehicle  @relation(fields: [vehicleId], references: [id])
+  driver     Driver   @relation(fields: [driverId], references: [id])
+  assignedBy User     @relation("AssignedBy", fields: [assignedById], references: [id])
+
+  @@map("dispatches")
+}
+
+model ShipmentStatusEvent {
+  id          String     @id @default(uuid())
+  shipmentId  String
+  status      ShipmentStatus
+  eventType   EventType
+  description String
+  location    String?
+  createdById String
+  createdAt   DateTime   @default(now())
+
+  // Relations
+  shipment  Shipment @relation(fields: [shipmentId], references: [id])
+  createdBy User     @relation(fields: [createdById], references: [id])
+
+  @@map("shipment_status_events")
+  @@index([shipmentId, createdAt])
+}
+
+model POD {
+  id           String      @id @default(uuid())
+  shipmentId   String
+  stopId       String?
+  fileName     String
+  filePath     String // URL to external storage
+  fileType     PODFileType
+  fileSize     Int // bytes, max 5MB
+  uploadedById String
+  uploadedAt   DateTime    @default(now())
+  isSubmitted  Boolean     @default(false) // Immutable after true
+
+  // Relations
+  shipment   Shipment      @relation(fields: [shipmentId], references: [id])
+  stop       ShipmentStop? @relation(fields: [stopId], references: [id])
+  uploadedBy User          @relation(fields: [uploadedById], references: [id])
+
+  @@map("pods")
+  @@index([shipmentId, isSubmitted])
+}
