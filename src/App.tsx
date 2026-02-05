@@ -1,12 +1,11 @@
 import { Outlet } from "react-router-dom";
 import "./App.css";
-import { Header } from "./shared/components/Header";
+import { Layout } from "./shared/components/Layout";
 
 export function App() {
   return (
-    <main className="flex min-h-screen w-full flex-col bg-neutral-50 text-neutral-800">
-      <Header />
+    <Layout>
       <Outlet />
-    </main>
+    </Layout>
   );
 }

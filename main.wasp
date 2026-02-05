@@ -27,7 +27,11 @@ app unicon_schedule {
     onAuthFailedRedirectTo: "/login",
   },
   emailSender: {
-    provider: Dummy,
+    provider: SMTP,
+    defaultFrom: {
+      name: "Unicon Schedule",
+      email: "no-reply@unicon.ltd"
+    },
   },
   client: {
     rootComponent: import { App } from "@src/App",
@@ -147,3 +151,207 @@ action uploadPOD {
 }
 
 // #endregion Logistics System
+
+// #region Debt Management System
+
+// Debt API Routes
+api uploadFilesApi {
+  fn: import { uploadFiles } from "@src/debt/api/uploadFiles",
+  httpRoute: (POST, "/api/upload"),
+  entities: [User]
+}
+
+// Debt Routes
+route DebtsListRoute { path: "/accounting/debts", to: DebtsListPage }
+page DebtsListPage {
+  authRequired: true,
+  component: import { DebtsListPage } from "@src/debt/pages/DebtsListPage"
+}
+
+route DebtDetailsRoute { path: "/accounting/debts/:id", to: DebtDetailsPage }
+page DebtDetailsPage {
+  authRequired: true,
+  component: import { DebtDetailsPage } from "@src/debt/pages/DebtDetailsPage"
+}
+
+// Customer Routes
+route CustomersListRoute { path: "/accounting/customers", to: CustomersListPage }
+page CustomersListPage {
+  authRequired: true,
+  component: import { CustomersListPage } from "@src/debt/pages/CustomersListPage"
+}
+
+route CustomerDetailsRoute { path: "/accounting/customers/:id", to: CustomerDetailsPage }
+page CustomerDetailsPage {
+  authRequired: true,
+  component: import { CustomerDetailsPage } from "@src/debt/pages/CustomerDetailsPage"
+}
+
+// Debt Queries
+query getAllDebts {
+  fn: import { getAllDebts } from "@src/debt/queries/debts",
+  entities: [Debt, Customer, User]
+}
+
+query getDebt {
+  fn: import { getDebt } from "@src/debt/queries/debts",
+  entities: [Debt, Customer, User]
+}
+
+query getAllCustomers {
+  fn: import { getAllCustomers } from "@src/debt/queries/customers",
+  entities: [Customer]
+}
+
+query getCustomer {
+  fn: import { getCustomer } from "@src/debt/queries/customers",
+  entities: [Customer]
+}
+
+query getDebtsSummaryByCustomer {
+  fn: import { getDebtsSummaryByCustomer } from "@src/debt/queries/summary",
+  entities: [Debt, Customer]
+}
+
+query getDebtsSummaryByMonth {
+  fn: import { getDebtsSummaryByMonth } from "@src/debt/queries/summary",
+  entities: [Debt]
+}
+
+// Debt Actions
+action createDebt {
+  fn: import { createDebt } from "@src/debt/actions/debts",
+  entities: [Debt, Customer, User]
+}
+
+action updateDebt {
+  fn: import { updateDebt } from "@src/debt/actions/debts",
+  entities: [Debt, Customer]
+}
+
+action markDebtAsPaid {
+  fn: import { markDebtAsPaid } from "@src/debt/actions/payment",
+  entities: [Debt]
+}
+
+action cancelDebt {
+  fn: import { cancelDebt } from "@src/debt/actions/debts",
+  entities: [Debt]
+}
+
+action deleteDebt {
+  fn: import { deleteDebt } from "@src/debt/actions/debts",
+  entities: [Debt]
+}
+
+// Customer Actions
+action createCustomer {
+  fn: import { createCustomer } from "@src/debt/actions/customers",
+  entities: [Customer]
+}
+
+action updateCustomer {
+  fn: import { updateCustomer } from "@src/debt/actions/customers",
+  entities: [Customer]
+}
+
+action deleteCustomer {
+  fn: import { deleteCustomer } from "@src/debt/actions/customers",
+  entities: [Customer, Debt, Order]
+}
+
+action uploadDebtInvoiceImages {
+  fn: import { uploadDebtInvoiceImages } from "@src/debt/actions/upload",
+  entities: [Debt]
+}
+
+action uploadDebtPaymentProofImages {
+  fn: import { uploadDebtPaymentProofImages } from "@src/debt/actions/upload",
+  entities: [Debt]
+}
+
+// #endregion Debt Management System
+
+// #region Resources Management (Vehicle & Driver)
+
+// Vehicle Routes
+route VehiclesListRoute { path: "/resources/vehicles", to: VehiclesListPage }
+page VehiclesListPage {
+  authRequired: true,
+  component: import { VehiclesListPage } from "@src/resources/pages/VehiclesListPage"
+}
+
+route VehicleDetailsRoute { path: "/resources/vehicles/:id", to: VehicleDetailsPage }
+page VehicleDetailsPage {
+  authRequired: true,
+  component: import { VehicleDetailsPage } from "@src/resources/pages/VehicleDetailsPage"
+}
+
+// Driver Routes
+route DriversListRoute { path: "/resources/drivers", to: DriversListPage }
+page DriversListPage {
+  authRequired: true,
+  component: import { DriversListPage } from "@src/resources/pages/DriversListPage"
+}
+
+route DriverDetailsRoute { path: "/resources/drivers/:id", to: DriverDetailsPage }
+page DriverDetailsPage {
+  authRequired: true,
+  component: import { DriverDetailsPage } from "@src/resources/pages/DriverDetailsPage"
+}
+
+// Vehicle Queries
+query getAllVehicles {
+  fn: import { getAllVehicles } from "@src/resources/queries/vehicles",
+  entities: [Vehicle]
+}
+
+query getVehicle {
+  fn: import { getVehicle } from "@src/resources/queries/vehicles",
+  entities: [Vehicle]
+}
+
+// Vehicle Actions
+action createVehicle {
+  fn: import { createVehicle } from "@src/resources/actions/vehicles",
+  entities: [Vehicle]
+}
+
+action updateVehicle {
+  fn: import { updateVehicle } from "@src/resources/actions/vehicles",
+  entities: [Vehicle]
+}
+
+action deleteVehicle {
+  fn: import { deleteVehicle } from "@src/resources/actions/vehicles",
+  entities: [Vehicle, Dispatch]
+}
+
+// Driver Queries
+query getAllDrivers {
+  fn: import { getAllDrivers } from "@src/resources/queries/drivers",
+  entities: [Driver, User]
+}
+
+query getDriver {
+  fn: import { getDriver } from "@src/resources/queries/drivers",
+  entities: [Driver, User]
+}
+
+// Driver Actions
+action createDriver {
+  fn: import { createDriver } from "@src/resources/actions/drivers",
+  entities: [Driver, User]
+}
+
+action updateDriver {
+  fn: import { updateDriver } from "@src/resources/actions/drivers",
+  entities: [Driver, User]
+}
+
+action deleteDriver {
+  fn: import { deleteDriver } from "@src/resources/actions/drivers",
+  entities: [Driver, User, Dispatch]
+}
+
+// #endregion Resources Management

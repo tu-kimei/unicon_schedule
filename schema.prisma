@@ -41,11 +41,8 @@ enum StopType {
 }
 
 enum VehicleType {
-  TRUCK_1T
-  TRUCK_3T
-  TRUCK_5T
-  TRUCK_10T
-  CONTAINER_TRUCK
+  TRACTOR       // Đầu kéo
+  TRAILER       // Mooc
 }
 
 enum VehicleStatus {
@@ -53,6 +50,11 @@ enum VehicleStatus {
   IN_USE
   MAINTENANCE
   OUT_OF_SERVICE
+}
+
+enum VehicleCompany {
+  KHANH_HUY     // Khánh Huy
+  UNICON        // Unicon
 }
 
 enum DriverStatus {
@@ -74,11 +76,51 @@ enum PODFileType {
 }
 
 enum UserRole {
-  OPS
-  DISPATCHER
-  ACCOUNTING
-  DRIVER
-  ADMIN
+  // Nội bộ
+  ADMIN         // Quản trị viên
+  ACCOUNTING    // Kế toán
+  OPS           // Vận hành nội bộ
+  DISPATCHER    // Điều phối
+  DRIVER        // Tài xế
+  
+  // Khách hàng
+  CUSTOMER_OWNER    // Chủ hàng
+  CUSTOMER_OPS      // Vận hành khách hàng
+}
+
+enum UserType {
+  INTERNAL      // Nội bộ
+  CUSTOMER      // Khách hàng
+}
+
+enum DebtType {
+  FREIGHT       // Công nợ cước vận chuyển
+  ADVANCE       // Công nợ chi hộ
+  OTHER         // Công nợ khác
+}
+
+enum DebtStatus {
+  UNPAID        // Chưa thanh toán
+  PAID          // Đã thanh toán
+  OVERDUE       // Quá hạn
+  CANCELLED     // Đã hủy
+}
+
+enum PaymentTermType {
+  DAYS          // 20 ngày, 30 ngày
+  MONTHS        // 1 tháng, 3 tháng
+}
+
+enum StatementFrequency {
+  MONTHLY_25    // 1 tháng 1 lần vào ngày 25
+  MONTHLY_30    // 1 tháng 1 lần vào ngày 30/31
+  WEEKLY        // 1 tuần 1 lần
+  BIMONTHLY     // 1 tháng 2 lần vào ngày 15 và 31
+}
+
+enum CustomerStatus {
+  ACTIVE        // Đang hợp tác
+  INACTIVE      // Ngưng hợp tác
 }
 
 // ============================================================================
@@ -90,32 +132,55 @@ model User {
   email       String   @unique
   password    String? // Wasp handles password hashing
   fullName    String
+  userType    UserType @default(INTERNAL) // INTERNAL or CUSTOMER
   role        UserRole @default(OPS)
+  customerId  String? // Nếu là user khách hàng thì link đến Customer
   isActive    Boolean  @default(true)
   lastLogin   DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   // Relations
+  customer              Customer?      @relation("CustomerUsers", fields: [customerId], references: [id])
   driver                Driver?
   createdDispatches     Dispatch[]     @relation("AssignedBy")
   createdStatusEvents   ShipmentStatusEvent[]
   uploadedPODs          POD[]
+  createdDebts          Debt[]         @relation("DebtCreatedBy")
 
   @@map("users")
 }
 
 model Customer {
-  id        String   @id @default(uuid())
-  name      String
-  email     String   @unique
-  phone     String?
-  address   String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id              String          @id @default(uuid())
+  name            String
+  email           String          @unique
+  phone           String?
+  address         String?
+  
+  // Payment terms
+  paymentTermDays Int             @default(30) // Thời hạn công nợ mặc định
+  paymentTermType PaymentTermType @default(DAYS)
+  
+  // Quy định chốt bảng kê
+  statementFrequency StatementFrequency? // 1 tháng 1 lần, 1 tuần 1 lần, 1 tháng 2 lần
+  
+  // Thông tin hóa đơn VAT
+  hasVATInvoice   Boolean         @default(false) // Có xuất HĐ VAT
+  invoiceName     String?         // Tên trên hóa đơn
+  taxCode         String?         // Mã số thuế
+  taxAddress      String?         // Địa chỉ thuế
+  
+  // Trạng thái hợp tác
+  status          CustomerStatus  @default(ACTIVE) // Đang hợp tác / Ngưng hợp tác
+  
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
 
   // Relations
+  users  User[]  @relation("CustomerUsers") // Các user thuộc khách hàng này
   orders Order[]
+  debts  Debt[]
 
   @@map("customers")
 }
@@ -190,15 +255,28 @@ model ShipmentStop {
 }
 
 model Vehicle {
-  id             String        @id @default(uuid())
-  licensePlate   String        @unique
-  vehicleType    VehicleType
-  capacityWeight Decimal?      @db.Decimal(10, 2)
-  capacityVolume Decimal?      @db.Decimal(10, 2)
-  status         VehicleStatus @default(AVAILABLE)
-  currentLocation String?
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  id                      String         @id @default(uuid())
+  licensePlate            String         @unique
+  vehicleType             VehicleType    // Đầu kéo / Mooc
+  manufacturingYear       Int?           // Năm sản xuất
+  status                  VehicleStatus  @default(AVAILABLE)
+  
+  // Hình ảnh giấy tờ
+  registrationImages      String[]       @default([]) // Hình đăng ký (multi images)
+  inspectionImages        String[]       @default([]) // Hình đăng kiểm (multi images)
+  insuranceImages         String[]       @default([]) // Hình bảo hiểm (multi images)
+  
+  // Ngày hết hạn - Thêm default để migrate được
+  operationExpiryDate     DateTime       @default(now()) // Ngày hết hạn vận hành
+  inspectionExpiryDate    DateTime       @default(now()) // Ngày hết hạn đăng kiểm
+  insuranceExpiryDate     DateTime       @default(now()) // Ngày hết hạn bảo hiểm
+  
+  // Trực thuộc công ty
+  company                 VehicleCompany @default(UNICON) // Khánh Huy / Unicon
+  
+  currentLocation         String?        // Vị trí hiện tại
+  createdAt               DateTime       @default(now())
+  updatedAt               DateTime       @updatedAt
 
   // Relations
   dispatches Dispatch[]
@@ -207,16 +285,23 @@ model Vehicle {
 }
 
 model Driver {
-  id             String      @id @default(uuid())
-  userId         String      @unique
-  driverCode     String      @unique
-  fullName       String
-  phone          String
-  licenseNumber  String      @unique
-  licenseExpiry  DateTime
-  status         DriverStatus @default(ACTIVE)
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
+  id                String       @id @default(uuid())
+  userId            String       @unique
+  fullName          String
+  phone             String
+  
+  // Thông tin cá nhân
+  citizenIdImages   String[]     // CCCD (multi images)
+  birthYear         Int?         // Năm sinh
+  hometown          String?      // Quê quán
+  
+  // Bằng lái
+  licenseImages     String[]     // Bằng lái (multi images)
+  licenseExpiry     DateTime     // Ngày hết hạn giấy phép
+  
+  status            DriverStatus @default(ACTIVE)
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
 
   // Relations
   user       User       @relation(fields: [userId], references: [id])
@@ -281,4 +366,45 @@ model POD {
 
   @@map("pods")
   @@index([shipmentId, isSubmitted])
+}
+
+model Debt {
+  id                  String     @id @default(uuid())
+  customerId          String
+  
+  // Debt Information
+  debtType            DebtType
+  debtMonth           String     // Format: "YYYY-MM" (e.g., "2026-02")
+  amount              Decimal    @db.Decimal(15, 2) // Số tiền công nợ
+  
+  // Documents & References
+  documentLink        String?    @db.Text // Link to Google Sheet/bảng kê
+  invoiceImages       String[]   // Array of image URLs (hóa đơn)
+  notes               String?    @db.Text
+  
+  // Dates
+  recognitionDate     DateTime   @default(now()) // Ngày ghi nhận công nợ
+  dueDate             DateTime   // Ngày đến hạn (auto calculated)
+  
+  // Payment Status
+  status              DebtStatus @default(UNPAID)
+  paidAmount          Decimal?   @db.Decimal(15, 2) // Số tiền đã thanh toán
+  paidDate            DateTime?  // Ngày thanh toán
+  paymentProofImages  String[]   // Array of UNC images
+  paymentNotes        String?    @db.Text
+  
+  // Metadata
+  createdById         String
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+  deletedAt           DateTime?  // Soft delete
+
+  // Relations
+  customer            Customer   @relation(fields: [customerId], references: [id])
+  createdBy           User       @relation("DebtCreatedBy", fields: [createdById], references: [id])
+
+  @@map("debts")
+  @@index([customerId, debtMonth])
+  @@index([status, dueDate])
+  @@index([debtMonth])
 }

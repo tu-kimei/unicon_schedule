@@ -70,12 +70,18 @@ export function Dialog({
     [open],
   );
 
+  if (!open) {
+    return null;
+  }
+
   return (
     <dialog
       ref={dialogRef}
       className={twJoin(
-        "max-h top-[20vh] my-0 flex max-h-[55vh]",
+        "fixed inset-0 z-50 flex items-center justify-center",
+        "max-w-full max-h-full w-auto h-auto m-0",
         "bg-transparent backdrop:bg-black/50 backdrop:backdrop-blur-sm",
+        "p-4",
       )}
       onClose={onClose}
     >

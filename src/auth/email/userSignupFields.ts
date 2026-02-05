@@ -19,4 +19,12 @@ export const userSignupFields = defineUserSignupFields({
     }
     return data.fullName;
   },
+  userType: () => {
+    // Default to INTERNAL for all signups
+    return "INTERNAL";
+  },
+  role: () => {
+    // Default to OPS for all signups
+    return "OPS";
+  },
 });
