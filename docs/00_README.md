@@ -25,7 +25,11 @@
 - [URL Structure](01_core/07_URLS_SITEMAP.md) - Routes & sitemap
 
 ### 🚢 **For Operations/DevOps**
-- [Deployment Guide](03_operations/DEPLOYMENT.md) - How to deploy
+- **[🚀 Deployment Documentation](deployment/README.md)** - Complete deployment guide ⭐
+  - [Quick Start Deploy](deployment/QUICK_START_DEPLOY.md) - Deploy in 10 minutes
+  - [Full Deployment Guide](deployment/DEPLOYMENT_GUIDE.md) - Detailed instructions
+  - [Deployment Files](deployment/DEPLOYMENT_FILES.md) - File overview
+- [Upload Structure](UPLOAD_STRUCTURE.md) - File upload organization
 - [Monitoring & Alerting](03_operations/MONITORING.md) - System monitoring
 - [Security Guidelines](03_operations/SECURITY.md) - Security best practices
 - [Performance Optimization](03_operations/PERFORMANCE.md) - Performance tuning
@@ -46,6 +50,7 @@
 ```
 docs/
 ├── 00_README.md                          # ← You are here
+├── UPLOAD_STRUCTURE.md                   # File upload organization
 │
 ├── 01_core/                              # Core system documentation
 │   ├── 01_CONTEXT.md                     # Project overview
@@ -66,7 +71,6 @@ docs/
 │       └── USER_GUIDE.md                 # End-user guide
 │
 ├── 03_operations/                        # Operational documentation
-│   ├── DEPLOYMENT.md                     # Deployment procedures
 │   ├── MONITORING.md                     # Monitoring & alerting
 │   ├── SECURITY.md                       # Security guidelines
 │   ├── PERFORMANCE.md                    # Performance optimization
@@ -81,6 +85,22 @@ docs/
 ├── 05_planning/                          # Historical planning docs
 │   ├── MILESTONE_PLAN.md                 # M1, M2, M3 milestones
 │   └── CHANGELOG.md                      # Version history
+│
+├── deployment/                           # 🚀 Deployment documentation
+│   ├── README.md                         # Deployment overview
+│   ├── QUICK_START_DEPLOY.md             # Quick start guide
+│   ├── DEPLOYMENT_GUIDE.md               # Full deployment guide
+│   ├── DEPLOYMENT_FILES.md               # File overview
+│   ├── config/                           # Configuration files
+│   │   ├── .env.server.example           # PM2 env template
+│   │   ├── .env.docker.example           # Docker env template
+│   │   ├── ecosystem.config.js           # PM2 config
+│   │   ├── Dockerfile                    # Docker image
+│   │   └── docker-compose.yml            # Docker Compose
+│   └── scripts/                          # Deployment scripts
+│       ├── backup-database.sh            # Database backup
+│       ├── backup-uploads.sh             # Uploads backup
+│       └── restore-database.sh           # Database restore
 │
 └── archive/                              # Obsolete/historical docs
     ├── README.md                         # Why files are archived
@@ -106,7 +126,7 @@ docs/
 → Check [05_API_CONTRACTS.md](01_core/05_API_CONTRACTS.md)
 
 #### **Deploy to production**
-→ Follow [DEPLOYMENT.md](03_operations/DEPLOYMENT.md)
+→ Follow [Deployment Guide](deployment/README.md) - Start with [Quick Start](deployment/QUICK_START_DEPLOY.md)
 
 #### **Troubleshoot issues**
 → Check [RUNBOOK.md](03_operations/RUNBOOK.md)
