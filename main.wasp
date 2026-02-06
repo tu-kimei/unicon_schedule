@@ -355,3 +355,57 @@ action deleteDriver {
 }
 
 // #endregion Resources Management
+
+// #region Admin - User Management
+
+// User Management Routes
+route UsersListRoute { path: "/admin/users", to: UsersListPage }
+page UsersListPage {
+  authRequired: true,
+  component: import { UsersListPage } from "@src/admin/pages/UsersListPage"
+}
+
+route UserDetailsRoute { path: "/admin/users/:id", to: UserDetailsPage }
+page UserDetailsPage {
+  authRequired: true,
+  component: import { UserDetailsPage } from "@src/admin/pages/UserDetailsPage"
+}
+
+// User Queries
+query getAllUsers {
+  fn: import { getAllUsers } from "@src/admin/queries/users",
+  entities: [User, Customer, Driver]
+}
+
+query getUser {
+  fn: import { getUser } from "@src/admin/queries/users",
+  entities: [User, Customer, Driver, Dispatch, Debt]
+}
+
+// User Actions
+action createUser {
+  fn: import { createUser } from "@src/admin/actions/users",
+  entities: [User, Customer]
+}
+
+action updateUserRole {
+  fn: import { updateUserRole } from "@src/admin/actions/users",
+  entities: [User, Customer, Driver]
+}
+
+action updateUserStatus {
+  fn: import { updateUserStatus } from "@src/admin/actions/users",
+  entities: [User, Customer, Driver]
+}
+
+action deleteUser {
+  fn: import { deleteUser } from "@src/admin/actions/users",
+  entities: [User, Driver, Dispatch, ShipmentStatusEvent, POD, Debt]
+}
+
+action forceResetPassword {
+  fn: import { forceResetPassword } from "@src/admin/actions/users",
+  entities: [User]
+}
+
+// #endregion Admin - User Management
