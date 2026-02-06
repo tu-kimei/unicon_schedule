@@ -23,14 +23,38 @@ export const VehiclesListPage = () => {
     }
   };
 
-  const filteredVehicles = vehicles?.filter((vehicle: any) =>
-    vehicle.licensePlate.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Sắp xếp theo nhóm status và ngày hết hạn đăng kiểm
+  const sortVehicles = (vehicles: any[]) => {
+    // Định nghĩa thứ tự ưu tiên cho status
+    const statusOrder: Record<string, number> = {
+      'IN_USE': 1,          // Đang sử dụng
+      'MAINTENANCE': 2,     // Bảo trì
+      'OUT_OF_SERVICE': 3   // Ngưng hoạt động
+    };
+
+    return [...vehicles].sort((a, b) => {
+      // So sánh theo status trước
+      const statusDiff = statusOrder[a.status] - statusOrder[b.status];
+      if (statusDiff !== 0) return statusDiff;
+
+      // Nếu cùng status, sắp xếp theo ngày hết hạn đăng kiểm (gần nhất trước)
+      const dateA = new Date(a.inspectionExpiryDate).getTime();
+      const dateB = new Date(b.inspectionExpiryDate).getTime();
+      return dateA - dateB;
+    });
+  };
+
+  const filteredVehicles = vehicles
+    ? sortVehicles(
+        vehicles.filter((vehicle: any) =>
+          vehicle.licensePlate.toLowerCase().includes(searchTerm.toLowerCase())
+        )
+      )
+    : [];
 
   const getStatusVariant = (status: string) => {
     switch (status) {
-      case 'AVAILABLE': return 'success';
-      case 'IN_USE': return 'info';
+      case 'IN_USE': return 'success';
       case 'MAINTENANCE': return 'warning';
       case 'OUT_OF_SERVICE': return 'danger';
       default: return 'default';
@@ -39,7 +63,6 @@ export const VehiclesListPage = () => {
 
   const getStatusLabel = (status: string) => {
     switch (status) {
-      case 'AVAILABLE': return 'Sẵn sàng';
       case 'IN_USE': return 'Đang sử dụng';
       case 'MAINTENANCE': return 'Bảo trì';
       case 'OUT_OF_SERVICE': return 'Ngưng hoạt động';

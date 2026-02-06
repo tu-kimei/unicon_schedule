@@ -46,10 +46,9 @@ enum VehicleType {
 }
 
 enum VehicleStatus {
-  AVAILABLE
-  IN_USE
-  MAINTENANCE
-  OUT_OF_SERVICE
+  IN_USE          // Đang sử dụng
+  MAINTENANCE     // Bảo trì
+  OUT_OF_SERVICE  // Ngưng hoạt động
 }
 
 enum VehicleCompany {
@@ -259,7 +258,7 @@ model Vehicle {
   licensePlate            String         @unique
   vehicleType             VehicleType    // Đầu kéo / Mooc
   manufacturingYear       Int?           // Năm sản xuất
-  status                  VehicleStatus  @default(AVAILABLE)
+  status                  VehicleStatus  @default(IN_USE)
   
   // Hình ảnh giấy tờ
   registrationImages      String[]       @default([]) // Hình đăng ký (multi images)

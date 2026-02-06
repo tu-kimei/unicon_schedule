@@ -1,6 +1,5 @@
 import { logout, useAuth } from 'wasp/client/auth';
 import { Link, useLocation } from 'react-router-dom';
-import Logo from '../../assets/logo.svg';
 import { Button } from './Button';
 
 interface SidebarProps {
@@ -44,8 +43,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
           <div className="p-4 border-b border-gray-200">
             <div className="flex items-center justify-between">
               <Link to="/" className="flex items-center gap-2" onClick={onClose}>
-                <img src={Logo} alt="Unicon Schedule" className="h-8 w-8" />
-                <span className="text-lg font-semibold text-gray-900">Unicon</span>
+                <img src="/unicon-logo.png" alt="Unicon Schedule" className="h-8" />
               </Link>
               <button
                 onClick={onClose}

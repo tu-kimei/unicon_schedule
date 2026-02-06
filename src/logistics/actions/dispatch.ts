@@ -40,8 +40,12 @@ export const createDispatch = async (args: CreateDispatchInput, context: any) =>
     throw new Error('Vehicle not found');
   }
 
-  if (vehicle.status !== 'AVAILABLE') {
-    throw new Error('Vehicle is not available');
+  if (vehicle.status === 'OUT_OF_SERVICE') {
+    throw new Error('Vehicle is out of service and cannot be assigned');
+  }
+  
+  if (vehicle.status === 'MAINTENANCE') {
+    throw new Error('Vehicle is under maintenance and cannot be assigned');
   }
 
   // Validate driver is active

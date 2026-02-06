@@ -23,9 +23,11 @@ export const getPendingShipments = async (args: any, context: any) => {
 };
 
 export const getAvailableVehicles = async (args: any, context: any) => {
+  // Get vehicles that are IN_USE (available for assignment)
+  // Exclude MAINTENANCE and OUT_OF_SERVICE
   const vehicles = await context.entities.Vehicle.findMany({
     where: {
-      status: 'AVAILABLE'
+      status: 'IN_USE'
     },
     orderBy: { vehicleType: 'asc' }
   });
