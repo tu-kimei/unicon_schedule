@@ -1,11 +1,15 @@
 # ============================================================================
-# Dockerfile for Unicon Schedule Production
+# Production Dockerfile for Unicon Schedule
+# Based on Wasp's generated Dockerfile with web-app included
 # ============================================================================
-# 
-# IMPORTANT: Build and bundle BEFORE building Docker image:
+#
+# Prerequisites:
 #   1. wasp build
-#   2. cd .wasp/build/server && npm install && npm run bundle
-#   3. docker-compose build
+#   2. cd .wasp/build/web-app && npm install && npm run build
+#   3. cd ../server && npm install && npm run bundle
+#
+# Then build:
+#   docker build -f Dockerfile.production -t unicon-schedule:latest .
 # ============================================================================
 
 FROM node:22-slim
@@ -20,41 +24,31 @@ RUN apt-get update && apt-get install -y \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy pre-built and bundled application from local .wasp/build
+# Copy the entire build directory
 COPY .wasp/build ./
 
-# Install dependencies at root level first (for workspace)
+# Install production dependencies at root
 RUN npm install --production
 
-# Generate Prisma Client
-WORKDIR /app/db
-RUN npx prisma generate --schema=schema.prisma
-
-# Go to server directory and install production dependencies
+# Install server dependencies
 WORKDIR /app/server
 RUN npm install --production
 
-# Go back to app root
+# Create uploads structure
 WORKDIR /app
-
-# Create uploads directory structure
 RUN mkdir -p public/uploads/debts/invoices && \
     mkdir -p public/uploads/debts/payments && \
     mkdir -p public/uploads/drivers/citizen_id && \
     mkdir -p public/uploads/drivers/license && \
     mkdir -p public/uploads/vehicles/registration && \
     mkdir -p public/uploads/vehicles/inspection && \
-    mkdir -p public/uploads/vehicles/insurance
+    mkdir -p public/uploads/vehicles/insurance && \
+    chmod -R 755 public/uploads
 
-# Set permissions
-RUN chmod -R 755 public/uploads
-
-# Create non-root user (Debian syntax)
+# Create non-root user
 RUN groupadd --gid 1001 nodejs && \
-    useradd --uid 1001 --gid nodejs --shell /bin/bash --create-home nodejs
-
-# Change ownership
-RUN chown -R nodejs:nodejs /app
+    useradd --uid 1001 --gid nodejs --shell /bin/bash --create-home nodejs && \
+    chown -R nodejs:nodejs /app
 
 # Switch to non-root user
 USER nodejs
@@ -64,8 +58,8 @@ EXPOSE 3001
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:3001/ || exit 1
+    CMD curl -f http://localhost:3001/auth/me || exit 1
 
-# Start the application
+# Start server (which will serve both API and frontend)
 WORKDIR /app/server
-CMD ["npm", "start"]
+CMD ["npm", "run", "start-production"]
