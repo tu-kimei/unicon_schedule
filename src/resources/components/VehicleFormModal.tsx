@@ -7,7 +7,7 @@ import { Dialog } from '../../shared/components/Dialog';
 import { getSessionId } from 'wasp/client/api';
 
 type VehicleType = 'TRACTOR' | 'TRAILER';
-type VehicleStatus = 'AVAILABLE' | 'IN_USE' | 'MAINTENANCE' | 'OUT_OF_SERVICE';
+type VehicleStatus = 'IN_USE' | 'MAINTENANCE' | 'OUT_OF_SERVICE';
 type VehicleCompany = 'KHANH_HUY' | 'UNICON';
 
 interface VehicleFormModalProps {
@@ -44,7 +44,7 @@ export const VehicleFormModal = ({
     licensePlate: initialData?.licensePlate || '',
     vehicleType: initialData?.vehicleType || 'TRACTOR',
     manufacturingYear: initialData?.manufacturingYear,
-    status: initialData?.status || 'AVAILABLE',
+    status: initialData?.status || 'IN_USE',
     registrationImages: initialData?.registrationImages || [],
     inspectionImages: initialData?.inspectionImages || [],
     insuranceImages: initialData?.insuranceImages || [],

@@ -1,5 +1,4 @@
 import { useAuth } from 'wasp/client/auth';
-import Logo from '../../assets/logo.svg';
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -25,8 +24,7 @@ export function Header({ onMenuClick }: HeaderProps) {
 
           {/* Logo - Hidden on mobile when sidebar is visible */}
           <div className="flex items-center gap-2 lg:hidden">
-            <img src={Logo} alt="Unicon" className="h-8 w-8" />
-            <span className="text-lg font-semibold text-gray-900">Unicon</span>
+            <img src="/unicon-logo.png" alt="Unicon" className="h-8" />
           </div>
         </div>
 

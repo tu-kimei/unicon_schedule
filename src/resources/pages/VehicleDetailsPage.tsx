@@ -41,8 +41,7 @@ export const VehicleDetailsPage = () => {
 
   const getStatusVariant = (status: string) => {
     switch (status) {
-      case 'AVAILABLE': return 'success';
-      case 'IN_USE': return 'info';
+      case 'IN_USE': return 'success';
       case 'MAINTENANCE': return 'warning';
       case 'OUT_OF_SERVICE': return 'danger';
       default: return 'default';
@@ -51,7 +50,6 @@ export const VehicleDetailsPage = () => {
 
   const getStatusLabel = (status: string) => {
     switch (status) {
-      case 'AVAILABLE': return 'Sẵn sàng';
       case 'IN_USE': return 'Đang sử dụng';
       case 'MAINTENANCE': return 'Bảo trì';
       case 'OUT_OF_SERVICE': return 'Ngưng hoạt động';
