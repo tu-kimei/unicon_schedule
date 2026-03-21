@@ -66,12 +66,12 @@ export const DriverDashboardPage = () => {
       });
       refetch();
     } catch (err: any) {
-      alert(err.message || 'Khong the bat dau chuyen');
+      alert(err.message || 'Không thể bắt đầu chuyến');
     }
   };
 
   const handleCompleteTrip = async (taskId: string) => {
-    if (!confirm('Xac nhan hoan thanh chuyen nay?')) return;
+    if (!confirm('Xác nhận hoàn thành chuyến này?')) return;
 
     try {
       await updateDriverTaskStatus({
@@ -80,7 +80,7 @@ export const DriverDashboardPage = () => {
       });
       refetch();
     } catch (err: any) {
-      alert(err.message || 'Khong the hoan thanh chuyen');
+      alert(err.message || 'Không thể hoàn thành chuyến');
     }
   };
 
@@ -89,7 +89,7 @@ export const DriverDashboardPage = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-          <p className="text-gray-600 mt-4">Dang tai...</p>
+          <p className="text-gray-600 mt-4">Đang tải...</p>
         </div>
       </div>
     );
@@ -105,8 +105,8 @@ export const DriverDashboardPage = () => {
       {/* Header */}
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <h1 className="text-2xl font-bold text-gray-900">Chuyen cua toi</h1>
-          <p className="text-gray-600 mt-1">Danh sach cong viec duoc phan cong</p>
+          <h1 className="text-2xl font-bold text-gray-900">Chuyến của tôi</h1>
+          <p className="text-gray-600 mt-1">Danh sách công việc được phân công</p>
         </div>
       </div>
 
@@ -118,8 +118,8 @@ export const DriverDashboardPage = () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z" />
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0" />
             </svg>
-            <p className="text-gray-600 mb-2">Chua co chuyen nao</p>
-            <p className="text-sm text-gray-500">Ban se thay cac chuyen duoc phan cong o day</p>
+            <p className="text-gray-600 mb-2">Chưa có chuyến nào</p>
+            <p className="text-sm text-gray-500">Bạn sẽ thấy các chuyến được phân công ở đây</p>
           </div>
         ) : (
           <div className="space-y-6">
@@ -128,7 +128,7 @@ export const DriverDashboardPage = () => {
               <div>
                 <h2 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
                   <span className="w-3 h-3 rounded-full bg-yellow-400"></span>
-                  Dang thuc hien ({activeTasks.length})
+                  Đang thực hiện ({activeTasks.length})
                 </h2>
                 <div className="space-y-4">
                   {activeTasks.map((task: DriverTask) => (
@@ -152,7 +152,7 @@ export const DriverDashboardPage = () => {
               <div>
                 <h2 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
                   <span className="w-3 h-3 rounded-full bg-gray-400"></span>
-                  Cho xu ly ({pendingTasks.length})
+                  Chờ xử lý ({pendingTasks.length})
                 </h2>
                 <div className="space-y-4">
                   {pendingTasks.map((task: DriverTask) => (
@@ -175,7 +175,7 @@ export const DriverDashboardPage = () => {
               <div>
                 <h2 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
                   <span className="w-3 h-3 rounded-full bg-green-400"></span>
-                  Hoan thanh ({completedTasks.length})
+                  Hoàn thành ({completedTasks.length})
                 </h2>
                 <div className="space-y-4">
                   {completedTasks.map((task: DriverTask) => (
@@ -245,8 +245,8 @@ const TaskCard = ({ task, isExpanded, isActive, onToggle, onStartTrip, onComplet
             </div>
             <p className="text-sm text-gray-600">{task.shipment.customer.name}</p>
             <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
-              <span>Dau keo: {task.tractor.licensePlate}</span>
-              {task.trailer && <span>Mooc: {task.trailer.licensePlate}</span>}
+              <span>Đầu kéo: {task.tractor.licensePlate}</span>
+              {task.trailer && <span>Rơ moóc: {task.trailer.licensePlate}</span>}
             </div>
             {task.instructions && (
               <p className="text-sm text-blue-600 mt-2 bg-blue-50 px-2 py-1 rounded">
@@ -270,7 +270,7 @@ const TaskCard = ({ task, isExpanded, isActive, onToggle, onStartTrip, onComplet
       {isExpanded && (
         <div className="px-4 pb-4 border-t border-gray-200">
           <div className="mt-4 space-y-3">
-            <h4 className="text-sm font-semibold text-gray-700">Diem dung ({stops.length})</h4>
+            <h4 className="text-sm font-semibold text-gray-700">Điểm dừng ({stops.length})</h4>
             {stops.map((stop) => (
               <StopCheckInOut
                 key={stop.id}
@@ -294,7 +294,7 @@ const TaskCard = ({ task, isExpanded, isActive, onToggle, onStartTrip, onComplet
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                Bat dau chuyen
+                Bắt đầu chuyến
               </button>
             )}
 
@@ -306,7 +306,7 @@ const TaskCard = ({ task, isExpanded, isActive, onToggle, onStartTrip, onComplet
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
-                Hoan thanh chuyen
+                Hoàn thành chuyến
               </button>
             )}
           </div>

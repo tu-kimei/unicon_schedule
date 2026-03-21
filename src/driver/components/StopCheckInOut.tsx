@@ -27,12 +27,12 @@ interface StopCheckInOutProps {
 }
 
 const stopCategoryLabels: Record<string, string> = {
-  PICKUP_EMPTY: 'Lay container rong',
-  WAREHOUSE_LOAD: 'Dong hang tai kho',
-  PORT_DELIVERY: 'Ha container tai cang',
-  PORT_PICKUP: 'Lay hang tai cang',
-  WAREHOUSE_UNLOAD: 'Do hang tai kho',
-  RETURN_EMPTY: 'Tra container rong',
+  PICKUP_EMPTY: 'Lấy container rỗng',
+  WAREHOUSE_LOAD: 'Đóng hàng tại kho',
+  PORT_DELIVERY: 'Hạ container tại cảng',
+  PORT_PICKUP: 'Lấy hàng tại cảng',
+  WAREHOUSE_UNLOAD: 'Dỡ hàng tại kho',
+  RETURN_EMPTY: 'Trả container rỗng',
 };
 
 export const StopCheckInOut = ({ stop, taskId, shipmentId, pods, onUpdate }: StopCheckInOutProps) => {
@@ -61,7 +61,7 @@ export const StopCheckInOut = ({ stop, taskId, shipmentId, pods, onUpdate }: Sto
       });
       onUpdate();
     } catch (err: any) {
-      alert(err.message || 'Check-in that bai');
+      alert(err.message || 'Check-in thất bại');
     } finally {
       setIsCheckingIn(false);
     }
@@ -69,7 +69,7 @@ export const StopCheckInOut = ({ stop, taskId, shipmentId, pods, onUpdate }: Sto
 
   const handleCheckOut = async () => {
     if (!hasAllRequiredPhotos) {
-      alert('Vui long upload du anh bat buoc truoc khi check-out');
+      alert('Vui lòng tải đủ ảnh bắt buộc trước khi check-out');
       return;
     }
 
@@ -85,7 +85,7 @@ export const StopCheckInOut = ({ stop, taskId, shipmentId, pods, onUpdate }: Sto
       });
       onUpdate();
     } catch (err: any) {
-      alert(err.message || 'Check-out that bai');
+      alert(err.message || 'Check-out thất bại');
     } finally {
       setIsCheckingOut(false);
     }
@@ -121,15 +121,15 @@ export const StopCheckInOut = ({ stop, taskId, shipmentId, pods, onUpdate }: Sto
         <div>
           {isCheckedOut ? (
             <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full font-medium">
-              Hoan thanh
+              Hoàn thành
             </span>
           ) : isCheckedIn ? (
             <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full font-medium">
-              Dang xu ly
+              Đang xử lý
             </span>
           ) : (
             <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full font-medium">
-              Chua den
+              Chưa đến
             </span>
           )}
         </div>
@@ -138,7 +138,7 @@ export const StopCheckInOut = ({ stop, taskId, shipmentId, pods, onUpdate }: Sto
       {/* Contact info */}
       {(stop.contactPerson || stop.contactPhone) && (
         <div className="mb-3 text-sm text-gray-600">
-          Lien he: {stop.contactPerson} {stop.contactPhone && (
+          Liên hệ: {stop.contactPerson} {stop.contactPhone && (
             <a href={`tel:${stop.contactPhone}`} className="text-blue-600 underline">{stop.contactPhone}</a>
           )}
         </div>
@@ -147,20 +147,20 @@ export const StopCheckInOut = ({ stop, taskId, shipmentId, pods, onUpdate }: Sto
       {/* Times */}
       <div className="grid grid-cols-2 gap-3 mb-3 text-xs">
         <div>
-          <span className="text-gray-500">Du kien den:</span>
+          <span className="text-gray-500">Dự kiến đến:</span>
           <p className="font-medium">{new Date(stop.plannedArrival).toLocaleString('vi-VN')}</p>
           {stop.actualArrival && (
             <p className="text-green-700 font-medium">
-              Thuc te: {new Date(stop.actualArrival).toLocaleString('vi-VN')}
+              Thực tế: {new Date(stop.actualArrival).toLocaleString('vi-VN')}
             </p>
           )}
         </div>
         <div>
-          <span className="text-gray-500">Du kien roi:</span>
+          <span className="text-gray-500">Dự kiến rời:</span>
           <p className="font-medium">{new Date(stop.plannedDeparture).toLocaleString('vi-VN')}</p>
           {stop.actualDeparture && (
             <p className="text-green-700 font-medium">
-              Thuc te: {new Date(stop.actualDeparture).toLocaleString('vi-VN')}
+              Thực tế: {new Date(stop.actualDeparture).toLocaleString('vi-VN')}
             </p>
           )}
         </div>
@@ -169,7 +169,7 @@ export const StopCheckInOut = ({ stop, taskId, shipmentId, pods, onUpdate }: Sto
       {/* Photo uploads (show after check-in, before check-out) */}
       {isCheckedIn && !isCheckedOut && stop.requiredPhotos.length > 0 && (
         <div className="mb-3 space-y-2">
-          <p className="text-sm font-medium text-gray-700">Anh bat buoc:</p>
+          <p className="text-sm font-medium text-gray-700">Ảnh bắt buộc:</p>
           {stop.requiredPhotos.map((category) => (
             <PhotoUpload
               key={category}
@@ -198,7 +198,7 @@ export const StopCheckInOut = ({ stop, taskId, shipmentId, pods, onUpdate }: Sto
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
               </svg>
             )}
-            Check-in
+            Đã đến
           </button>
         )}
 
@@ -215,14 +215,14 @@ export const StopCheckInOut = ({ stop, taskId, shipmentId, pods, onUpdate }: Sto
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
               </svg>
             )}
-            Check-out
+            Đã rời
           </button>
         )}
       </div>
 
       {isCheckedIn && !isCheckedOut && !hasAllRequiredPhotos && (
         <p className="text-xs text-amber-600 mt-2">
-          Upload du anh bat buoc de check-out
+          Tải đủ ảnh bắt buộc để hoàn thành điểm dừng
         </p>
       )}
     </div>

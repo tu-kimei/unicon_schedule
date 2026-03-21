@@ -10,12 +10,12 @@ interface PhotoUploadProps {
 }
 
 const photoCategoryLabels: Record<string, string> = {
-  CONTAINER_EXTERIOR: 'Anh ngoai container',
-  CONTAINER_INTERIOR: 'Anh trong container',
-  PORT_GATE_PASS: 'Phieu qua cong cang',
-  WAREHOUSE_GATE_PASS: 'Phieu qua cong kho',
-  WEIGHT_TICKET: 'Phieu can',
-  OTHER: 'Khac',
+  CONTAINER_EXTERIOR: 'Mặt ngoài container',
+  CONTAINER_INTERIOR: 'Mặt trong container',
+  PORT_GATE_PASS: 'Phiếu ra/vào cảng',
+  WAREHOUSE_GATE_PASS: 'Phiếu ra/vào kho',
+  WEIGHT_TICKET: 'Phiếu cân xe',
+  OTHER: 'Khác',
 };
 
 export const PhotoUpload = ({
@@ -39,13 +39,13 @@ export const PhotoUpload = ({
     // Validate file type
     const allowedTypes = ['image/jpeg', 'image/png', 'application/pdf'];
     if (!allowedTypes.includes(file.type)) {
-      setError('Chi chap nhan file JPG, PNG hoac PDF');
+      setError('Chỉ chấp nhận file JPG, PNG hoặc PDF');
       return;
     }
 
     // Validate file size (5MB)
     if (file.size > 5 * 1024 * 1024) {
-      setError('File khong duoc vuot qua 5MB');
+      setError('File không được vượt quá 5MB');
       return;
     }
 
@@ -67,7 +67,7 @@ export const PhotoUpload = ({
 
       onUploadComplete();
     } catch (err: any) {
-      setError(err.message || 'Upload that bai');
+      setError(err.message || 'Tải lên thất bại');
     } finally {
       setIsUploading(false);
       // Reset inputs
@@ -84,7 +84,7 @@ export const PhotoUpload = ({
         </span>
         {categoryPhotos.length > 0 && (
           <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded font-medium">
-            {categoryPhotos.length} anh
+            {categoryPhotos.length} ảnh
           </span>
         )}
       </div>
@@ -118,7 +118,7 @@ export const PhotoUpload = ({
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
           </svg>
-          Chup
+          Chụp ảnh
         </button>
         <input
           ref={cameraInputRef}
@@ -138,7 +138,7 @@ export const PhotoUpload = ({
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
           </svg>
-          File
+          Tải ảnh lên
         </button>
         <input
           ref={fileInputRef}
@@ -152,7 +152,7 @@ export const PhotoUpload = ({
       {isUploading && (
         <div className="mt-2 flex items-center gap-2 text-sm text-blue-600">
           <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-          Dang upload...
+          Đang tải lên...
         </div>
       )}
 
