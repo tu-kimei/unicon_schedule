@@ -4,26 +4,26 @@ import { useParams, Link } from 'react-router-dom';
 import { useState } from 'react';
 
 const operationStatusLabels: Record<string, string> = {
-  DRAFT: 'Nhap',
-  PENDING: 'Cho xu ly',
-  DISPATCHED: 'Da dispatch',
-  IN_TRANSIT: 'Dang van chuyen',
-  DELIVERED: 'Da giao',
-  CANCELLED: 'Da huy',
+  DRAFT: 'Nháp',
+  PENDING: 'Chờ xử lý',
+  DISPATCHED: 'Đã điều phối',
+  IN_TRANSIT: 'Đang vận chuyển',
+  DELIVERED: 'Đã giao',
+  CANCELLED: 'Đã hủy',
 };
 
 const documentStatusLabels: Record<string, string> = {
-  DOC_PENDING: 'Cho chung tu',
-  DOC_RECEIVED: 'Da nhan chung tu',
-  DOC_RETURNED: 'Da tra chung tu',
+  DOC_PENDING: 'Chờ chứng từ',
+  DOC_RECEIVED: 'Đã nhận chứng từ',
+  DOC_RETURNED: 'Đã trả chứng từ',
 };
 
 const financialStatusLabels: Record<string, string> = {
-  NOT_BILLED: 'Chua xuat HD',
-  INVOICED: 'Da xuat HD',
-  PARTIAL_PAID: 'TT mot phan',
-  PAID: 'Da thanh toan',
-  OVERDUE: 'Qua han',
+  NOT_BILLED: 'Chưa xuất HĐ',
+  INVOICED: 'Đã xuất HĐ',
+  PARTIAL_PAID: 'TT một phần',
+  PAID: 'Đã thanh toán',
+  OVERDUE: 'Quá hạn',
 };
 
 const operationStatusStyles: Record<string, string> = {
@@ -50,12 +50,12 @@ const financialStatusStyles: Record<string, string> = {
 };
 
 const photoCategoryLabels: Record<string, string> = {
-  CONTAINER_EXTERIOR: 'Ngoai container',
-  CONTAINER_INTERIOR: 'Trong container',
-  PORT_GATE_PASS: 'Phieu cong cang',
-  WAREHOUSE_GATE_PASS: 'Phieu cong kho',
-  WEIGHT_TICKET: 'Phieu can',
-  OTHER: 'Khac',
+  CONTAINER_EXTERIOR: 'Mặt ngoài container',
+  CONTAINER_INTERIOR: 'Mặt trong container',
+  PORT_GATE_PASS: 'Phiếu ra/vào cảng',
+  WAREHOUSE_GATE_PASS: 'Phiếu ra/vào kho',
+  WEIGHT_TICKET: 'Phiếu cân xe',
+  OTHER: 'Khác',
 };
 
 export const MyShipmentDetailsPage = () => {
@@ -64,7 +64,7 @@ export const MyShipmentDetailsPage = () => {
   const [isConfirming, setIsConfirming] = useState(false);
 
   const handleConfirmDocuments = async () => {
-    if (!confirm('Xac nhan rang ban da nhan du tat ca chung tu cho chuyen hang nay?')) {
+    if (!confirm('Xác nhận rằng bạn đã nhận đủ tất cả chứng từ cho chuyến hàng này?')) {
       return;
     }
 
@@ -72,9 +72,9 @@ export const MyShipmentDetailsPage = () => {
     try {
       await confirmDocuments({ shipmentId: id! });
       await refetch();
-      alert('Da xac nhan chung tu thanh cong');
+      alert('Đã xác nhận chứng từ thành công');
     } catch (error: any) {
-      alert(error.message || 'Khong the xac nhan chung tu');
+      alert(error.message || 'Không thể xác nhận chứng từ');
     } finally {
       setIsConfirming(false);
     }
@@ -85,7 +85,7 @@ export const MyShipmentDetailsPage = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-          <p className="text-gray-600 mt-4">Dang tai thong tin...</p>
+          <p className="text-gray-600 mt-4">Đang tải thông tin...</p>
         </div>
       </div>
     );
@@ -95,9 +95,9 @@ export const MyShipmentDetailsPage = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-gray-600">Khong tim thay chuyen hang</p>
+          <p className="text-gray-600">Không tìm thấy chuyến hàng</p>
           <Link to="/customer/shipments" className="text-blue-600 hover:text-blue-700 mt-2 inline-block">
-            Quay lai danh sach
+            Quay lại danh sách
           </Link>
         </div>
       </div>
@@ -154,7 +154,7 @@ export const MyShipmentDetailsPage = () => {
                 </span>
               </div>
 
-              <p className="text-gray-600 mt-2">Khach hang: {shipment.customer.name}</p>
+              <p className="text-gray-600 mt-2">Khách hàng: {shipment.customer.name}</p>
             </div>
 
             {shipment.currentStatus === 'COMPLETED' && (
@@ -163,7 +163,7 @@ export const MyShipmentDetailsPage = () => {
                 disabled={isConfirming}
                 className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium disabled:bg-gray-300"
               >
-                {isConfirming ? 'Dang xac nhan...' : 'Xac nhan da nhan chung tu'}
+                {isConfirming ? 'Đang xác nhận...' : 'Xác nhận đã nhận chứng từ'}
               </button>
             )}
           </div>
@@ -178,47 +178,47 @@ export const MyShipmentDetailsPage = () => {
             {/* Shipment Info */}
             <div className="bg-white rounded-lg shadow">
               <div className="px-6 py-4 border-b border-gray-200">
-                <h2 className="text-lg font-semibold text-gray-900">Thong tin chuyen hang</h2>
+                <h2 className="text-lg font-semibold text-gray-900">Thông tin chuyến hàng</h2>
               </div>
               <div className="p-6">
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <span className="text-gray-600">Do uu tien</span>
+                    <span className="text-gray-600">Độ ưu tiên</span>
                     <p className="font-medium text-gray-900">
-                      {shipment.priority === 'URGENT' ? 'Khan cap' :
+                      {shipment.priority === 'URGENT' ? 'Khẩn cấp' :
                        shipment.priority === 'HIGH' ? 'Cao' :
-                       shipment.priority === 'NORMAL' ? 'Binh thuong' : 'Thap'}
+                       shipment.priority === 'NORMAL' ? 'Bình thường' : 'Thấp'}
                     </p>
                   </div>
                   {shipment.containerNumber && (
                     <div>
-                      <span className="text-gray-600">So container</span>
+                      <span className="text-gray-600">Số container</span>
                       <p className="font-medium text-gray-900">{shipment.containerNumber}</p>
                     </div>
                   )}
                   {shipment.containerType && (
                     <div>
-                      <span className="text-gray-600">Loai container</span>
+                      <span className="text-gray-600">Loại container</span>
                       <p className="font-medium text-gray-900">
                         {shipment.containerType.replace('CONTAINER_', '').replace('_', ' ')}
                       </p>
                     </div>
                   )}
                   <div>
-                    <span className="text-gray-600">Ngay bat dau du kien</span>
+                    <span className="text-gray-600">Ngày bắt đầu dự kiến</span>
                     <p className="font-medium text-gray-900">
                       {new Date(shipment.plannedStartDate).toLocaleString('vi-VN')}
                     </p>
                   </div>
                   <div>
-                    <span className="text-gray-600">Ngay ket thuc du kien</span>
+                    <span className="text-gray-600">Ngày kết thúc dự kiến</span>
                     <p className="font-medium text-gray-900">
                       {new Date(shipment.plannedEndDate).toLocaleString('vi-VN')}
                     </p>
                   </div>
                   {shipment.actualStartDate && (
                     <div>
-                      <span className="text-gray-600">Ngay bat dau thuc te</span>
+                      <span className="text-gray-600">Ngày bắt đầu thực tế</span>
                       <p className="font-medium text-gray-900">
                         {new Date(shipment.actualStartDate).toLocaleString('vi-VN')}
                       </p>
@@ -226,7 +226,7 @@ export const MyShipmentDetailsPage = () => {
                   )}
                   {shipment.actualEndDate && (
                     <div>
-                      <span className="text-gray-600">Ngay ket thuc thuc te</span>
+                      <span className="text-gray-600">Ngày kết thúc thực tế</span>
                       <p className="font-medium text-gray-900">
                         {new Date(shipment.actualEndDate).toLocaleString('vi-VN')}
                       </p>
@@ -234,7 +234,7 @@ export const MyShipmentDetailsPage = () => {
                   )}
                   {shipment.specialInstructions && (
                     <div className="col-span-2">
-                      <span className="text-gray-600">Yeu cau dac biet</span>
+                      <span className="text-gray-600">Hướng dẫn đặc biệt</span>
                       <p className="font-medium text-gray-900 mt-1">{shipment.specialInstructions}</p>
                     </div>
                   )}
@@ -245,7 +245,7 @@ export const MyShipmentDetailsPage = () => {
             {/* Stops with real-time photos */}
             <div className="bg-white rounded-lg shadow">
               <div className="px-6 py-4 border-b border-gray-200">
-                <h2 className="text-lg font-semibold text-gray-900">Diem dung ({shipment.stops.length})</h2>
+                <h2 className="text-lg font-semibold text-gray-900">Điểm dừng ({shipment.stops.length})</h2>
               </div>
               <div className="p-6">
                 <div className="space-y-4">
@@ -276,9 +276,9 @@ export const MyShipmentDetailsPage = () => {
                                 </span>
                               )}
                               {stop.actualDeparture ? (
-                                <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded font-medium">Hoan thanh</span>
+                                <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded font-medium">Hoàn thành</span>
                               ) : stop.actualArrival ? (
-                                <span className="px-2 py-1 bg-yellow-100 text-yellow-700 text-xs rounded font-medium">Dang xu ly</span>
+                                <span className="px-2 py-1 bg-yellow-100 text-yellow-700 text-xs rounded font-medium">Đang xử lý</span>
                               ) : null}
                             </div>
                           </div>
@@ -286,24 +286,24 @@ export const MyShipmentDetailsPage = () => {
 
                         <div className="grid grid-cols-2 gap-2 text-sm mt-3">
                           <div>
-                            <span className="text-gray-600">Den:</span>
+                            <span className="text-gray-600">Đến:</span>
                             <p className="font-medium text-gray-900">
                               {new Date(stop.plannedArrival).toLocaleString('vi-VN')}
                             </p>
                             {stop.actualArrival && (
                               <p className="text-green-700 text-xs">
-                                Thuc te: {new Date(stop.actualArrival).toLocaleString('vi-VN')}
+                                Thực tế: {new Date(stop.actualArrival).toLocaleString('vi-VN')}
                               </p>
                             )}
                           </div>
                           <div>
-                            <span className="text-gray-600">Roi:</span>
+                            <span className="text-gray-600">Rời:</span>
                             <p className="font-medium text-gray-900">
                               {new Date(stop.plannedDeparture).toLocaleString('vi-VN')}
                             </p>
                             {stop.actualDeparture && (
                               <p className="text-green-700 text-xs">
-                                Thuc te: {new Date(stop.actualDeparture).toLocaleString('vi-VN')}
+                                Thực tế: {new Date(stop.actualDeparture).toLocaleString('vi-VN')}
                               </p>
                             )}
                           </div>
@@ -311,14 +311,14 @@ export const MyShipmentDetailsPage = () => {
 
                         {stop.contactPerson && (
                           <p className="text-sm text-gray-600 mt-2">
-                            Lien he: {stop.contactPerson} {stop.contactPhone && `(${stop.contactPhone})`}
+                            Liên hệ: {stop.contactPerson} {stop.contactPhone && `(${stop.contactPhone})`}
                           </p>
                         )}
 
                         {/* Photos per stop */}
                         {shipment.pods && shipment.pods.filter((p: any) => p.stopId === stop.id).length > 0 && (
                           <div className="mt-3 pt-3 border-t border-gray-200">
-                            <p className="text-sm font-medium text-gray-700 mb-2">Anh chung tu:</p>
+                            <p className="text-sm font-medium text-gray-700 mb-2">Ảnh chứng từ:</p>
                             <div className="space-y-2">
                               {Object.entries(
                                 shipment.pods
@@ -369,7 +369,7 @@ export const MyShipmentDetailsPage = () => {
             {shipment.statusEvents && shipment.statusEvents.length > 0 && (
               <div className="bg-white rounded-lg shadow">
                 <div className="px-6 py-4 border-b border-gray-200">
-                  <h2 className="text-lg font-semibold text-gray-900">Lich su trang thai</h2>
+                  <h2 className="text-lg font-semibold text-gray-900">Lịch sử trạng thái</h2>
                 </div>
                 <div className="p-6">
                   <div className="space-y-3">
@@ -396,27 +396,27 @@ export const MyShipmentDetailsPage = () => {
             {driverTask && (
               <div className="bg-white rounded-lg shadow">
                 <div className="px-6 py-4 border-b border-gray-200">
-                  <h2 className="text-lg font-semibold text-gray-900">Thong tin dieu xe</h2>
+                  <h2 className="text-lg font-semibold text-gray-900">Thông tin điều xe</h2>
                 </div>
                 <div className="p-6 space-y-4">
                   <div>
-                    <span className="text-sm text-gray-600">Tai xe</span>
+                    <span className="text-sm text-gray-600">Tài xế</span>
                     <p className="font-medium text-gray-900">
                       {driverTask.driver?.fullName || driverTask.driver?.user?.fullName}
                     </p>
                   </div>
                   <div>
-                    <span className="text-sm text-gray-600">Dau keo</span>
+                    <span className="text-sm text-gray-600">Đầu kéo</span>
                     <p className="font-medium text-gray-900">{driverTask.tractor?.licensePlate}</p>
                   </div>
                   {driverTask.trailer && (
                     <div>
-                      <span className="text-sm text-gray-600">Mooc</span>
+                      <span className="text-sm text-gray-600">Moóc</span>
                       <p className="font-medium text-gray-900">{driverTask.trailer.licensePlate}</p>
                     </div>
                   )}
                   <div>
-                    <span className="text-sm text-gray-600">Trang thai</span>
+                    <span className="text-sm text-gray-600">Trạng thái</span>
                     <p className="font-medium text-gray-900">
                       <span className={`px-2 py-1 text-xs rounded font-medium ${
                         driverTask.status === 'COMPLETED' ? 'bg-green-100 text-green-800' :
@@ -429,7 +429,7 @@ export const MyShipmentDetailsPage = () => {
                   </div>
                   {driverTask.instructions && (
                     <div>
-                      <span className="text-sm text-gray-600">Ghi chu</span>
+                      <span className="text-sm text-gray-600">Ghi chú</span>
                       <p className="text-sm text-gray-900 mt-1">{driverTask.instructions}</p>
                     </div>
                   )}
@@ -441,30 +441,30 @@ export const MyShipmentDetailsPage = () => {
             {shipment.dispatch && !driverTask && (
               <div className="bg-white rounded-lg shadow">
                 <div className="px-6 py-4 border-b border-gray-200">
-                  <h2 className="text-lg font-semibold text-gray-900">Thong tin dieu xe</h2>
+                  <h2 className="text-lg font-semibold text-gray-900">Thông tin điều xe</h2>
                 </div>
                 <div className="p-6 space-y-4">
                   <div>
                     <span className="text-sm text-gray-600">Xe</span>
                     <p className="font-medium text-gray-900">{shipment.dispatch.vehicle.licensePlate}</p>
                     <p className="text-sm text-gray-600">
-                      {shipment.dispatch.vehicle.vehicleType === 'TRACTOR' ? 'Dau keo' : 'Mooc'}
+                      {shipment.dispatch.vehicle.vehicleType === 'TRACTOR' ? 'Đầu kéo' : 'Moóc'}
                     </p>
                   </div>
                   <div>
-                    <span className="text-sm text-gray-600">Tai xe</span>
+                    <span className="text-sm text-gray-600">Tài xế</span>
                     <p className="font-medium text-gray-900">{shipment.dispatch.driver.user.fullName}</p>
                     <p className="text-sm text-gray-600">{shipment.dispatch.driver.phone}</p>
                   </div>
                   <div>
-                    <span className="text-sm text-gray-600">Thoi gian phan cong</span>
+                    <span className="text-sm text-gray-600">Thời gian phân công</span>
                     <p className="font-medium text-gray-900">
                       {new Date(shipment.dispatch.assignedAt).toLocaleString('vi-VN')}
                     </p>
                   </div>
                   {shipment.dispatch.notes && (
                     <div>
-                      <span className="text-sm text-gray-600">Ghi chu</span>
+                      <span className="text-sm text-gray-600">Ghi chú</span>
                       <p className="text-sm text-gray-900 mt-1">{shipment.dispatch.notes}</p>
                     </div>
                   )}
@@ -477,7 +477,7 @@ export const MyShipmentDetailsPage = () => {
               <div className="bg-white rounded-lg shadow">
                 <div className="px-6 py-4 border-b border-gray-200">
                   <h2 className="text-lg font-semibold text-gray-900">
-                    Chung tu giao hang ({shipment.pods.length})
+                    Chứng từ giao hàng ({shipment.pods.length})
                   </h2>
                 </div>
                 <div className="p-6">
@@ -515,11 +515,11 @@ export const MyShipmentDetailsPage = () => {
             {/* Created By Info */}
             {shipment.createdBy && (
               <div className="bg-white rounded-lg shadow p-6">
-                <h3 className="text-sm font-medium text-gray-600 mb-2">Nguoi tao</h3>
+                <h3 className="text-sm font-medium text-gray-600 mb-2">Người tạo</h3>
                 <p className="font-medium text-gray-900">{shipment.createdBy.fullName}</p>
                 <p className="text-sm text-gray-600">{shipment.createdBy.email}</p>
                 <p className="text-xs text-gray-500 mt-1">
-                  {shipment.createdByType === 'CUSTOMER' ? 'Khach hang' : 'Noi bo'}
+                  {shipment.createdByType === 'CUSTOMER' ? 'Khách hàng' : 'Nội bộ'}
                 </p>
               </div>
             )}

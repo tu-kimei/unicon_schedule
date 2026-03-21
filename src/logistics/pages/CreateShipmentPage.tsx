@@ -106,7 +106,7 @@ export const CreateShipmentPage = () => {
 
   const renderStepIndicator = () => (
     <div className="flex items-center mb-8">
-      {['Basic Info', 'Stops', 'Review'].map((label, index) => {
+      {['Thông tin cơ bản', 'Điểm dừng', 'Xác nhận'].map((label, index) => {
         const stepNumber = index + 1;
         const isActive = step === stepNumber;
         const isCompleted = step > stepNumber;
@@ -135,7 +135,7 @@ export const CreateShipmentPage = () => {
     <div className="space-y-6">
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          Customer *
+          Khách hàng *
         </label>
         <select
           value={form.customerId}
@@ -143,7 +143,7 @@ export const CreateShipmentPage = () => {
           className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           required
         >
-          <option value="">-- Select Customer --</option>
+          <option value="">-- Chọn khách hàng --</option>
           {customers?.filter((c: Customer) => c.status === 'ACTIVE').map((customer: Customer) => (
             <option key={customer.id} value={customer.id}>
               {customer.name} ({customer.email})
@@ -151,30 +151,30 @@ export const CreateShipmentPage = () => {
           ))}
         </select>
         <p className="mt-1 text-sm text-gray-500">
-          Select the customer for this shipment
+          Chọn khách hàng cho chuyến hàng này
         </p>
       </div>
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          Priority
+          Mức ưu tiên
         </label>
         <select
           value={form.priority}
           onChange={(e) => updateForm({ priority: e.target.value as any })}
           className="w-full border border-gray-300 rounded-lg px-3 py-2"
         >
-          <option value="LOW">Low</option>
-          <option value="NORMAL">Normal</option>
-          <option value="HIGH">High</option>
-          <option value="URGENT">Urgent</option>
+          <option value="LOW">Thấp</option>
+          <option value="NORMAL">Bình thường</option>
+          <option value="HIGH">Cao</option>
+          <option value="URGENT">Khẩn cấp</option>
         </select>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Planned Start Date
+            Ngày bắt đầu dự kiến
           </label>
           <input
             type="datetime-local"
@@ -186,7 +186,7 @@ export const CreateShipmentPage = () => {
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Planned End Date
+            Ngày kết thúc dự kiến
           </label>
           <input
             type="datetime-local"
@@ -204,87 +204,87 @@ export const CreateShipmentPage = () => {
       {form.stops.map((stop, index) => (
         <div key={index} className="border border-gray-200 rounded-lg p-4">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-medium">Stop {stop.sequence}</h3>
+            <h3 className="text-lg font-medium">Điểm dừng {stop.sequence}</h3>
             <button
               onClick={() => removeStop(index)}
               className="text-red-500 hover:text-red-700"
             >
-              Remove
+              Xóa
             </button>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Stop Type
+                Loại điểm dừng
               </label>
               <select
                 value={stop.stopType}
                 onChange={(e) => updateStop(index, { stopType: e.target.value as any })}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2"
               >
-                <option value="PICKUP">Pickup</option>
-                <option value="DROPOFF">Dropoff</option>
-                <option value="DEPOT">Depot</option>
-                <option value="PORT">Port</option>
+                <option value="PICKUP">Lấy hàng</option>
+                <option value="DROPOFF">Giao hàng</option>
+                <option value="DEPOT">Bãi xe</option>
+                <option value="PORT">Cảng</option>
               </select>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Location Name
+                Tên địa điểm
               </label>
               <input
                 type="text"
                 value={stop.locationName}
                 onChange={(e) => updateStop(index, { locationName: e.target.value })}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                placeholder="Warehouse A"
+                placeholder="Kho A"
               />
             </div>
 
             <div className="col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Address
+                Địa chỉ
               </label>
               <input
                 type="text"
                 value={stop.address}
                 onChange={(e) => updateStop(index, { address: e.target.value })}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                placeholder="123 Main St, City, State"
+                placeholder="123 Đường ABC, Quận XYZ, TP.HCM"
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Contact Person
+                Người liên hệ
               </label>
               <input
                 type="text"
                 value={stop.contactPerson || ''}
                 onChange={(e) => updateStop(index, { contactPerson: e.target.value })}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                placeholder="John Doe"
+                placeholder="Nguyễn Văn A"
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Contact Phone
+                Số điện thoại
               </label>
               <input
                 type="tel"
                 value={stop.contactPhone || ''}
                 onChange={(e) => updateStop(index, { contactPhone: e.target.value })}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                placeholder="+1 234 567 8900"
+                placeholder="0901 234 567"
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Planned Arrival
+                Thời gian đến dự kiến
               </label>
               <input
                 type="datetime-local"
@@ -296,7 +296,7 @@ export const CreateShipmentPage = () => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Planned Departure
+                Thời gian đi dự kiến
               </label>
               <input
                 type="datetime-local"
@@ -308,14 +308,14 @@ export const CreateShipmentPage = () => {
 
             <div className="col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Special Instructions
+                Hướng dẫn đặc biệt
               </label>
               <textarea
                 value={stop.specialInstructions || ''}
                 onChange={(e) => updateStop(index, { specialInstructions: e.target.value })}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2"
                 rows={2}
-                placeholder="Any special handling instructions..."
+                placeholder="Hướng dẫn xử lý đặc biệt..."
               />
             </div>
           </div>
@@ -326,7 +326,7 @@ export const CreateShipmentPage = () => {
         onClick={addStop}
         className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium"
       >
-        + Add Stop
+        + Thêm điểm dừng
       </button>
     </div>
   );
@@ -337,40 +337,40 @@ export const CreateShipmentPage = () => {
     return (
       <div className="space-y-6">
         <div className="bg-gray-50 rounded-lg p-4">
-          <h3 className="text-lg font-medium mb-4">Shipment Summary</h3>
+          <h3 className="text-lg font-medium mb-4">Tóm tắt chuyến hàng</h3>
 
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
-              <span className="font-medium">Customer:</span>
+              <span className="font-medium">Khách hàng:</span>
               <p className="text-gray-900">{selectedCustomer?.name}</p>
               <p className="text-gray-600 text-xs">{selectedCustomer?.email}</p>
             </div>
             <div>
-              <span className="font-medium">Priority:</span>
+              <span className="font-medium">Mức ưu tiên:</span>
               <p className="text-gray-900">{form.priority}</p>
             </div>
             <div>
-              <span className="font-medium">Start Date:</span>
+              <span className="font-medium">Ngày bắt đầu:</span>
               <p className="text-gray-900">{form.plannedStartDate.toLocaleString()}</p>
             </div>
             <div>
-              <span className="font-medium">End Date:</span>
+              <span className="font-medium">Ngày kết thúc:</span>
               <p className="text-gray-900">{form.plannedEndDate.toLocaleString()}</p>
             </div>
             <div className="col-span-2">
-              <span className="font-medium">Total Stops:</span>
-              <p className="text-gray-900">{form.stops.length} stops</p>
+              <span className="font-medium">Tổng điểm dừng:</span>
+              <p className="text-gray-900">{form.stops.length} điểm</p>
             </div>
           </div>
         </div>
 
         <div className="space-y-3">
-          <h4 className="font-medium">Stop Details:</h4>
+          <h4 className="font-medium">Chi tiết điểm dừng:</h4>
           {form.stops.map((stop, index) => (
             <div key={index} className="bg-white border border-gray-200 rounded-lg p-3">
               <div className="flex justify-between items-start">
                 <div>
-                  <h5 className="font-medium">Stop {stop.sequence}: {stop.locationName}</h5>
+                  <h5 className="font-medium">Điểm {stop.sequence}: {stop.locationName}</h5>
                   <p className="text-sm text-gray-600">{stop.address}</p>
                   <p className="text-sm text-gray-600">{stop.stopType}</p>
                 </div>
@@ -382,12 +382,12 @@ export const CreateShipmentPage = () => {
               </div>
               {stop.contactPerson && (
                 <p className="text-sm mt-2">
-                  Contact: {stop.contactPerson} {stop.contactPhone && `(${stop.contactPhone})`}
+                  Liên hệ: {stop.contactPerson} {stop.contactPhone && `(${stop.contactPhone})`}
                 </p>
               )}
               {stop.specialInstructions && (
                 <p className="text-sm mt-1 text-gray-600">
-                  Instructions: {stop.specialInstructions}
+                  Hướng dẫn: {stop.specialInstructions}
                 </p>
               )}
             </div>
@@ -402,8 +402,8 @@ export const CreateShipmentPage = () => {
       <div className="max-w-4xl mx-auto px-6 py-8">
         <div className="bg-white rounded-lg shadow">
           <div className="px-6 py-4 border-b border-gray-200">
-            <h1 className="text-2xl font-bold text-gray-900">Create New Shipment</h1>
-            <p className="text-gray-600">Fill in the shipment details step by step</p>
+            <h1 className="text-2xl font-bold text-gray-900">Tạo chuyến hàng mới</h1>
+            <p className="text-gray-600">Điền thông tin chuyến hàng theo từng bước</p>
           </div>
 
           <div className="px-6 py-6">
@@ -421,7 +421,7 @@ export const CreateShipmentPage = () => {
                 disabled={step === 1}
                 className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Previous
+                Quay lại
               </button>
 
               <div className="flex space-x-3">
@@ -431,7 +431,7 @@ export const CreateShipmentPage = () => {
                     disabled={!validateStep(step)}
                     className="px-4 py-2 bg-blue-600 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Next
+                    Tiếp theo
                   </button>
                 ) : (
                   <button
@@ -439,7 +439,7 @@ export const CreateShipmentPage = () => {
                     disabled={isSubmitting}
                     className="px-6 py-2 bg-green-600 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {isSubmitting ? 'Creating...' : 'Create Shipment'}
+                    {isSubmitting ? 'Đang tạo...' : 'Tạo chuyến hàng'}
                   </button>
                 )}
               </div>

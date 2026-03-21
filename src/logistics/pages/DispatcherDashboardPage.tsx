@@ -152,7 +152,7 @@ export const DispatcherDashboardPage = () => {
       refetchAll();
     } catch (error: any) {
       console.error('Failed to create driver task:', error);
-      alert(error?.message || 'Failed to assign driver task. Please try again.');
+      alert(error?.message || 'Không thể phân công tài xế. Vui lòng thử lại.');
     }
   };
 
@@ -164,7 +164,7 @@ export const DispatcherDashboardPage = () => {
       refetchTasks();
     } catch (error: any) {
       console.error('Failed to reorder tasks:', error);
-      alert(error?.message || 'Failed to reorder tasks.');
+      alert(error?.message || 'Không thể sắp xếp lại. Vui lòng thử lại.');
     }
   };
 
@@ -175,7 +175,7 @@ export const DispatcherDashboardPage = () => {
       refetchAll();
     } catch (error: any) {
       console.error('Failed to create quick dispatch:', error);
-      alert(error?.message || 'Failed to create quick dispatch. Please try again.');
+      alert(error?.message || 'Không thể tạo điều phối nhanh. Vui lòng thử lại.');
     }
   };
 
@@ -204,11 +204,11 @@ export const DispatcherDashboardPage = () => {
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Dispatcher Dashboard</h1>
-              <p className="text-gray-600">Phan cong tai xe va quan ly chuyen</p>
+              <h1 className="text-2xl font-bold text-gray-900">Bảng điều phối</h1>
+              <p className="text-gray-600">Phân công tài xế và quản lý chuyến</p>
             </div>
             <Button onClick={() => setShowQuickDispatchModal(true)}>
-              + Tao & Dispatch nhanh
+              + Tạo & Điều phối nhanh
             </Button>
           </div>
         </div>
@@ -222,10 +222,10 @@ export const DispatcherDashboardPage = () => {
             <div className="px-6 py-4 border-b border-gray-200">
               <div className="flex items-center gap-2">
                 <h2 className="text-xl font-semibold text-gray-900">
-                  Yeu cau tu Khach hang ({customerRequests.length})
+                  Yêu cầu từ Khách hàng ({customerRequests.length})
                 </h2>
                 <span className="px-2 py-1 bg-amber-100 text-amber-800 text-xs font-medium rounded">
-                  Yeu cau tu KH
+                  Yêu cầu từ KH
                 </span>
               </div>
             </div>
@@ -249,9 +249,9 @@ export const DispatcherDashboardPage = () => {
           <div className="bg-white rounded-lg shadow">
             <div className="px-6 py-4 border-b border-gray-200">
               <h2 className="text-xl font-semibold text-gray-900">
-                Chuyen cho dispatch ({internalPending.length})
+                Chuyến chờ điều phối ({internalPending.length})
               </h2>
-              <p className="text-sm text-gray-600 mt-1">Click de phan cong tai xe</p>
+              <p className="text-sm text-gray-600 mt-1">Nhấn để phân công tài xế</p>
             </div>
             <div className="px-6 py-4 max-h-[500px] overflow-y-auto">
               {internalPending.length > 0 ? (
@@ -266,7 +266,7 @@ export const DispatcherDashboardPage = () => {
                 </div>
               ) : (
                 <div className="text-center py-8">
-                  <p className="text-gray-500">Khong co chuyen cho dispatch</p>
+                  <p className="text-gray-500">Không có chuyến chờ điều phối</p>
                 </div>
               )}
             </div>
@@ -276,9 +276,9 @@ export const DispatcherDashboardPage = () => {
           <div className="bg-white rounded-lg shadow">
             <div className="px-6 py-4 border-b border-gray-200">
               <h2 className="text-xl font-semibold text-gray-900">
-                Cong viec tai xe
+                Danh sách chuyến tài xế
               </h2>
-              <p className="text-sm text-gray-600 mt-1">Keo tha de sap xep thu tu</p>
+              <p className="text-sm text-gray-600 mt-1">Kéo thả để sắp xếp thứ tự</p>
             </div>
             <div className="px-6 py-4 max-h-[500px] overflow-y-auto">
               {Object.keys(tasksByDriver).length > 0 ? (
@@ -294,7 +294,7 @@ export const DispatcherDashboardPage = () => {
                 </div>
               ) : (
                 <div className="text-center py-8">
-                  <p className="text-gray-500">Chua co cong viec nao</p>
+                  <p className="text-gray-500">Chưa có chuyến nào được gán</p>
                 </div>
               )}
             </div>
@@ -380,7 +380,7 @@ const PendingShipmentCard = ({ shipment, onClick, isCustomerRequest }: PendingSh
       </div>
       <div className="text-sm text-gray-600 space-y-1">
         <p>{formatDate(shipment.plannedStartDate)} - {formatDate(shipment.plannedEndDate)}</p>
-        <p>{shipment.stops.length} diem dung</p>
+        <p>{shipment.stops.length} điểm dừng</p>
         <p className="truncate">
           {shipment.stops.slice(0, 2).map(s => s.locationName).join(' -> ')}
           {shipment.stops.length > 2 && '...'}
@@ -470,7 +470,7 @@ const DriverTaskGroup = ({ driver, tasks, onReorder }: DriverTaskGroupProps) => 
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
           </svg>
           <span className="font-medium text-gray-900">{driver.fullName}</span>
-          <span className="text-xs text-gray-500">({tasks.length} chuyen)</span>
+          <span className="text-xs text-gray-500">({tasks.length} chuyến)</span>
         </div>
       </div>
 
@@ -573,7 +573,7 @@ const AssignDriverTaskModal = ({ shipment, vehicles, drivers, onAssign, onClose 
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
         <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900">Phan cong tai xe</h2>
+          <h2 className="text-xl font-semibold text-gray-900">Phân công tài xế</h2>
         </div>
 
         <div className="px-6 py-4 space-y-4">
@@ -591,20 +591,20 @@ const AssignDriverTaskModal = ({ shipment, vehicles, drivers, onAssign, onClose 
               )}
             </div>
             <p className="text-sm text-gray-600">{shipment.customer?.name}</p>
-            <p className="text-sm text-gray-600">{shipment.stops.length} diem dung</p>
+            <p className="text-sm text-gray-600">{shipment.stops.length} điểm dừng</p>
           </div>
 
           {/* Tractor Selection */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Dau keo <span className="text-red-500">*</span>
+              Đầu kéo <span className="text-red-500">*</span>
             </label>
             <select
               value={selectedTractor}
               onChange={(e) => setSelectedTractor(e.target.value)}
               className="w-full border border-gray-300 rounded-lg px-3 py-2"
             >
-              <option value="">-- Chon dau keo --</option>
+              <option value="">-- Chọn đầu kéo --</option>
               {tractors.map((v) => (
                 <option key={v.id} value={v.id}>
                   {v.licensePlate}
@@ -616,14 +616,14 @@ const AssignDriverTaskModal = ({ shipment, vehicles, drivers, onAssign, onClose 
           {/* Trailer Selection */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Mooc (Tuy chon)
+              Rơ moóc (Tùy chọn)
             </label>
             <select
               value={selectedTrailer}
               onChange={(e) => setSelectedTrailer(e.target.value)}
               className="w-full border border-gray-300 rounded-lg px-3 py-2"
             >
-              <option value="">-- Chon mooc --</option>
+              <option value="">-- Chọn rơ moóc --</option>
               {trailers.map((v) => (
                 <option key={v.id} value={v.id}>
                   {v.licensePlate}
@@ -635,14 +635,14 @@ const AssignDriverTaskModal = ({ shipment, vehicles, drivers, onAssign, onClose 
           {/* Driver Selection */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Tai xe <span className="text-red-500">*</span>
+              Tài xế <span className="text-red-500">*</span>
             </label>
             <select
               value={selectedDriver}
               onChange={(e) => setSelectedDriver(e.target.value)}
               className="w-full border border-gray-300 rounded-lg px-3 py-2"
             >
-              <option value="">-- Chon tai xe --</option>
+              <option value="">-- Chọn tài xế --</option>
               {drivers.map((driver) => (
                 <option key={driver.id} value={driver.id}>
                   {driver.fullName}
@@ -654,27 +654,27 @@ const AssignDriverTaskModal = ({ shipment, vehicles, drivers, onAssign, onClose 
           {/* Instructions */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Chi dan cho tai xe
+              Chỉ dẫn cho tài xế
             </label>
             <textarea
               value={instructions}
               onChange={(e) => setInstructions(e.target.value)}
               className="w-full border border-gray-300 rounded-lg px-3 py-2"
               rows={3}
-              placeholder="Chi dan dac biet cho tai xe..."
+              placeholder="Chỉ dẫn đặc biệt cho tài xế..."
             />
           </div>
         </div>
 
         <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
           <Button variant="ghost" onClick={onClose} disabled={isAssigning}>
-            Huy
+            Hủy
           </Button>
           <Button
             onClick={handleAssign}
             disabled={!selectedTractor || !selectedDriver || isAssigning}
           >
-            {isAssigning ? 'Dang phan cong...' : 'Phan cong'}
+            {isAssigning ? 'Đang phân công...' : 'Phân công'}
           </Button>
         </div>
       </div>
@@ -825,9 +825,9 @@ const QuickDispatchModal = ({
     <Dialog open={open} onClose={handleClose} closeOnClickOutside={false}>
       <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div className="px-6 py-4 border-b border-gray-200 sticky top-0 bg-white z-10">
-          <h2 className="text-xl font-semibold text-gray-900">Tao & Dispatch nhanh</h2>
+          <h2 className="text-xl font-semibold text-gray-900">Tạo & Điều phối nhanh</h2>
           <p className="text-sm text-gray-600 mt-1">
-            Tao chuyen hang moi va phan cong trong mot buoc
+            Tạo chuyến hàng mới và phân công trong một bước
           </p>
         </div>
 
@@ -836,30 +836,30 @@ const QuickDispatchModal = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Khach hang <span className="text-red-500">*</span>
+                Khách hàng <span className="text-red-500">*</span>
               </label>
               <select
                 value={customerId}
                 onChange={(e) => setCustomerId(e.target.value)}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2"
               >
-                <option value="">-- Chon khach hang --</option>
+                <option value="">-- Chọn khách hàng --</option>
                 {activeCustomers.map((c) => (
                   <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Do uu tien</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Mức ưu tiên</label>
               <select
                 value={priority}
                 onChange={(e) => setPriority(e.target.value)}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2"
               >
-                <option value="LOW">Low</option>
-                <option value="NORMAL">Normal</option>
-                <option value="HIGH">High</option>
-                <option value="URGENT">Urgent</option>
+                <option value="LOW">Thấp</option>
+                <option value="NORMAL">Bình thường</option>
+                <option value="HIGH">Cao</option>
+                <option value="URGENT">Khẩn cấp</option>
               </select>
             </div>
           </div>
@@ -868,7 +868,7 @@ const QuickDispatchModal = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Ngay bat dau <span className="text-red-500">*</span>
+                Ngày bắt đầu <span className="text-red-500">*</span>
               </label>
               <input
                 type="datetime-local"
@@ -879,7 +879,7 @@ const QuickDispatchModal = ({
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Ngay ket thuc <span className="text-red-500">*</span>
+                Ngày kết thúc <span className="text-red-500">*</span>
               </label>
               <input
                 type="datetime-local"
@@ -893,7 +893,7 @@ const QuickDispatchModal = ({
           {/* Container Info */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">So container</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Số container</label>
               <input
                 type="text"
                 value={containerNumber}
@@ -903,13 +903,13 @@ const QuickDispatchModal = ({
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Loai container</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Loại container</label>
               <select
                 value={containerType}
                 onChange={(e) => setContainerType(e.target.value)}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2"
               >
-                <option value="">-- Chon loai --</option>
+                <option value="">-- Chọn loại --</option>
                 <option value="CONTAINER_20FT">Container 20ft</option>
                 <option value="CONTAINER_40FT">Container 40ft</option>
                 <option value="CONTAINER_40HC">Container 40ft HC</option>
@@ -924,13 +924,13 @@ const QuickDispatchModal = ({
 
           {/* Special Instructions */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Yeu cau dac biet</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Yêu cầu đặc biệt</label>
             <textarea
               value={specialInstructions}
               onChange={(e) => setSpecialInstructions(e.target.value)}
               className="w-full border border-gray-300 rounded-lg px-3 py-2"
               rows={2}
-              placeholder="Ghi chu yeu cau dac biet..."
+              placeholder="Ghi chú yêu cầu đặc biệt..."
             />
           </div>
 
@@ -938,46 +938,46 @@ const QuickDispatchModal = ({
           <div>
             <div className="flex justify-between items-center mb-3">
               <label className="block text-sm font-medium text-gray-700">
-                Diem dung <span className="text-red-500">*</span>
+                Điểm dừng <span className="text-red-500">*</span>
               </label>
               <button type="button" onClick={addStop} className="text-sm text-blue-600 hover:text-blue-800 font-medium">
-                + Them diem dung
+                + Thêm điểm dừng
               </button>
             </div>
             <div className="space-y-4">
               {stops.map((stop, index) => (
                 <div key={index} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
                   <div className="flex justify-between items-center mb-3">
-                    <h4 className="text-sm font-medium text-gray-700">Diem #{index + 1}</h4>
+                    <h4 className="text-sm font-medium text-gray-700">Điểm #{index + 1}</h4>
                     <div className="flex items-center gap-2">
                       <select
                         value={stop.stopType}
                         onChange={(e) => updateStop(index, 'stopType', e.target.value)}
                         className="border border-gray-300 rounded px-2 py-1 text-sm"
                       >
-                        <option value="PICKUP">Pickup</option>
-                        <option value="DROPOFF">Dropoff</option>
-                        <option value="DEPOT">Depot</option>
-                        <option value="PORT">Port</option>
+                        <option value="PICKUP">Lấy hàng</option>
+                        <option value="DROPOFF">Giao hàng</option>
+                        <option value="DEPOT">Bãi xe</option>
+                        <option value="PORT">Cảng</option>
                       </select>
                       {stops.length > 2 && (
                         <button type="button" onClick={() => removeStop(index)} className="text-red-500 hover:text-red-700 text-sm">
-                          Xoa
+                          Xóa
                         </button>
                       )}
                     </div>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <input type="text" value={stop.locationName} onChange={(e) => updateStop(index, 'locationName', e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2 text-sm" placeholder="Ten dia diem *" />
-                    <input type="text" value={stop.address} onChange={(e) => updateStop(index, 'address', e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2 text-sm" placeholder="Dia chi *" />
-                    <input type="text" value={stop.contactPerson} onChange={(e) => updateStop(index, 'contactPerson', e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2 text-sm" placeholder="Nguoi lien he" />
-                    <input type="text" value={stop.contactPhone} onChange={(e) => updateStop(index, 'contactPhone', e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2 text-sm" placeholder="So dien thoai" />
+                    <input type="text" value={stop.locationName} onChange={(e) => updateStop(index, 'locationName', e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2 text-sm" placeholder="Tên địa điểm *" />
+                    <input type="text" value={stop.address} onChange={(e) => updateStop(index, 'address', e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2 text-sm" placeholder="Địa chỉ *" />
+                    <input type="text" value={stop.contactPerson} onChange={(e) => updateStop(index, 'contactPerson', e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2 text-sm" placeholder="Người liên hệ" />
+                    <input type="text" value={stop.contactPhone} onChange={(e) => updateStop(index, 'contactPhone', e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2 text-sm" placeholder="Số điện thoại" />
                     <div>
-                      <label className="block text-xs text-gray-500 mb-1">Den *</label>
+                      <label className="block text-xs text-gray-500 mb-1">Đến *</label>
                       <input type="datetime-local" value={stop.plannedArrival} onChange={(e) => updateStop(index, 'plannedArrival', e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2 text-sm" />
                     </div>
                     <div>
-                      <label className="block text-xs text-gray-500 mb-1">Di *</label>
+                      <label className="block text-xs text-gray-500 mb-1">Đi *</label>
                       <input type="datetime-local" value={stop.plannedDeparture} onChange={(e) => updateStop(index, 'plannedDeparture', e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2 text-sm" />
                     </div>
                   </div>
@@ -988,14 +988,14 @@ const QuickDispatchModal = ({
 
           {/* Vehicle & Driver Assignment */}
           <div className="border-t border-gray-200 pt-4">
-            <h3 className="text-sm font-semibold text-gray-700 mb-3">Phan cong</h3>
+            <h3 className="text-sm font-semibold text-gray-700 mb-3">Phân công</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Xe <span className="text-red-500">*</span>
                 </label>
                 <select value={vehicleId} onChange={(e) => setVehicleId(e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2">
-                  <option value="">-- Chon xe --</option>
+                  <option value="">-- Chọn xe --</option>
                   {vehicles.map((v) => (
                     <option key={v.id} value={v.id}>{v.licensePlate} - {v.vehicleType.replace('_', ' ')}</option>
                   ))}
@@ -1003,10 +1003,10 @@ const QuickDispatchModal = ({
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Tai xe <span className="text-red-500">*</span>
+                  Tài xế <span className="text-red-500">*</span>
                 </label>
                 <select value={driverId} onChange={(e) => setDriverId(e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2">
-                  <option value="">-- Chon tai xe --</option>
+                  <option value="">-- Chọn tài xế --</option>
                   {drivers.map((d) => (
                     <option key={d.id} value={d.id}>{d.fullName}</option>
                   ))}
@@ -1017,16 +1017,16 @@ const QuickDispatchModal = ({
 
           {/* Dispatch Notes */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Ghi chu dispatch</label>
-            <textarea value={dispatchNotes} onChange={(e) => setDispatchNotes(e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2" rows={2} placeholder="Ghi chu cho tai xe..." />
+            <label className="block text-sm font-medium text-gray-700 mb-1">Ghi chú điều phối</label>
+            <textarea value={dispatchNotes} onChange={(e) => setDispatchNotes(e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2" rows={2} placeholder="Ghi chú cho tài xế..." />
           </div>
         </div>
 
         {/* Footer */}
         <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3 sticky bottom-0 bg-white">
-          <Button variant="ghost" onClick={handleClose} disabled={isSubmitting}>Huy</Button>
+          <Button variant="ghost" onClick={handleClose} disabled={isSubmitting}>Hủy</Button>
           <Button onClick={handleSubmit} disabled={!isValid || isSubmitting}>
-            {isSubmitting ? 'Dang tao...' : 'Tao & Dispatch'}
+            {isSubmitting ? 'Đang tạo...' : 'Tạo & Điều phối'}
           </Button>
         </div>
       </div>

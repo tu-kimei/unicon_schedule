@@ -32,9 +32,9 @@ const formatCurrency = (amount: number) => {
 
 const formatDebtType = (type: string) => {
   switch (type) {
-    case 'FREIGHT': return 'Cuoc van chuyen';
-    case 'ADVANCE': return 'Chi ho';
-    case 'OTHER': return 'Khac';
+    case 'FREIGHT': return 'Cước vận chuyển';
+    case 'ADVANCE': return 'Chi hộ';
+    case 'OTHER': return 'Khác';
     default: return type;
   }
 };

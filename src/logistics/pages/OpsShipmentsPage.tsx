@@ -13,26 +13,26 @@ interface ShipmentFilters {
 }
 
 const operationStatusLabels: Record<string, string> = {
-  DRAFT: 'Nhap',
-  PENDING: 'Cho xu ly',
-  DISPATCHED: 'Da dispatch',
-  IN_TRANSIT: 'Dang van chuyen',
-  DELIVERED: 'Da giao',
-  CANCELLED: 'Da huy',
+  DRAFT: 'Nháp',
+  PENDING: 'Chờ xử lý',
+  DISPATCHED: 'Đã điều phối',
+  IN_TRANSIT: 'Đang vận chuyển',
+  DELIVERED: 'Đã giao',
+  CANCELLED: 'Đã hủy',
 };
 
 const documentStatusLabels: Record<string, string> = {
-  DOC_PENDING: 'Cho chung tu',
-  DOC_RECEIVED: 'Da nhan',
-  DOC_RETURNED: 'Da tra',
+  DOC_PENDING: 'Chờ chứng từ',
+  DOC_RECEIVED: 'Đã nhận chứng từ',
+  DOC_RETURNED: 'Đã trả chứng từ',
 };
 
 const financialStatusLabels: Record<string, string> = {
-  NOT_BILLED: 'Chua HD',
-  INVOICED: 'Da HD',
-  PARTIAL_PAID: 'TT 1 phan',
-  PAID: 'Da TT',
-  OVERDUE: 'Qua han',
+  NOT_BILLED: 'Chưa xuất hóa đơn',
+  INVOICED: 'Đã xuất hóa đơn',
+  PARTIAL_PAID: 'Thanh toán một phần',
+  PAID: 'Đã thanh toán',
+  OVERDUE: 'Quá hạn',
 };
 
 const operationStatusStyles: Record<string, string> = {
@@ -75,7 +75,7 @@ export const OpsShipmentsPage = () => {
       <div className="min-h-screen bg-gray-50 p-6">
         <div className="max-w-7xl mx-auto">
           <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-            <p className="text-red-800">Error loading shipments: {error.message}</p>
+            <p className="text-red-800">Lỗi khi tải chuyến hàng: {error.message}</p>
           </div>
         </div>
       </div>
@@ -89,14 +89,14 @@ export const OpsShipmentsPage = () => {
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Shipment Management</h1>
-              <p className="text-gray-600">Quan ly chuyen hang</p>
+              <h1 className="text-2xl font-bold text-gray-900">Quản lý chuyến hàng</h1>
+              <p className="text-gray-600">Tất cả chuyến hàng</p>
             </div>
             <Link
               to="/ops/shipments/create"
               className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium"
             >
-              Create Shipment
+              Tạo chuyến hàng
             </Link>
           </div>
         </div>
@@ -106,7 +106,7 @@ export const OpsShipmentsPage = () => {
       <div className="max-w-7xl mx-auto px-6 py-6">
         {/* Filters */}
         <div className="bg-white rounded-lg shadow mb-6 p-4">
-          <h2 className="text-lg font-semibold mb-4">Bo loc</h2>
+          <h2 className="text-lg font-semibold mb-4">Bộ lọc</h2>
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             {/* Shipment Type Filter */}
             <select
@@ -117,9 +117,9 @@ export const OpsShipmentsPage = () => {
               }))}
               className="border border-gray-300 rounded-lg px-3 py-2"
             >
-              <option value="">Tat ca loai</option>
-              <option value="EXPORT">EXPORT</option>
-              <option value="IMPORT">IMPORT</option>
+              <option value="">Tất cả loại</option>
+              <option value="EXPORT">Hàng xuất</option>
+              <option value="IMPORT">Hàng nhập</option>
             </select>
 
             {/* Operation Status Filter */}
@@ -131,13 +131,13 @@ export const OpsShipmentsPage = () => {
               }))}
               className="border border-gray-300 rounded-lg px-3 py-2"
             >
-              <option value="">Tat ca trang thai VH</option>
-              <option value="DRAFT">Nhap</option>
-              <option value="PENDING">Cho xu ly</option>
-              <option value="DISPATCHED">Da dispatch</option>
-              <option value="IN_TRANSIT">Dang van chuyen</option>
-              <option value="DELIVERED">Da giao</option>
-              <option value="CANCELLED">Da huy</option>
+              <option value="">Tất cả trạng thái VH</option>
+              <option value="DRAFT">Nháp</option>
+              <option value="PENDING">Chờ xử lý</option>
+              <option value="DISPATCHED">Đã điều phối</option>
+              <option value="IN_TRANSIT">Đang vận chuyển</option>
+              <option value="DELIVERED">Đã giao</option>
+              <option value="CANCELLED">Đã hủy</option>
             </select>
 
             <select
@@ -148,13 +148,13 @@ export const OpsShipmentsPage = () => {
               }))}
               className="border border-gray-300 rounded-lg px-3 py-2"
             >
-              <option value="">Tat ca Statuses</option>
-              <option value="DRAFT">Draft</option>
-              <option value="READY">Ready</option>
-              <option value="ASSIGNED">Assigned</option>
-              <option value="IN_TRANSIT">In Transit</option>
-              <option value="COMPLETED">Completed</option>
-              <option value="CANCELLED">Cancelled</option>
+              <option value="">Tất cả trạng thái</option>
+              <option value="DRAFT">Nháp</option>
+              <option value="READY">Sẵn sàng</option>
+              <option value="ASSIGNED">Đã gán</option>
+              <option value="IN_TRANSIT">Đang vận chuyển</option>
+              <option value="COMPLETED">Hoàn thành</option>
+              <option value="CANCELLED">Đã hủy</option>
             </select>
 
             <select
@@ -165,11 +165,11 @@ export const OpsShipmentsPage = () => {
               }))}
               className="border border-gray-300 rounded-lg px-3 py-2"
             >
-              <option value="">Tat ca Priorities</option>
-              <option value="LOW">Low</option>
-              <option value="NORMAL">Normal</option>
-              <option value="HIGH">High</option>
-              <option value="URGENT">Urgent</option>
+              <option value="">Tất cả mức ưu tiên</option>
+              <option value="LOW">Thấp</option>
+              <option value="NORMAL">Bình thường</option>
+              <option value="HIGH">Cao</option>
+              <option value="URGENT">Khẩn cấp</option>
             </select>
 
             <input
@@ -182,7 +182,7 @@ export const OpsShipmentsPage = () => {
                 }));
               }}
               className="border border-gray-300 rounded-lg px-3 py-2"
-              placeholder="Start Date"
+              placeholder="Ngày bắt đầu"
             />
           </div>
         </div>
@@ -252,7 +252,7 @@ export const OpsShipmentsPage = () => {
 
                   <div className="space-y-1.5 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Priority:</span>
+                      <span className="text-gray-600">Mức ưu tiên:</span>
                       <span className={`font-medium ${
                         shipment.priority === 'URGENT' ? 'text-red-600' :
                         shipment.priority === 'HIGH' ? 'text-orange-600' :
@@ -262,11 +262,11 @@ export const OpsShipmentsPage = () => {
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Stops:</span>
+                      <span className="text-gray-600">Điểm dừng:</span>
                       <span className="font-medium">{shipment.stops?.length || 0}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Start:</span>
+                      <span className="text-gray-600">Bắt đầu:</span>
                       <span className="font-medium">
                         {new Date(shipment.plannedStartDate).toLocaleDateString('vi-VN')}
                       </span>
@@ -277,8 +277,8 @@ export const OpsShipmentsPage = () => {
             ))
           ) : (
             <div className="col-span-full text-center py-12">
-              <p className="text-gray-500 text-lg">Khong tim thay chuyen hang</p>
-              <p className="text-gray-400">Thu dieu chinh bo loc hoac tao chuyen hang moi</p>
+              <p className="text-gray-500 text-lg">Không tìm thấy chuyến hàng</p>
+              <p className="text-gray-400">Thử điều chỉnh bộ lọc hoặc tạo chuyến hàng mới</p>
             </div>
           )}
         </div>
