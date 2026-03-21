@@ -178,6 +178,44 @@ action createAndDispatchShipment {
   entities: [Shipment, ShipmentStop, Dispatch, ShipmentStatusEvent, Vehicle, Driver, Customer, User]
 }
 
+// DriverTask Queries
+query getDriverTasks {
+  fn: import { getDriverTasks } from "@src/logistics/queries/driverTasks",
+  entities: [DriverTask, Shipment, Driver, Vehicle, ShipmentStop]
+}
+
+query getDriverTasksByDriver {
+  fn: import { getDriverTasksByDriver } from "@src/logistics/queries/driverTasks",
+  entities: [DriverTask, Shipment, Driver, Vehicle, ShipmentStop]
+}
+
+// DriverTask Actions
+action createDriverTask {
+  fn: import { createDriverTask } from "@src/logistics/actions/driverTasks",
+  entities: [DriverTask, Shipment, Vehicle, Driver, ShipmentStatusEvent, Notification, User]
+}
+
+action updateDriverTaskSequence {
+  fn: import { updateDriverTaskSequence } from "@src/logistics/actions/driverTasks",
+  entities: [DriverTask]
+}
+
+action updateDriverTaskStatus {
+  fn: import { updateDriverTaskStatus } from "@src/logistics/actions/driverTasks",
+  entities: [DriverTask, Shipment, ShipmentStop, ShipmentStatusEvent, Notification, User]
+}
+
+// Operation & Document Status Actions
+action updateOperationStatus {
+  fn: import { updateOperationStatus } from "@src/logistics/actions/operationStatus",
+  entities: [Shipment, ShipmentStop, ShipmentStatusEvent, DriverTask, Notification, User]
+}
+
+action updateDocumentStatus {
+  fn: import { updateDocumentStatus } from "@src/logistics/actions/documentStatus",
+  entities: [Shipment, Notification, User]
+}
+
 // #endregion Logistics System
 
 // #region Customer Portal
@@ -565,3 +603,29 @@ action forceResetPassword {
 }
 
 // #endregion Admin - User Management
+
+// #region Notifications
+
+// Notification Queries
+query getNotifications {
+  fn: import { getNotifications } from "@src/notifications/queries",
+  entities: [Notification]
+}
+
+query getUnreadNotificationCount {
+  fn: import { getUnreadNotificationCount } from "@src/notifications/queries",
+  entities: [Notification]
+}
+
+// Notification Actions
+action markNotificationRead {
+  fn: import { markNotificationRead } from "@src/notifications/actions",
+  entities: [Notification]
+}
+
+action markAllNotificationsRead {
+  fn: import { markAllNotificationsRead } from "@src/notifications/actions",
+  entities: [Notification]
+}
+
+// #endregion Notifications
