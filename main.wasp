@@ -1,6 +1,6 @@
 app unicon_schedule {
   wasp: {
-    version: "^0.20.0"
+    version: "^0.21.0"
   },
   title: "Unicon Logistic",
   head: [

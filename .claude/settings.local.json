@@ -15,7 +15,11 @@
       "Bash(pkill:*)",
       "Bash(curl:*)",
       "Bash(echo:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(grep -v \"^--$\")",
+      "Bash(lsof:*)",
+      "Bash(npm install:*)",
+      "Bash(npm ls:*)"
     ]
   },
   "disabledMcpjsonServers": [
