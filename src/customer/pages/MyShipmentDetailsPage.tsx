@@ -329,13 +329,13 @@ export const MyShipmentDetailsPage = () => {
                                     acc[cat].push(pod);
                                     return acc;
                                   }, {})
-                              ).map(([category, pods]: [string, any[]]) => (
+                              ).map(([category, pods]: [string, unknown]) => (
                                 <div key={category}>
                                   <span className="text-xs text-gray-500">
                                     {photoCategoryLabels[category] || category}:
                                   </span>
                                   <div className="flex gap-2 mt-1 flex-wrap">
-                                    {pods.map((pod: any) => (
+                                    {(pods as any[]).map((pod: any) => (
                                       <a
                                         key={pod.id}
                                         href={pod.filePath}

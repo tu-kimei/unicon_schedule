@@ -187,7 +187,7 @@ export const updateDriverTaskSequence = async (args: UpdateDriverTaskSequenceInp
   }
 
   // Update each task sequence
-  const updates = [];
+  const updates: any[] = [];
   for (const task of args.tasks) {
     const updated = await context.entities.DriverTask.update({
       where: { id: task.id },
