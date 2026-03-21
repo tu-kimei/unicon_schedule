@@ -629,3 +629,13 @@ action markAllNotificationsRead {
 }
 
 // #endregion Notifications
+
+// #region Driver Portal
+
+route DriverDashboardRoute { path: "/driver", to: DriverDashboardPage }
+page DriverDashboardPage {
+  component: import { DriverDashboardPage } from "@src/driver/pages/DriverDashboardPage",
+  authRequired: true
+}
+
+// #endregion Driver Portal

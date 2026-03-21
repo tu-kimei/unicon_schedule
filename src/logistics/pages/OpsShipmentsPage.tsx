@@ -2,30 +2,73 @@ import { useState } from 'react';
 import { useQuery } from 'wasp/client/operations';
 import { getAllShipments } from 'wasp/client/operations';
 import { ShipmentCard } from '../components/ShipmentCard';
+import { Link } from 'react-router-dom';
 
 interface ShipmentFilters {
   status?: string;
   priority?: string;
+  shipmentType?: string;
+  operationStatus?: string;
   dateRange?: { start?: Date; end?: Date };
 }
 
+const operationStatusLabels: Record<string, string> = {
+  DRAFT: 'Nhap',
+  PENDING: 'Cho xu ly',
+  DISPATCHED: 'Da dispatch',
+  IN_TRANSIT: 'Dang van chuyen',
+  DELIVERED: 'Da giao',
+  CANCELLED: 'Da huy',
+};
+
+const documentStatusLabels: Record<string, string> = {
+  DOC_PENDING: 'Cho chung tu',
+  DOC_RECEIVED: 'Da nhan',
+  DOC_RETURNED: 'Da tra',
+};
+
+const financialStatusLabels: Record<string, string> = {
+  NOT_BILLED: 'Chua HD',
+  INVOICED: 'Da HD',
+  PARTIAL_PAID: 'TT 1 phan',
+  PAID: 'Da TT',
+  OVERDUE: 'Qua han',
+};
+
+const operationStatusStyles: Record<string, string> = {
+  DRAFT: 'bg-gray-100 text-gray-700',
+  PENDING: 'bg-blue-100 text-blue-700',
+  DISPATCHED: 'bg-purple-100 text-purple-700',
+  IN_TRANSIT: 'bg-yellow-100 text-yellow-700',
+  DELIVERED: 'bg-green-100 text-green-700',
+  CANCELLED: 'bg-red-100 text-red-700',
+};
+
+const documentStatusStyles: Record<string, string> = {
+  DOC_PENDING: 'bg-orange-100 text-orange-700',
+  DOC_RECEIVED: 'bg-blue-100 text-blue-700',
+  DOC_RETURNED: 'bg-green-100 text-green-700',
+};
+
+const financialStatusStyles: Record<string, string> = {
+  NOT_BILLED: 'bg-gray-100 text-gray-700',
+  INVOICED: 'bg-blue-100 text-blue-700',
+  PARTIAL_PAID: 'bg-yellow-100 text-yellow-700',
+  PAID: 'bg-green-100 text-green-700',
+  OVERDUE: 'bg-red-100 text-red-700',
+};
+
 export const OpsShipmentsPage = () => {
   const [filters, setFilters] = useState<ShipmentFilters>({});
-  const [selectedShipment, setSelectedShipment] = useState<any>(null);
 
-  // Use Wasp's useQuery hook
   const { data: shipments, isLoading, error } = useQuery(getAllShipments, filters);
 
-  const handleShipmentClick = (shipment: any) => {
-    // Navigate to shipment details or show modal
-    console.log('Selected shipment:', shipment);
-    setSelectedShipment(shipment);
-  };
-
-  const handleCreateShipment = () => {
-    // Navigate to create shipment page
-    console.log('Create new shipment');
-  };
+  // Client-side filtering for shipmentType and operationStatus
+  const filteredShipments = (shipments || []).filter((s: any) => {
+    if (filters.shipmentType && s.shipmentType !== filters.shipmentType) return false;
+    if (filters.operationStatus && s.operationStatus !== filters.operationStatus) return false;
+    return true;
+  });
 
   if (error) {
     return (
@@ -47,14 +90,14 @@ export const OpsShipmentsPage = () => {
           <div className="flex justify-between items-center">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Shipment Management</h1>
-              <p className="text-gray-600">Manage orders and shipments</p>
+              <p className="text-gray-600">Quan ly chuyen hang</p>
             </div>
-            <button
-              onClick={handleCreateShipment}
+            <Link
+              to="/ops/shipments/create"
               className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium"
             >
               Create Shipment
-            </button>
+            </Link>
           </div>
         </div>
       </div>
@@ -63,8 +106,40 @@ export const OpsShipmentsPage = () => {
       <div className="max-w-7xl mx-auto px-6 py-6">
         {/* Filters */}
         <div className="bg-white rounded-lg shadow mb-6 p-4">
-          <h2 className="text-lg font-semibold mb-4">Filters</h2>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <h2 className="text-lg font-semibold mb-4">Bo loc</h2>
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            {/* Shipment Type Filter */}
+            <select
+              value={filters.shipmentType || ''}
+              onChange={(e) => setFilters(prev => ({
+                ...prev,
+                shipmentType: e.target.value || undefined
+              }))}
+              className="border border-gray-300 rounded-lg px-3 py-2"
+            >
+              <option value="">Tat ca loai</option>
+              <option value="EXPORT">EXPORT</option>
+              <option value="IMPORT">IMPORT</option>
+            </select>
+
+            {/* Operation Status Filter */}
+            <select
+              value={filters.operationStatus || ''}
+              onChange={(e) => setFilters(prev => ({
+                ...prev,
+                operationStatus: e.target.value || undefined
+              }))}
+              className="border border-gray-300 rounded-lg px-3 py-2"
+            >
+              <option value="">Tat ca trang thai VH</option>
+              <option value="DRAFT">Nhap</option>
+              <option value="PENDING">Cho xu ly</option>
+              <option value="DISPATCHED">Da dispatch</option>
+              <option value="IN_TRANSIT">Dang van chuyen</option>
+              <option value="DELIVERED">Da giao</option>
+              <option value="CANCELLED">Da huy</option>
+            </select>
+
             <select
               value={filters.status || ''}
               onChange={(e) => setFilters(prev => ({
@@ -73,7 +148,7 @@ export const OpsShipmentsPage = () => {
               }))}
               className="border border-gray-300 rounded-lg px-3 py-2"
             >
-              <option value="">All Statuses</option>
+              <option value="">Tat ca Statuses</option>
               <option value="DRAFT">Draft</option>
               <option value="READY">Ready</option>
               <option value="ASSIGNED">Assigned</option>
@@ -90,7 +165,7 @@ export const OpsShipmentsPage = () => {
               }))}
               className="border border-gray-300 rounded-lg px-3 py-2"
             >
-              <option value="">All Priorities</option>
+              <option value="">Tat ca Priorities</option>
               <option value="LOW">Low</option>
               <option value="NORMAL">Normal</option>
               <option value="HIGH">High</option>
@@ -109,26 +184,12 @@ export const OpsShipmentsPage = () => {
               className="border border-gray-300 rounded-lg px-3 py-2"
               placeholder="Start Date"
             />
-
-            <input
-              type="date"
-              onChange={(e) => {
-                const end = e.target.value ? new Date(e.target.value) : undefined;
-                setFilters(prev => ({
-                  ...prev,
-                  dateRange: end ? { ...prev.dateRange, end } : undefined
-                }));
-              }}
-              className="border border-gray-300 rounded-lg px-3 py-2"
-              placeholder="End Date"
-            />
           </div>
         </div>
 
         {/* Shipments Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {isLoading ? (
-            // Loading skeleton
             Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
                 <div className="animate-pulse">
@@ -142,19 +203,82 @@ export const OpsShipmentsPage = () => {
                 </div>
               </div>
             ))
-          ) : shipments && shipments.length > 0 ? (
-            shipments.map((shipment: any) => (
-              <ShipmentCard
+          ) : filteredShipments.length > 0 ? (
+            filteredShipments.map((shipment: any) => (
+              <Link
                 key={shipment.id}
-                shipment={shipment}
-                onClick={handleShipmentClick}
-                showActions={true}
-              />
+                to={`/ops/shipments/${shipment.id}`}
+                className="block"
+              >
+                <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-lg font-semibold text-gray-900">
+                          {shipment.shipmentNumber}
+                        </h3>
+                        {shipment.shipmentType && (
+                          <span className={`px-1.5 py-0.5 text-[10px] font-medium rounded ${
+                            shipment.shipmentType === 'EXPORT' ? 'bg-green-100 text-green-700' : 'bg-purple-100 text-purple-700'
+                          }`}>
+                            {shipment.shipmentType}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-600">
+                        {shipment.customer?.name}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* 3 Status Badges */}
+                  <div className="flex flex-wrap gap-1 mb-3">
+                    <span className={`px-1.5 py-0.5 text-[10px] rounded font-medium ${
+                      operationStatusStyles[shipment.operationStatus] || 'bg-gray-100 text-gray-700'
+                    }`}>
+                      {operationStatusLabels[shipment.operationStatus] || shipment.operationStatus || 'N/A'}
+                    </span>
+                    <span className={`px-1.5 py-0.5 text-[10px] rounded font-medium ${
+                      documentStatusStyles[shipment.documentStatus] || 'bg-gray-100 text-gray-700'
+                    }`}>
+                      {documentStatusLabels[shipment.documentStatus] || shipment.documentStatus || 'N/A'}
+                    </span>
+                    <span className={`px-1.5 py-0.5 text-[10px] rounded font-medium ${
+                      financialStatusStyles[shipment.financialStatus] || 'bg-gray-100 text-gray-700'
+                    }`}>
+                      {financialStatusLabels[shipment.financialStatus] || shipment.financialStatus || 'N/A'}
+                    </span>
+                  </div>
+
+                  <div className="space-y-1.5 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Priority:</span>
+                      <span className={`font-medium ${
+                        shipment.priority === 'URGENT' ? 'text-red-600' :
+                        shipment.priority === 'HIGH' ? 'text-orange-600' :
+                        'text-gray-600'
+                      }`}>
+                        {shipment.priority}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Stops:</span>
+                      <span className="font-medium">{shipment.stops?.length || 0}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Start:</span>
+                      <span className="font-medium">
+                        {new Date(shipment.plannedStartDate).toLocaleDateString('vi-VN')}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </Link>
             ))
           ) : (
             <div className="col-span-full text-center py-12">
-              <p className="text-gray-500 text-lg">No shipments found</p>
-              <p className="text-gray-400">Try adjusting your filters or create a new shipment</p>
+              <p className="text-gray-500 text-lg">Khong tim thay chuyen hang</p>
+              <p className="text-gray-400">Thu dieu chinh bo loc hoac tao chuyen hang moi</p>
             </div>
           )}
         </div>

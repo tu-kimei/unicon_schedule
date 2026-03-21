@@ -3,13 +3,68 @@ import { getMyShipmentDetails, confirmDocuments } from 'wasp/client/operations';
 import { useParams, Link } from 'react-router-dom';
 import { useState } from 'react';
 
+const operationStatusLabels: Record<string, string> = {
+  DRAFT: 'Nhap',
+  PENDING: 'Cho xu ly',
+  DISPATCHED: 'Da dispatch',
+  IN_TRANSIT: 'Dang van chuyen',
+  DELIVERED: 'Da giao',
+  CANCELLED: 'Da huy',
+};
+
+const documentStatusLabels: Record<string, string> = {
+  DOC_PENDING: 'Cho chung tu',
+  DOC_RECEIVED: 'Da nhan chung tu',
+  DOC_RETURNED: 'Da tra chung tu',
+};
+
+const financialStatusLabels: Record<string, string> = {
+  NOT_BILLED: 'Chua xuat HD',
+  INVOICED: 'Da xuat HD',
+  PARTIAL_PAID: 'TT mot phan',
+  PAID: 'Da thanh toan',
+  OVERDUE: 'Qua han',
+};
+
+const operationStatusStyles: Record<string, string> = {
+  DRAFT: 'bg-gray-100 text-gray-800',
+  PENDING: 'bg-blue-100 text-blue-800',
+  DISPATCHED: 'bg-purple-100 text-purple-800',
+  IN_TRANSIT: 'bg-yellow-100 text-yellow-800',
+  DELIVERED: 'bg-green-100 text-green-800',
+  CANCELLED: 'bg-red-100 text-red-800',
+};
+
+const documentStatusStyles: Record<string, string> = {
+  DOC_PENDING: 'bg-orange-100 text-orange-800',
+  DOC_RECEIVED: 'bg-blue-100 text-blue-800',
+  DOC_RETURNED: 'bg-green-100 text-green-800',
+};
+
+const financialStatusStyles: Record<string, string> = {
+  NOT_BILLED: 'bg-gray-100 text-gray-800',
+  INVOICED: 'bg-blue-100 text-blue-800',
+  PARTIAL_PAID: 'bg-yellow-100 text-yellow-800',
+  PAID: 'bg-green-100 text-green-800',
+  OVERDUE: 'bg-red-100 text-red-800',
+};
+
+const photoCategoryLabels: Record<string, string> = {
+  CONTAINER_EXTERIOR: 'Ngoai container',
+  CONTAINER_INTERIOR: 'Trong container',
+  PORT_GATE_PASS: 'Phieu cong cang',
+  WAREHOUSE_GATE_PASS: 'Phieu cong kho',
+  WEIGHT_TICKET: 'Phieu can',
+  OTHER: 'Khac',
+};
+
 export const MyShipmentDetailsPage = () => {
   const { id } = useParams<{ id: string }>();
   const { data: shipment, isLoading, refetch } = useQuery(getMyShipmentDetails, { id: id! });
   const [isConfirming, setIsConfirming] = useState(false);
 
   const handleConfirmDocuments = async () => {
-    if (!confirm('Xác nhận rằng bạn đã nhận đủ tất cả chứng từ cho chuyến hàng này?')) {
+    if (!confirm('Xac nhan rang ban da nhan du tat ca chung tu cho chuyen hang nay?')) {
       return;
     }
 
@@ -17,30 +72,11 @@ export const MyShipmentDetailsPage = () => {
     try {
       await confirmDocuments({ shipmentId: id! });
       await refetch();
-      alert('Đã xác nhận chứng từ thành công');
+      alert('Da xac nhan chung tu thanh cong');
     } catch (error: any) {
-      alert(error.message || 'Không thể xác nhận chứng từ');
+      alert(error.message || 'Khong the xac nhan chung tu');
     } finally {
       setIsConfirming(false);
-    }
-  };
-
-  const getStatusBadgeClass = (status: string) => {
-    switch (status) {
-      case 'DRAFT':
-        return 'bg-gray-100 text-gray-800';
-      case 'READY':
-        return 'bg-blue-100 text-blue-800';
-      case 'ASSIGNED':
-        return 'bg-purple-100 text-purple-800';
-      case 'IN_TRANSIT':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'COMPLETED':
-        return 'bg-green-100 text-green-800';
-      case 'CANCELLED':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
     }
   };
 
@@ -49,7 +85,7 @@ export const MyShipmentDetailsPage = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-          <p className="text-gray-600 mt-4">Đang tải thông tin...</p>
+          <p className="text-gray-600 mt-4">Dang tai thong tin...</p>
         </div>
       </div>
     );
@@ -59,14 +95,17 @@ export const MyShipmentDetailsPage = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-gray-600">Không tìm thấy chuyến hàng</p>
+          <p className="text-gray-600">Khong tim thay chuyen hang</p>
           <Link to="/customer/shipments" className="text-blue-600 hover:text-blue-700 mt-2 inline-block">
-            ← Quay lại danh sách
+            Quay lai danh sach
           </Link>
         </div>
       </div>
     );
   }
+
+  // Get first driver task for vehicle/driver info
+  const driverTask = shipment.driverTasks?.[0];
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -87,11 +126,35 @@ export const MyShipmentDetailsPage = () => {
                 <h1 className="text-2xl font-bold text-gray-900">
                   {shipment.shipmentNumber}
                 </h1>
-                <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusBadgeClass(shipment.currentStatus)}`}>
-                  {shipment.currentStatus}
+                {shipment.shipmentType && (
+                  <span className={`px-2 py-1 text-xs rounded font-medium ${
+                    shipment.shipmentType === 'EXPORT' ? 'bg-green-100 text-green-800' : 'bg-purple-100 text-purple-800'
+                  }`}>
+                    {shipment.shipmentType}
+                  </span>
+                )}
+              </div>
+
+              {/* 3 Status Badges */}
+              <div className="flex flex-wrap gap-2 mt-2">
+                <span className={`px-2 py-1 text-xs rounded font-medium ${
+                  operationStatusStyles[shipment.operationStatus] || 'bg-gray-100 text-gray-800'
+                }`}>
+                  {operationStatusLabels[shipment.operationStatus] || shipment.operationStatus}
+                </span>
+                <span className={`px-2 py-1 text-xs rounded font-medium ${
+                  documentStatusStyles[shipment.documentStatus] || 'bg-gray-100 text-gray-800'
+                }`}>
+                  {documentStatusLabels[shipment.documentStatus] || shipment.documentStatus}
+                </span>
+                <span className={`px-2 py-1 text-xs rounded font-medium ${
+                  financialStatusStyles[shipment.financialStatus] || 'bg-gray-100 text-gray-800'
+                }`}>
+                  {financialStatusLabels[shipment.financialStatus] || shipment.financialStatus}
                 </span>
               </div>
-              <p className="text-gray-600">Khách hàng: {shipment.customer.name}</p>
+
+              <p className="text-gray-600 mt-2">Khach hang: {shipment.customer.name}</p>
             </div>
 
             {shipment.currentStatus === 'COMPLETED' && (
@@ -100,7 +163,7 @@ export const MyShipmentDetailsPage = () => {
                 disabled={isConfirming}
                 className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium disabled:bg-gray-300"
               >
-                {isConfirming ? 'Đang xác nhận...' : 'Xác nhận đã nhận chứng từ'}
+                {isConfirming ? 'Dang xac nhan...' : 'Xac nhan da nhan chung tu'}
               </button>
             )}
           </div>
@@ -115,47 +178,47 @@ export const MyShipmentDetailsPage = () => {
             {/* Shipment Info */}
             <div className="bg-white rounded-lg shadow">
               <div className="px-6 py-4 border-b border-gray-200">
-                <h2 className="text-lg font-semibold text-gray-900">Thông tin chuyến hàng</h2>
+                <h2 className="text-lg font-semibold text-gray-900">Thong tin chuyen hang</h2>
               </div>
               <div className="p-6">
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <span className="text-gray-600">Độ ưu tiên</span>
+                    <span className="text-gray-600">Do uu tien</span>
                     <p className="font-medium text-gray-900">
-                      {shipment.priority === 'URGENT' ? 'Khẩn cấp' :
+                      {shipment.priority === 'URGENT' ? 'Khan cap' :
                        shipment.priority === 'HIGH' ? 'Cao' :
-                       shipment.priority === 'NORMAL' ? 'Bình thường' : 'Thấp'}
+                       shipment.priority === 'NORMAL' ? 'Binh thuong' : 'Thap'}
                     </p>
                   </div>
                   {shipment.containerNumber && (
                     <div>
-                      <span className="text-gray-600">Số container</span>
+                      <span className="text-gray-600">So container</span>
                       <p className="font-medium text-gray-900">{shipment.containerNumber}</p>
                     </div>
                   )}
                   {shipment.containerType && (
                     <div>
-                      <span className="text-gray-600">Loại container</span>
+                      <span className="text-gray-600">Loai container</span>
                       <p className="font-medium text-gray-900">
                         {shipment.containerType.replace('CONTAINER_', '').replace('_', ' ')}
                       </p>
                     </div>
                   )}
                   <div>
-                    <span className="text-gray-600">Ngày bắt đầu dự kiến</span>
+                    <span className="text-gray-600">Ngay bat dau du kien</span>
                     <p className="font-medium text-gray-900">
                       {new Date(shipment.plannedStartDate).toLocaleString('vi-VN')}
                     </p>
                   </div>
                   <div>
-                    <span className="text-gray-600">Ngày kết thúc dự kiến</span>
+                    <span className="text-gray-600">Ngay ket thuc du kien</span>
                     <p className="font-medium text-gray-900">
                       {new Date(shipment.plannedEndDate).toLocaleString('vi-VN')}
                     </p>
                   </div>
                   {shipment.actualStartDate && (
                     <div>
-                      <span className="text-gray-600">Ngày bắt đầu thực tế</span>
+                      <span className="text-gray-600">Ngay bat dau thuc te</span>
                       <p className="font-medium text-gray-900">
                         {new Date(shipment.actualStartDate).toLocaleString('vi-VN')}
                       </p>
@@ -163,7 +226,7 @@ export const MyShipmentDetailsPage = () => {
                   )}
                   {shipment.actualEndDate && (
                     <div>
-                      <span className="text-gray-600">Ngày kết thúc thực tế</span>
+                      <span className="text-gray-600">Ngay ket thuc thuc te</span>
                       <p className="font-medium text-gray-900">
                         {new Date(shipment.actualEndDate).toLocaleString('vi-VN')}
                       </p>
@@ -171,7 +234,7 @@ export const MyShipmentDetailsPage = () => {
                   )}
                   {shipment.specialInstructions && (
                     <div className="col-span-2">
-                      <span className="text-gray-600">Yêu cầu đặc biệt</span>
+                      <span className="text-gray-600">Yeu cau dac biet</span>
                       <p className="font-medium text-gray-900 mt-1">{shipment.specialInstructions}</p>
                     </div>
                   )}
@@ -179,17 +242,21 @@ export const MyShipmentDetailsPage = () => {
               </div>
             </div>
 
-            {/* Stops */}
+            {/* Stops with real-time photos */}
             <div className="bg-white rounded-lg shadow">
               <div className="px-6 py-4 border-b border-gray-200">
-                <h2 className="text-lg font-semibold text-gray-900">Điểm dừng ({shipment.stops.length})</h2>
+                <h2 className="text-lg font-semibold text-gray-900">Diem dung ({shipment.stops.length})</h2>
               </div>
               <div className="p-6">
                 <div className="space-y-4">
                   {shipment.stops.map((stop: any, index: number) => (
                     <div key={stop.id} className="relative pl-8">
                       {/* Timeline dot */}
-                      <div className="absolute left-0 top-2 w-4 h-4 rounded-full bg-blue-600 border-4 border-white shadow"></div>
+                      <div className={`absolute left-0 top-2 w-4 h-4 rounded-full border-4 border-white shadow ${
+                        stop.actualDeparture ? 'bg-green-500' :
+                        stop.actualArrival ? 'bg-yellow-500' :
+                        'bg-blue-600'
+                      }`}></div>
                       {index < shipment.stops.length - 1 && (
                         <div className="absolute left-1.5 top-6 w-0.5 h-full bg-gray-300"></div>
                       )}
@@ -199,31 +266,97 @@ export const MyShipmentDetailsPage = () => {
                           <div>
                             <h4 className="font-medium text-gray-900">{stop.locationName}</h4>
                             <p className="text-sm text-gray-600">{stop.address}</p>
+                            <div className="flex gap-2 mt-1">
+                              <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded font-medium">
+                                {stop.stopType}
+                              </span>
+                              {stop.stopCategory && (
+                                <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded font-medium">
+                                  {stop.stopCategory}
+                                </span>
+                              )}
+                              {stop.actualDeparture ? (
+                                <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded font-medium">Hoan thanh</span>
+                              ) : stop.actualArrival ? (
+                                <span className="px-2 py-1 bg-yellow-100 text-yellow-700 text-xs rounded font-medium">Dang xu ly</span>
+                              ) : null}
+                            </div>
                           </div>
-                          <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded font-medium">
-                            {stop.stopType}
-                          </span>
                         </div>
-                        
+
                         <div className="grid grid-cols-2 gap-2 text-sm mt-3">
                           <div>
-                            <span className="text-gray-600">Đến:</span>
+                            <span className="text-gray-600">Den:</span>
                             <p className="font-medium text-gray-900">
                               {new Date(stop.plannedArrival).toLocaleString('vi-VN')}
                             </p>
+                            {stop.actualArrival && (
+                              <p className="text-green-700 text-xs">
+                                Thuc te: {new Date(stop.actualArrival).toLocaleString('vi-VN')}
+                              </p>
+                            )}
                           </div>
                           <div>
-                            <span className="text-gray-600">Rời:</span>
+                            <span className="text-gray-600">Roi:</span>
                             <p className="font-medium text-gray-900">
                               {new Date(stop.plannedDeparture).toLocaleString('vi-VN')}
                             </p>
+                            {stop.actualDeparture && (
+                              <p className="text-green-700 text-xs">
+                                Thuc te: {new Date(stop.actualDeparture).toLocaleString('vi-VN')}
+                              </p>
+                            )}
                           </div>
                         </div>
 
                         {stop.contactPerson && (
                           <p className="text-sm text-gray-600 mt-2">
-                            Liên hệ: {stop.contactPerson} {stop.contactPhone && `(${stop.contactPhone})`}
+                            Lien he: {stop.contactPerson} {stop.contactPhone && `(${stop.contactPhone})`}
                           </p>
+                        )}
+
+                        {/* Photos per stop */}
+                        {shipment.pods && shipment.pods.filter((p: any) => p.stopId === stop.id).length > 0 && (
+                          <div className="mt-3 pt-3 border-t border-gray-200">
+                            <p className="text-sm font-medium text-gray-700 mb-2">Anh chung tu:</p>
+                            <div className="space-y-2">
+                              {Object.entries(
+                                shipment.pods
+                                  .filter((p: any) => p.stopId === stop.id)
+                                  .reduce((acc: Record<string, any[]>, pod: any) => {
+                                    const cat = pod.photoCategory || 'OTHER';
+                                    if (!acc[cat]) acc[cat] = [];
+                                    acc[cat].push(pod);
+                                    return acc;
+                                  }, {})
+                              ).map(([category, pods]: [string, any[]]) => (
+                                <div key={category}>
+                                  <span className="text-xs text-gray-500">
+                                    {photoCategoryLabels[category] || category}:
+                                  </span>
+                                  <div className="flex gap-2 mt-1 flex-wrap">
+                                    {pods.map((pod: any) => (
+                                      <a
+                                        key={pod.id}
+                                        href={pod.filePath}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="w-16 h-16 rounded bg-gray-100 border border-gray-200 flex items-center justify-center hover:border-blue-400 overflow-hidden"
+                                      >
+                                        {pod.filePath.match(/\.(jpg|jpeg|png)$/i) ? (
+                                          <img src={pod.filePath} alt={pod.fileName} className="w-full h-full object-cover" />
+                                        ) : (
+                                          <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                          </svg>
+                                        )}
+                                      </a>
+                                    ))}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
                         )}
                       </div>
                     </div>
@@ -236,7 +369,7 @@ export const MyShipmentDetailsPage = () => {
             {shipment.statusEvents && shipment.statusEvents.length > 0 && (
               <div className="bg-white rounded-lg shadow">
                 <div className="px-6 py-4 border-b border-gray-200">
-                  <h2 className="text-lg font-semibold text-gray-900">Lịch sử trạng thái</h2>
+                  <h2 className="text-lg font-semibold text-gray-900">Lich su trang thai</h2>
                 </div>
                 <div className="p-6">
                   <div className="space-y-3">
@@ -257,36 +390,81 @@ export const MyShipmentDetailsPage = () => {
             )}
           </div>
 
-          {/* Right Column - Dispatch & POD */}
+          {/* Right Column - Driver & Vehicle Info */}
           <div className="space-y-6">
-            {/* Dispatch Info */}
-            {shipment.dispatch && (
+            {/* Driver Task Info */}
+            {driverTask && (
               <div className="bg-white rounded-lg shadow">
                 <div className="px-6 py-4 border-b border-gray-200">
-                  <h2 className="text-lg font-semibold text-gray-900">Thông tin điều xe</h2>
+                  <h2 className="text-lg font-semibold text-gray-900">Thong tin dieu xe</h2>
+                </div>
+                <div className="p-6 space-y-4">
+                  <div>
+                    <span className="text-sm text-gray-600">Tai xe</span>
+                    <p className="font-medium text-gray-900">
+                      {driverTask.driver?.fullName || driverTask.driver?.user?.fullName}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-sm text-gray-600">Dau keo</span>
+                    <p className="font-medium text-gray-900">{driverTask.tractor?.licensePlate}</p>
+                  </div>
+                  {driverTask.trailer && (
+                    <div>
+                      <span className="text-sm text-gray-600">Mooc</span>
+                      <p className="font-medium text-gray-900">{driverTask.trailer.licensePlate}</p>
+                    </div>
+                  )}
+                  <div>
+                    <span className="text-sm text-gray-600">Trang thai</span>
+                    <p className="font-medium text-gray-900">
+                      <span className={`px-2 py-1 text-xs rounded font-medium ${
+                        driverTask.status === 'COMPLETED' ? 'bg-green-100 text-green-800' :
+                        driverTask.status === 'IN_PROGRESS' ? 'bg-yellow-100 text-yellow-800' :
+                        'bg-gray-100 text-gray-700'
+                      }`}>
+                        {driverTask.status}
+                      </span>
+                    </p>
+                  </div>
+                  {driverTask.instructions && (
+                    <div>
+                      <span className="text-sm text-gray-600">Ghi chu</span>
+                      <p className="text-sm text-gray-900 mt-1">{driverTask.instructions}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Legacy Dispatch Info (backwards compat) */}
+            {shipment.dispatch && !driverTask && (
+              <div className="bg-white rounded-lg shadow">
+                <div className="px-6 py-4 border-b border-gray-200">
+                  <h2 className="text-lg font-semibold text-gray-900">Thong tin dieu xe</h2>
                 </div>
                 <div className="p-6 space-y-4">
                   <div>
                     <span className="text-sm text-gray-600">Xe</span>
                     <p className="font-medium text-gray-900">{shipment.dispatch.vehicle.licensePlate}</p>
                     <p className="text-sm text-gray-600">
-                      {shipment.dispatch.vehicle.vehicleType === 'TRACTOR' ? 'Đầu kéo' : 'Mooc'}
+                      {shipment.dispatch.vehicle.vehicleType === 'TRACTOR' ? 'Dau keo' : 'Mooc'}
                     </p>
                   </div>
                   <div>
-                    <span className="text-sm text-gray-600">Tài xế</span>
+                    <span className="text-sm text-gray-600">Tai xe</span>
                     <p className="font-medium text-gray-900">{shipment.dispatch.driver.user.fullName}</p>
                     <p className="text-sm text-gray-600">{shipment.dispatch.driver.phone}</p>
                   </div>
                   <div>
-                    <span className="text-sm text-gray-600">Thời gian phân công</span>
+                    <span className="text-sm text-gray-600">Thoi gian phan cong</span>
                     <p className="font-medium text-gray-900">
                       {new Date(shipment.dispatch.assignedAt).toLocaleString('vi-VN')}
                     </p>
                   </div>
                   {shipment.dispatch.notes && (
                     <div>
-                      <span className="text-sm text-gray-600">Ghi chú</span>
+                      <span className="text-sm text-gray-600">Ghi chu</span>
                       <p className="text-sm text-gray-900 mt-1">{shipment.dispatch.notes}</p>
                     </div>
                   )}
@@ -299,7 +477,7 @@ export const MyShipmentDetailsPage = () => {
               <div className="bg-white rounded-lg shadow">
                 <div className="px-6 py-4 border-b border-gray-200">
                   <h2 className="text-lg font-semibold text-gray-900">
-                    Chứng từ giao hàng ({shipment.pods.length})
+                    Chung tu giao hang ({shipment.pods.length})
                   </h2>
                 </div>
                 <div className="p-6">
@@ -313,6 +491,8 @@ export const MyShipmentDetailsPage = () => {
                           <div>
                             <p className="text-sm font-medium text-gray-900">{pod.fileName}</p>
                             <p className="text-xs text-gray-600">
+                              {pod.photoCategory && (photoCategoryLabels[pod.photoCategory] || pod.photoCategory)}
+                              {' - '}
                               {new Date(pod.uploadedAt).toLocaleString('vi-VN')}
                             </p>
                           </div>
@@ -335,11 +515,11 @@ export const MyShipmentDetailsPage = () => {
             {/* Created By Info */}
             {shipment.createdBy && (
               <div className="bg-white rounded-lg shadow p-6">
-                <h3 className="text-sm font-medium text-gray-600 mb-2">Người tạo</h3>
+                <h3 className="text-sm font-medium text-gray-600 mb-2">Nguoi tao</h3>
                 <p className="font-medium text-gray-900">{shipment.createdBy.fullName}</p>
                 <p className="text-sm text-gray-600">{shipment.createdBy.email}</p>
                 <p className="text-xs text-gray-500 mt-1">
-                  {shipment.createdByType === 'CUSTOMER' ? 'Khách hàng' : 'Nội bộ'}
+                  {shipment.createdByType === 'CUSTOMER' ? 'Khach hang' : 'Noi bo'}
                 </p>
               </div>
             )}

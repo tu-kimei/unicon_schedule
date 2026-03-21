@@ -1,4 +1,5 @@
 import { useAuth } from 'wasp/client/auth';
+import { NotificationBell } from './NotificationBell';
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -28,20 +29,26 @@ export function Header({ onMenuClick }: HeaderProps) {
           </div>
         </div>
 
-        {/* Right: User Info (Desktop only) */}
-        {user && (
-          <div className="hidden lg:flex items-center gap-3">
-            <div className="text-right">
-              <p className="text-sm font-medium text-gray-900">{user.fullName}</p>
-              <p className="text-xs text-gray-600">{user.role}</p>
+        {/* Right: Notifications + User Info */}
+        <div className="flex items-center gap-3">
+          {/* Notification Bell */}
+          {user && <NotificationBell />}
+
+          {/* User Info (Desktop only) */}
+          {user && (
+            <div className="hidden lg:flex items-center gap-3">
+              <div className="text-right">
+                <p className="text-sm font-medium text-gray-900">{user.fullName}</p>
+                <p className="text-xs text-gray-600">{user.role}</p>
+              </div>
+              <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                <span className="text-sm font-medium text-blue-700">
+                  {user.fullName.charAt(0).toUpperCase()}
+                </span>
+              </div>
             </div>
-            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-              <span className="text-sm font-medium text-blue-700">
-                {user.fullName.charAt(0).toUpperCase()}
-              </span>
-            </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </header>
   );

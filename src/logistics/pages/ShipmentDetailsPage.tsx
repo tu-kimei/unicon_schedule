@@ -1,11 +1,87 @@
 import { useState } from 'react';
 import { useQuery } from 'wasp/client/operations';
-import { getShipment } from 'wasp/client/operations';
+import { useAuth } from 'wasp/client/auth';
+import {
+  getShipment,
+  updateDocumentStatus,
+} from 'wasp/client/operations';
 import { StatusBadge } from '../components/StatusBadge';
 import { DocumentSection } from '../components/DocumentSection';
 
+const operationStatusLabels: Record<string, string> = {
+  DRAFT: 'Nhap',
+  PENDING: 'Cho xu ly',
+  DISPATCHED: 'Da dispatch',
+  IN_TRANSIT: 'Dang van chuyen',
+  DELIVERED: 'Da giao',
+  CANCELLED: 'Da huy',
+};
+
+const documentStatusLabels: Record<string, string> = {
+  DOC_PENDING: 'Cho chung tu',
+  DOC_RECEIVED: 'Da nhan chung tu',
+  DOC_RETURNED: 'Da tra chung tu',
+};
+
+const financialStatusLabels: Record<string, string> = {
+  NOT_BILLED: 'Chua xuat HD',
+  INVOICED: 'Da xuat HD',
+  PARTIAL_PAID: 'TT mot phan',
+  PAID: 'Da thanh toan',
+  OVERDUE: 'Qua han',
+};
+
+const operationStatusStyles: Record<string, string> = {
+  DRAFT: 'bg-gray-100 text-gray-800',
+  PENDING: 'bg-blue-100 text-blue-800',
+  DISPATCHED: 'bg-purple-100 text-purple-800',
+  IN_TRANSIT: 'bg-yellow-100 text-yellow-800',
+  DELIVERED: 'bg-green-100 text-green-800',
+  CANCELLED: 'bg-red-100 text-red-800',
+};
+
+const documentStatusStyles: Record<string, string> = {
+  DOC_PENDING: 'bg-orange-100 text-orange-800',
+  DOC_RECEIVED: 'bg-blue-100 text-blue-800',
+  DOC_RETURNED: 'bg-green-100 text-green-800',
+};
+
+const financialStatusStyles: Record<string, string> = {
+  NOT_BILLED: 'bg-gray-100 text-gray-800',
+  INVOICED: 'bg-blue-100 text-blue-800',
+  PARTIAL_PAID: 'bg-yellow-100 text-yellow-800',
+  PAID: 'bg-green-100 text-green-800',
+  OVERDUE: 'bg-red-100 text-red-800',
+};
+
+const photoCategoryLabels: Record<string, string> = {
+  CONTAINER_EXTERIOR: 'Ngoai container',
+  CONTAINER_INTERIOR: 'Trong container',
+  PORT_GATE_PASS: 'Phieu cong cang',
+  WAREHOUSE_GATE_PASS: 'Phieu cong kho',
+  WEIGHT_TICKET: 'Phieu can',
+  OTHER: 'Khac',
+};
+
 export const ShipmentDetailsPage = ({ shipmentId }: { shipmentId: string }) => {
-  const { data: shipment, isLoading, error } = useQuery(getShipment, { id: shipmentId });
+  const { data: user } = useAuth();
+  const { data: shipment, isLoading, error, refetch } = useQuery(getShipment, { id: shipmentId });
+  const [isUpdatingDoc, setIsUpdatingDoc] = useState(false);
+
+  const handleUpdateDocStatus = async (newStatus: 'DOC_RECEIVED' | 'DOC_RETURNED') => {
+    setIsUpdatingDoc(true);
+    try {
+      await updateDocumentStatus({
+        shipmentId,
+        documentStatus: newStatus,
+      });
+      refetch();
+    } catch (err: any) {
+      alert(err.message || 'Khong the cap nhat trang thai chung tu');
+    } finally {
+      setIsUpdatingDoc(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -46,15 +122,76 @@ export const ShipmentDetailsPage = ({ shipmentId }: { shipmentId: string }) => {
           <div className="px-6 py-4 border-b border-gray-200">
             <div className="flex justify-between items-start">
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">
-                  Shipment {shipment.shipmentNumber}
-                </h1>
+                <div className="flex items-center gap-2 mb-1">
+                  <h1 className="text-2xl font-bold text-gray-900">
+                    Shipment {shipment.shipmentNumber}
+                  </h1>
+                  {shipment.shipmentType && (
+                    <span className={`px-2 py-1 text-xs rounded font-medium ${
+                      shipment.shipmentType === 'EXPORT' ? 'bg-green-100 text-green-800' : 'bg-purple-100 text-purple-800'
+                    }`}>
+                      {shipment.shipmentType}
+                    </span>
+                  )}
+                </div>
                 <p className="text-gray-600 mt-1">
                   Customer: {shipment.customer.name}
                 </p>
               </div>
-              <StatusBadge status={shipment.currentStatus} size="lg" />
+              <StatusBadge status={shipment.currentStatus as any} size="lg" />
             </div>
+
+            {/* 3 Status Badges */}
+            <div className="flex gap-3 mt-4">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-500">Van hanh:</span>
+                <span className={`px-2 py-1 text-xs rounded font-medium ${
+                  operationStatusStyles[shipment.operationStatus] || 'bg-gray-100 text-gray-800'
+                }`}>
+                  {operationStatusLabels[shipment.operationStatus] || shipment.operationStatus}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-500">Chung tu:</span>
+                <span className={`px-2 py-1 text-xs rounded font-medium ${
+                  documentStatusStyles[shipment.documentStatus] || 'bg-gray-100 text-gray-800'
+                }`}>
+                  {documentStatusLabels[shipment.documentStatus] || shipment.documentStatus}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-500">Tai chinh:</span>
+                <span className={`px-2 py-1 text-xs rounded font-medium ${
+                  financialStatusStyles[shipment.financialStatus] || 'bg-gray-100 text-gray-800'
+                }`}>
+                  {financialStatusLabels[shipment.financialStatus] || shipment.financialStatus}
+                </span>
+              </div>
+            </div>
+
+            {/* OPS Document Status Buttons */}
+            {user && ['ADMIN', 'OPS'].includes(user.role) && (
+              <div className="mt-4 flex gap-2">
+                {shipment.documentStatus === 'DOC_PENDING' && (
+                  <button
+                    onClick={() => handleUpdateDocStatus('DOC_RECEIVED')}
+                    disabled={isUpdatingDoc}
+                    className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded font-medium disabled:bg-gray-300"
+                  >
+                    {isUpdatingDoc ? 'Dang cap nhat...' : 'Da nhan chung tu'}
+                  </button>
+                )}
+                {shipment.documentStatus === 'DOC_RECEIVED' && (
+                  <button
+                    onClick={() => handleUpdateDocStatus('DOC_RETURNED')}
+                    disabled={isUpdatingDoc}
+                    className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-sm rounded font-medium disabled:bg-gray-300"
+                  >
+                    {isUpdatingDoc ? 'Dang cap nhat...' : 'Da tra chung tu'}
+                  </button>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Shipment Overview */}
@@ -71,21 +208,71 @@ export const ShipmentDetailsPage = ({ shipmentId }: { shipmentId: string }) => {
               <div>
                 <span className="text-sm text-gray-600">Start Date</span>
                 <p className="font-medium">
-                  {new Date(shipment.plannedStartDate).toLocaleDateString()}
+                  {new Date(shipment.plannedStartDate).toLocaleDateString('vi-VN')}
                 </p>
               </div>
               <div>
                 <span className="text-sm text-gray-600">End Date</span>
                 <p className="font-medium">
-                  {new Date(shipment.plannedEndDate).toLocaleDateString()}
+                  {new Date(shipment.plannedEndDate).toLocaleDateString('vi-VN')}
                 </p>
               </div>
             </div>
+          </div>
+        </div>
 
-            {/* Dispatch Info */}
-            {shipment.dispatch && (
-              <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-                <h3 className="font-medium text-blue-900 mb-2">Dispatch Information</h3>
+        {/* Driver Tasks */}
+        {shipment.driverTasks && shipment.driverTasks.length > 0 && (
+          <div className="bg-white rounded-lg shadow mb-6">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h2 className="text-xl font-semibold text-gray-900">Driver Tasks</h2>
+            </div>
+            <div className="px-6 py-4">
+              <div className="space-y-3">
+                {shipment.driverTasks.map((task: any) => (
+                  <div key={task.id} className="border border-gray-200 rounded-lg p-4">
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-bold text-gray-500">#{task.sequence}</span>
+                          <span className="font-medium text-gray-900">{task.driver?.fullName || task.driver?.user?.fullName}</span>
+                          <span className={`px-2 py-0.5 text-xs rounded font-medium ${
+                            task.status === 'COMPLETED' ? 'bg-green-100 text-green-800' :
+                            task.status === 'IN_PROGRESS' ? 'bg-yellow-100 text-yellow-800' :
+                            task.status === 'SKIPPED' ? 'bg-red-100 text-red-700' :
+                            'bg-gray-100 text-gray-700'
+                          }`}>
+                            {task.status}
+                          </span>
+                        </div>
+                        <div className="text-sm text-gray-600 mt-1 space-y-0.5">
+                          <p>Dau keo: {task.tractor?.licensePlate}</p>
+                          {task.trailer && <p>Mooc: {task.trailer.licensePlate}</p>}
+                          {task.instructions && (
+                            <p className="text-blue-600">{task.instructions}</p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="text-right text-xs text-gray-500">
+                        {task.startedAt && <p>Bat dau: {new Date(task.startedAt).toLocaleString('vi-VN')}</p>}
+                        {task.completedAt && <p>Hoan thanh: {new Date(task.completedAt).toLocaleString('vi-VN')}</p>}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Legacy Dispatch Info (backwards compatibility) */}
+        {shipment.dispatch && !shipment.driverTasks?.length && (
+          <div className="bg-white rounded-lg shadow mb-6">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h2 className="text-xl font-semibold text-gray-900">Dispatch Information</h2>
+            </div>
+            <div className="px-6 py-4">
+              <div className="p-4 bg-blue-50 rounded-lg">
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <span className="text-blue-700">Vehicle:</span>
@@ -97,9 +284,7 @@ export const ShipmentDetailsPage = ({ shipmentId }: { shipmentId: string }) => {
                   </div>
                   <div>
                     <span className="text-blue-700">Assigned:</span>
-                    <p className="font-medium">
-                      {new Date(shipment.dispatch.assignedAt).toLocaleString()}
-                    </p>
+                    <p className="font-medium">{new Date(shipment.dispatch.assignedAt).toLocaleString('vi-VN')}</p>
                   </div>
                   <div>
                     <span className="text-blue-700">Notes:</span>
@@ -107,9 +292,9 @@ export const ShipmentDetailsPage = ({ shipmentId }: { shipmentId: string }) => {
                   </div>
                 </div>
               </div>
-            )}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Stops */}
         <div className="bg-white rounded-lg shadow mb-6">
@@ -127,23 +312,30 @@ export const ShipmentDetailsPage = ({ shipmentId }: { shipmentId: string }) => {
                         Stop {stop.sequence}: {stop.locationName}
                       </h3>
                       <p className="text-gray-600">{stop.address}</p>
-                      <span className="inline-block mt-1 px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded">
-                        {stop.stopType}
-                      </span>
+                      <div className="flex gap-2 mt-1">
+                        <span className="inline-block px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded">
+                          {stop.stopType}
+                        </span>
+                        {stop.stopCategory && (
+                          <span className="inline-block px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded">
+                            {stop.stopCategory}
+                          </span>
+                        )}
+                      </div>
                     </div>
 
                     <div className="text-right text-sm">
                       <div className="mb-1">
                         <span className="text-gray-600">Planned:</span>
-                        <p>{new Date(stop.plannedArrival).toLocaleString()}</p>
-                        <p>to {new Date(stop.plannedDeparture).toLocaleString()}</p>
+                        <p>{new Date(stop.plannedArrival).toLocaleString('vi-VN')}</p>
+                        <p>to {new Date(stop.plannedDeparture).toLocaleString('vi-VN')}</p>
                       </div>
 
                       {(stop.actualArrival || stop.actualDeparture) && (
                         <div className="mt-2 pt-2 border-t border-gray-200">
                           <span className="text-gray-600">Actual:</span>
-                          {stop.actualArrival && <p>Arrival: {new Date(stop.actualArrival).toLocaleString()}</p>}
-                          {stop.actualDeparture && <p>Departure: {new Date(stop.actualDeparture).toLocaleString()}</p>}
+                          {stop.actualArrival && <p>Arrival: {new Date(stop.actualArrival).toLocaleString('vi-VN')}</p>}
+                          {stop.actualDeparture && <p>Departure: {new Date(stop.actualDeparture).toLocaleString('vi-VN')}</p>}
                         </div>
                       )}
                     </div>
@@ -159,10 +351,47 @@ export const ShipmentDetailsPage = ({ shipmentId }: { shipmentId: string }) => {
                     </div>
                   )}
 
-                  {stop.specialInstructions && (
-                    <div>
-                      <span className="text-sm text-gray-600">Instructions:</span>
-                      <p className="text-sm mt-1">{stop.specialInstructions}</p>
+                  {/* PODs grouped by stop and photoCategory */}
+                  {shipment.pods && shipment.pods.filter((p: any) => p.stopId === stop.id).length > 0 && (
+                    <div className="mt-3 pt-3 border-t border-gray-200">
+                      <p className="text-sm font-medium text-gray-700 mb-2">Anh chung tu:</p>
+                      <div className="space-y-2">
+                        {Object.entries(
+                          shipment.pods
+                            .filter((p: any) => p.stopId === stop.id)
+                            .reduce((acc: Record<string, any[]>, pod: any) => {
+                              const cat = pod.photoCategory || 'OTHER';
+                              if (!acc[cat]) acc[cat] = [];
+                              acc[cat].push(pod);
+                              return acc;
+                            }, {})
+                        ).map(([category, pods]: [string, any[]]) => (
+                          <div key={category}>
+                            <span className="text-xs text-gray-500">
+                              {photoCategoryLabels[category] || category}:
+                            </span>
+                            <div className="flex gap-2 mt-1 flex-wrap">
+                              {pods.map((pod: any) => (
+                                <a
+                                  key={pod.id}
+                                  href={pod.filePath}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="w-16 h-16 rounded bg-gray-100 border border-gray-200 flex items-center justify-center hover:border-blue-400 overflow-hidden"
+                                >
+                                  {pod.filePath.match(/\.(jpg|jpeg|png)$/i) ? (
+                                    <img src={pod.filePath} alt={pod.fileName} className="w-full h-full object-cover" />
+                                  ) : (
+                                    <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                  )}
+                                </a>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -177,7 +406,6 @@ export const ShipmentDetailsPage = ({ shipmentId }: { shipmentId: string }) => {
             <div className="px-6 py-4 border-b border-gray-200">
               <h2 className="text-xl font-semibold text-gray-900">Status History</h2>
             </div>
-
             <div className="px-6 py-4">
               <div className="space-y-3">
                 {shipment.statusEvents.map((event: any) => (
@@ -191,47 +419,9 @@ export const ShipmentDetailsPage = ({ shipmentId }: { shipmentId: string }) => {
                         <p className="text-sm text-gray-600">Location: {event.location}</p>
                       )}
                       <p className="text-xs text-gray-500">
-                        {new Date(event.createdAt).toLocaleString()}
+                        {new Date(event.createdAt).toLocaleString('vi-VN')}
                       </p>
                     </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* PODs */}
-        {shipment.pods && shipment.pods.length > 0 && (
-          <div className="bg-white rounded-lg shadow">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-xl font-semibold text-gray-900">Proof of Delivery</h2>
-            </div>
-
-            <div className="px-6 py-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {shipment.pods.map((pod: any) => (
-                  <div key={pod.id} className="border border-gray-200 rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-medium">{pod.fileName}</h4>
-                      <span className={`px-2 py-1 text-xs rounded ${
-                        pod.isSubmitted ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                      }`}>
-                        {pod.isSubmitted ? 'Submitted' : 'Draft'}
-                      </span>
-                    </div>
-
-                    <div className="text-sm text-gray-600 space-y-1">
-                      <p>Type: {pod.fileType.replace('_', ' ')}</p>
-                      <p>Size: {(pod.fileSize / 1024 / 1024).toFixed(2)} MB</p>
-                      <p>Uploaded: {new Date(pod.uploadedAt).toLocaleString()}</p>
-                    </div>
-
-                    {pod.isSubmitted && (
-                      <button className="mt-3 w-full bg-blue-600 text-white px-3 py-2 rounded text-sm hover:bg-blue-700">
-                        View POD
-                      </button>
-                    )}
                   </div>
                 ))}
               </div>
