@@ -3,6 +3,8 @@ import { HttpError } from 'wasp/server';
 interface ShipmentStopInput {
   sequence: number;
   stopType: 'PICKUP' | 'DROPOFF' | 'DEPOT' | 'PORT';
+  stopCategory?: string;
+  requiredPhotos?: string[];
   locationName: string;
   address: string;
   contactPerson?: string;
@@ -13,6 +15,7 @@ interface ShipmentStopInput {
 }
 
 interface CreateShipmentRequestInput {
+  shipmentType?: 'EXPORT' | 'IMPORT';
   priority?: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
   plannedStartDate: Date;
   plannedEndDate: Date;
@@ -21,6 +24,19 @@ interface CreateShipmentRequestInput {
   containerType?: string;
   stops: ShipmentStopInput[];
 }
+
+const STOP_TEMPLATES = {
+  EXPORT: [
+    { sequence: 1, stopCategory: 'PICKUP_EMPTY', stopType: 'DEPOT' as const, requiredPhotos: ['CONTAINER_EXTERIOR', 'CONTAINER_INTERIOR', 'PORT_GATE_PASS'] },
+    { sequence: 2, stopCategory: 'WAREHOUSE_LOAD', stopType: 'PICKUP' as const, requiredPhotos: ['WAREHOUSE_GATE_PASS', 'WEIGHT_TICKET'] },
+    { sequence: 3, stopCategory: 'PORT_DELIVERY', stopType: 'PORT' as const, requiredPhotos: ['PORT_GATE_PASS'] },
+  ],
+  IMPORT: [
+    { sequence: 1, stopCategory: 'PORT_PICKUP', stopType: 'PORT' as const, requiredPhotos: ['PORT_GATE_PASS'] },
+    { sequence: 2, stopCategory: 'WAREHOUSE_UNLOAD', stopType: 'DROPOFF' as const, requiredPhotos: ['WAREHOUSE_GATE_PASS', 'WEIGHT_TICKET'] },
+    { sequence: 3, stopCategory: 'RETURN_EMPTY', stopType: 'DEPOT' as const, requiredPhotos: ['PORT_GATE_PASS', 'CONTAINER_EXTERIOR', 'CONTAINER_INTERIOR'] },
+  ],
+};
 
 // Customer creates shipment request
 export const createShipmentRequest = async (args: CreateShipmentRequestInput, context: any) => {
@@ -65,6 +81,43 @@ export const createShipmentRequest = async (args: CreateShipmentRequestInput, co
   const shipmentCount = await context.entities.Shipment.count();
   const shipmentNumber = `SHP-${new Date().getFullYear()}-${String(shipmentCount + 1).padStart(4, '0')}`;
 
+  // Build stops: merge template with customer-provided data if shipmentType is set
+  let stopsToCreate: any[];
+  if (args.shipmentType && STOP_TEMPLATES[args.shipmentType]) {
+    const templates = STOP_TEMPLATES[args.shipmentType];
+    stopsToCreate = templates.map((template) => {
+      // Find matching customer-provided stop by sequence
+      const customerStop = args.stops.find(s => s.sequence === template.sequence);
+      return {
+        sequence: template.sequence,
+        stopType: template.stopType,
+        stopCategory: template.stopCategory,
+        requiredPhotos: template.requiredPhotos,
+        locationName: customerStop?.locationName || '',
+        address: customerStop?.address || '',
+        contactPerson: customerStop?.contactPerson,
+        contactPhone: customerStop?.contactPhone,
+        plannedArrival: customerStop?.plannedArrival || args.plannedStartDate,
+        plannedDeparture: customerStop?.plannedDeparture || args.plannedEndDate,
+        specialInstructions: customerStop?.specialInstructions,
+      };
+    });
+  } else {
+    stopsToCreate = args.stops.map(stop => ({
+      sequence: stop.sequence,
+      stopType: stop.stopType,
+      stopCategory: stop.stopCategory,
+      requiredPhotos: stop.requiredPhotos || [],
+      locationName: stop.locationName,
+      address: stop.address,
+      contactPerson: stop.contactPerson,
+      contactPhone: stop.contactPhone,
+      plannedArrival: stop.plannedArrival,
+      plannedDeparture: stop.plannedDeparture,
+      specialInstructions: stop.specialInstructions,
+    }));
+  }
+
   // Create shipment request (status: DRAFT)
   const shipment = await context.entities.Shipment.create({
     data: {
@@ -73,6 +126,7 @@ export const createShipmentRequest = async (args: CreateShipmentRequestInput, co
       createdByType: 'CUSTOMER',
       shipmentNumber,
       currentStatus: 'DRAFT',
+      ...(args.shipmentType ? { shipmentType: args.shipmentType, operationStatus: 'DRAFT' } : {}),
       priority: args.priority || 'NORMAL',
       plannedStartDate: args.plannedStartDate,
       plannedEndDate: args.plannedEndDate,
@@ -80,17 +134,7 @@ export const createShipmentRequest = async (args: CreateShipmentRequestInput, co
       containerNumber: args.containerNumber,
       containerType: args.containerType,
       stops: {
-        create: args.stops.map(stop => ({
-          sequence: stop.sequence,
-          stopType: stop.stopType,
-          locationName: stop.locationName,
-          address: stop.address,
-          contactPerson: stop.contactPerson,
-          contactPhone: stop.contactPhone,
-          plannedArrival: stop.plannedArrival,
-          plannedDeparture: stop.plannedDeparture,
-          specialInstructions: stop.specialInstructions
-        }))
+        create: stopsToCreate
       }
     },
     include: {

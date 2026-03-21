@@ -1,5 +1,6 @@
 interface CreateShipmentInput {
   customerId: string;
+  shipmentType?: 'EXPORT' | 'IMPORT';
   priority?: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
   plannedStartDate: Date;
   plannedEndDate: Date;
@@ -9,6 +10,8 @@ interface CreateShipmentInput {
 interface ShipmentStopInput {
   sequence: number;
   stopType: 'PICKUP' | 'DROPOFF' | 'DEPOT' | 'PORT';
+  stopCategory?: string;
+  requiredPhotos?: string[];
   locationName: string;
   address: string;
   contactPerson?: string;
@@ -17,6 +20,19 @@ interface ShipmentStopInput {
   plannedDeparture: Date;
   specialInstructions?: string;
 }
+
+const STOP_TEMPLATES = {
+  EXPORT: [
+    { sequence: 1, stopCategory: 'PICKUP_EMPTY', stopType: 'DEPOT' as const, requiredPhotos: ['CONTAINER_EXTERIOR', 'CONTAINER_INTERIOR', 'PORT_GATE_PASS'] },
+    { sequence: 2, stopCategory: 'WAREHOUSE_LOAD', stopType: 'PICKUP' as const, requiredPhotos: ['WAREHOUSE_GATE_PASS', 'WEIGHT_TICKET'] },
+    { sequence: 3, stopCategory: 'PORT_DELIVERY', stopType: 'PORT' as const, requiredPhotos: ['PORT_GATE_PASS'] },
+  ],
+  IMPORT: [
+    { sequence: 1, stopCategory: 'PORT_PICKUP', stopType: 'PORT' as const, requiredPhotos: ['PORT_GATE_PASS'] },
+    { sequence: 2, stopCategory: 'WAREHOUSE_UNLOAD', stopType: 'DROPOFF' as const, requiredPhotos: ['WAREHOUSE_GATE_PASS', 'WEIGHT_TICKET'] },
+    { sequence: 3, stopCategory: 'RETURN_EMPTY', stopType: 'DEPOT' as const, requiredPhotos: ['PORT_GATE_PASS', 'CONTAINER_EXTERIOR', 'CONTAINER_INTERIOR'] },
+  ],
+};
 
 export const createShipment = async (args: CreateShipmentInput, context: any) => {
   const { user } = context;
@@ -55,27 +71,54 @@ export const createShipment = async (args: CreateShipmentInput, context: any) =>
   const shipmentCount = await context.entities.Shipment.count();
   const shipmentNumber = `SHP${String(shipmentCount + 1).padStart(6, '0')}`;
 
+  // Build stops: merge template with provided data if shipmentType is set
+  let stopsToCreate: any[];
+  if (args.shipmentType && STOP_TEMPLATES[args.shipmentType]) {
+    const templates = STOP_TEMPLATES[args.shipmentType];
+    stopsToCreate = templates.map((template) => {
+      const providedStop = args.stops.find(s => s.sequence === template.sequence);
+      return {
+        sequence: template.sequence,
+        stopType: template.stopType,
+        stopCategory: template.stopCategory,
+        requiredPhotos: template.requiredPhotos,
+        locationName: providedStop?.locationName || '',
+        address: providedStop?.address || '',
+        contactPerson: providedStop?.contactPerson,
+        contactPhone: providedStop?.contactPhone,
+        plannedArrival: providedStop?.plannedArrival || args.plannedStartDate,
+        plannedDeparture: providedStop?.plannedDeparture || args.plannedEndDate,
+        specialInstructions: providedStop?.specialInstructions,
+      };
+    });
+  } else {
+    stopsToCreate = args.stops.map(stop => ({
+      sequence: stop.sequence,
+      stopType: stop.stopType,
+      stopCategory: stop.stopCategory,
+      requiredPhotos: stop.requiredPhotos || [],
+      locationName: stop.locationName,
+      address: stop.address,
+      contactPerson: stop.contactPerson,
+      contactPhone: stop.contactPhone,
+      plannedArrival: stop.plannedArrival,
+      plannedDeparture: stop.plannedDeparture,
+      specialInstructions: stop.specialInstructions,
+    }));
+  }
+
   // Create shipment and stops in transaction
   const shipment = await context.entities.Shipment.create({
     data: {
       customerId: args.customerId,
       shipmentNumber,
       currentStatus: 'DRAFT',
+      ...(args.shipmentType ? { shipmentType: args.shipmentType, operationStatus: 'DRAFT' } : {}),
       priority: args.priority || 'NORMAL',
       plannedStartDate: args.plannedStartDate,
       plannedEndDate: args.plannedEndDate,
       stops: {
-        create: args.stops.map(stop => ({
-          sequence: stop.sequence,
-          stopType: stop.stopType,
-          locationName: stop.locationName,
-          address: stop.address,
-          contactPerson: stop.contactPerson,
-          contactPhone: stop.contactPhone,
-          plannedArrival: stop.plannedArrival,
-          plannedDeparture: stop.plannedDeparture,
-          specialInstructions: stop.specialInstructions
-        }))
+        create: stopsToCreate
       }
     },
     include: {

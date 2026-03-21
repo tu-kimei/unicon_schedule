@@ -3,6 +3,7 @@ interface UploadPODInput {
   file: File;
   fileName: string;
   fileType: 'IMAGE_JPG' | 'IMAGE_PNG' | 'DOCUMENT_PDF';
+  photoCategory?: 'CONTAINER_EXTERIOR' | 'CONTAINER_INTERIOR' | 'PORT_GATE_PASS' | 'WAREHOUSE_GATE_PASS' | 'WEIGHT_TICKET' | 'OTHER';
   stopId?: string;
 }
 
@@ -24,13 +25,24 @@ export const uploadPOD = async (args: UploadPODInput, context: any) => {
   }
 
   // Validate stop belongs to shipment if provided
+  let stop: any = null;
   if (args.stopId) {
-    const stop = await context.entities.ShipmentStop.findUnique({
+    stop = await context.entities.ShipmentStop.findUnique({
       where: { id: args.stopId }
     });
 
     if (!stop || stop.shipmentId !== args.shipmentId) {
       throw new Error('Stop does not belong to this shipment');
+    }
+
+    // Validate photoCategory against stop's requiredPhotos if both are provided
+    if (args.photoCategory && stop.requiredPhotos && stop.requiredPhotos.length > 0) {
+      if (!stop.requiredPhotos.includes(args.photoCategory)) {
+        throw new Error(
+          `Photo category '${args.photoCategory}' is not valid for this stop. ` +
+          `Required categories: ${stop.requiredPhotos.join(', ')}`
+        );
+      }
     }
   }
 
@@ -62,10 +74,31 @@ export const uploadPOD = async (args: UploadPODInput, context: any) => {
       fileName: args.fileName,
       filePath,
       fileType: args.fileType,
+      photoCategory: args.photoCategory || null,
       fileSize: args.file.size,
       uploadedById: user.id
     }
   });
+
+  // Notify customer users about the photo upload
+  if (shipment.customerId) {
+    const customerUsers = await context.entities.User.findMany({
+      where: { customerId: shipment.customerId, isActive: true }
+    });
+    for (const cu of customerUsers) {
+      await context.entities.Notification.create({
+        data: {
+          userId: cu.id,
+          type: 'PHOTO_UPLOADED',
+          title: 'Ảnh chứng từ mới',
+          message: `Tài xế đã upload ảnh cho chuyến ${shipment.shipmentNumber}`,
+          referenceId: args.shipmentId,
+          referenceType: 'REF_SHIPMENT',
+          channels: ['IN_APP'],
+        }
+      });
+    }
+  }
 
   return pod;
 };

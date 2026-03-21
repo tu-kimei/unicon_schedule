@@ -100,12 +100,12 @@ page DispatcherDashboardPage {
 // Shared Queries
 query getAllShipments {
   fn: import { getAllShipments } from "@src/logistics/queries/shipments",
-  entities: [Shipment, Customer, ShipmentStop, Dispatch, Vehicle, Driver, ShipmentStatusEvent, POD]
+  entities: [Shipment, Customer, ShipmentStop, Dispatch, Vehicle, Driver, ShipmentStatusEvent, POD, DriverTask]
 }
 
 query getShipment {
   fn: import { getShipment } from "@src/logistics/queries/shipments",
-  entities: [Shipment, Customer, ShipmentStop, Dispatch, Vehicle, Driver, ShipmentStatusEvent, POD]
+  entities: [Shipment, Customer, ShipmentStop, Dispatch, Vehicle, Driver, ShipmentStatusEvent, POD, DriverTask]
 }
 
 query getPendingShipments {
@@ -149,7 +149,7 @@ action updateShipmentStatus {
 
 action uploadPOD {
   fn: import { uploadPOD } from "@src/logistics/actions/pods",
-  entities: [POD, Shipment]
+  entities: [POD, Shipment, ShipmentStop, User, Notification]
 }
 
 // Document Management
@@ -254,12 +254,12 @@ page MyDebtsPage {
 // Customer Queries
 query getMyShipments {
   fn: import { getMyShipments } from "@src/customer/queries/shipments",
-  entities: [Shipment, Customer, User, ShipmentStop, Dispatch, Vehicle, Driver, ShipmentStatusEvent, POD]
+  entities: [Shipment, Customer, User, ShipmentStop, Dispatch, Vehicle, Driver, ShipmentStatusEvent, POD, DriverTask]
 }
 
 query getMyShipmentDetails {
   fn: import { getMyShipmentDetails } from "@src/customer/queries/shipments",
-  entities: [Shipment, Customer, User, ShipmentStop, Dispatch, Vehicle, Driver, ShipmentStatusEvent, POD]
+  entities: [Shipment, Customer, User, ShipmentStop, Dispatch, Vehicle, Driver, ShipmentStatusEvent, POD, DriverTask]
 }
 
 query getMyShipmentStats {

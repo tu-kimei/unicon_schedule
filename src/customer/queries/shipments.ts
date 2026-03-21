@@ -47,6 +47,20 @@ export const getMyShipments = async (args: any, context: any) => {
           }
         }
       },
+      driverTasks: {
+        include: {
+          driver: {
+            include: {
+              user: {
+                select: { fullName: true, email: true }
+              }
+            }
+          },
+          tractor: true,
+          trailer: true,
+        },
+        orderBy: { sequence: 'asc' }
+      },
       statusEvents: {
         orderBy: { createdAt: 'desc' },
         take: 5
@@ -106,6 +120,20 @@ export const getMyShipmentDetails = async ({ id }: { id: string }, context: any)
           }
         }
       },
+      driverTasks: {
+        include: {
+          driver: {
+            include: {
+              user: {
+                select: { fullName: true, email: true, phone: true }
+              }
+            }
+          },
+          tractor: true,
+          trailer: true,
+        },
+        orderBy: { sequence: 'asc' }
+      },
       statusEvents: {
         orderBy: { createdAt: 'desc' }
       },
@@ -162,6 +190,28 @@ export const getMyShipmentStats = async (args: any, context: any) => {
     })
   ]);
 
+  // Get counts by operationStatus
+  const [opDraft, opPending, opDispatched, opInTransit, opDelivered, opCancelled] = await Promise.all([
+    context.entities.Shipment.count({
+      where: { customerId: user.customerId, operationStatus: 'DRAFT', deletedAt: null }
+    }),
+    context.entities.Shipment.count({
+      where: { customerId: user.customerId, operationStatus: 'PENDING', deletedAt: null }
+    }),
+    context.entities.Shipment.count({
+      where: { customerId: user.customerId, operationStatus: 'DISPATCHED', deletedAt: null }
+    }),
+    context.entities.Shipment.count({
+      where: { customerId: user.customerId, operationStatus: 'IN_TRANSIT', deletedAt: null }
+    }),
+    context.entities.Shipment.count({
+      where: { customerId: user.customerId, operationStatus: 'DELIVERED', deletedAt: null }
+    }),
+    context.entities.Shipment.count({
+      where: { customerId: user.customerId, operationStatus: 'CANCELLED', deletedAt: null }
+    }),
+  ]);
+
   return {
     total,
     draft,
@@ -169,6 +219,14 @@ export const getMyShipmentStats = async (args: any, context: any) => {
     assigned,
     inTransit,
     completed,
-    active: assigned + inTransit // Shipments đang vận chuyển
+    active: assigned + inTransit, // Shipments đang vận chuyển
+    byOperationStatus: {
+      draft: opDraft,
+      pending: opPending,
+      dispatched: opDispatched,
+      inTransit: opInTransit,
+      delivered: opDelivered,
+      cancelled: opCancelled,
+    }
   };
 };
