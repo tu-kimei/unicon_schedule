@@ -8,7 +8,7 @@ import { getSessionId } from 'wasp/client/api';
 
 type VehicleType = 'TRACTOR' | 'TRAILER';
 type VehicleStatus = 'IN_USE' | 'MAINTENANCE' | 'OUT_OF_SERVICE';
-type VehicleCompany = 'KHANH_HUY' | 'UNICON';
+type VehicleCompany = 'KHANH_HUY' | 'UNICON' | 'RENTAL';
 
 interface VehicleFormModalProps {
   isOpen: boolean;
@@ -86,11 +86,14 @@ export const VehicleFormModal = ({
       headers['Authorization'] = `Bearer ${sessionId}`;
     }
 
-    console.log('Uploading vehicle files to /api/upload...');
+    // Get API URL from environment or use relative path
+    const apiUrl = import.meta.env.REACT_APP_API_URL || '';
+    const uploadUrl = `${apiUrl}/api/upload`;
+    console.log('Uploading vehicle files to:', uploadUrl);
     console.log('Category: vehicles, Type:', type);
     console.log('Files count:', files.length);
 
-    const response = await fetch('/api/upload', {
+    const response = await fetch(uploadUrl, {
       method: 'POST',
       body: formData,
       headers,
@@ -201,6 +204,7 @@ export const VehicleFormModal = ({
   const companyOptions = [
     { value: 'KHANH_HUY', label: 'Khánh Huy' },
     { value: 'UNICON', label: 'Unicon' },
+    { value: 'RENTAL', label: 'Xe thuê ngoài' },
   ];
 
   return (

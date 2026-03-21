@@ -13,13 +13,20 @@ export const getAllDrivers = async (_args: void, context: any) => {
   const drivers = await context.entities.Driver.findMany({
     include: {
       user: true,
+      dispatches: {
+        select: { id: true },
+      },
     },
     orderBy: {
       createdAt: 'desc',
     },
   });
 
-  return drivers;
+  return drivers.map((driver: any) => ({
+    ...driver,
+    dispatchCount: driver.dispatches.length,
+    dispatches: undefined,
+  }));
 };
 
 // ============================================================================

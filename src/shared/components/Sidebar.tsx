@@ -7,6 +7,16 @@ interface SidebarProps {
   onClose: () => void;
 }
 
+const roleLabels: Record<string, string> = {
+  ADMIN: 'Quản trị viên',
+  OPS: 'Vận hành',
+  DISPATCHER: 'Điều phối',
+  ACCOUNTING: 'Kế toán',
+  DRIVER: 'Tài xế',
+  CUSTOMER_OWNER: 'Chủ hàng',
+  CUSTOMER_OPS: 'Vận hành KH',
+};
+
 export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
   const { data: user } = useAuth();
   const location = useLocation();
@@ -16,11 +26,23 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
   };
 
   const navLinkClass = (path: string) => {
-    const base = 'flex items-center gap-3 px-4 py-3 rounded-lg transition-colors';
+    const base =
+      'flex items-center gap-3 px-4 py-2.5 rounded-r-lg transition-all duration-200 text-sm';
     return isActive(path)
-      ? `${base} bg-blue-100 text-blue-700 font-medium`
-      : `${base} text-gray-700 hover:bg-gray-100`;
+      ? `${base} border-l-[3px] border-blue-600 bg-blue-50 text-blue-700 font-medium`
+      : `${base} border-l-[3px] border-transparent text-gray-600 hover:bg-gray-50 hover:text-gray-900`;
   };
+
+  const sectionHeader = (label: string) => (
+    <div className="pt-5 pb-1.5">
+      <div className="flex items-center gap-2 px-4">
+        <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-widest">
+          {label}
+        </p>
+        <div className="flex-1 h-px bg-gray-200" />
+      </div>
+    </div>
+  );
 
   return (
     <>
@@ -40,14 +62,14 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
       >
         <div className="flex flex-col h-full">
           {/* Logo & Close Button */}
-          <div className="p-4 border-b border-gray-200">
+          <div className="px-4 py-3 border-b border-gray-200">
             <div className="flex items-center justify-between">
               <Link to="/" className="flex items-center gap-2" onClick={onClose}>
                 <img src="/unicon-logo.png" alt="Unicon Schedule" className="h-8" />
               </Link>
               <button
                 onClick={onClose}
-                className="lg:hidden text-gray-500 hover:text-gray-700"
+                className="lg:hidden text-gray-500 hover:text-gray-700 transition-colors duration-150"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -58,28 +80,69 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
 
           {/* User Info */}
           {user && (
-            <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-200">
-              <p className="font-medium text-gray-900 truncate">{user.fullName}</p>
-              <p className="text-xs text-gray-600 truncate">{user.email}</p>
-              <div className="mt-2">
-                <span className="inline-block px-2 py-1 text-xs font-medium bg-blue-100 text-blue-700 rounded">
-                  {user.role}
+            <div className="px-4 py-3 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-200">
+              <p className="font-medium text-sm text-gray-900 truncate">{user.fullName}</p>
+              <p className="text-xs text-gray-500 truncate mt-0.5">{user.email}</p>
+              <div className="mt-1.5">
+                <span className="inline-block px-2 py-0.5 text-[11px] font-medium bg-blue-100 text-blue-700 rounded-full">
+                  {roleLabels[user.role] || user.role}
                 </span>
               </div>
             </div>
           )}
 
           {/* Navigation */}
-          <nav className="flex-1 overflow-y-auto p-4">
+          <nav className="flex-1 overflow-y-auto py-3 pr-2 sidebar-scroll">
             {user ? (
-              <div className="space-y-1">
-                {/* Shipments */}
-                <Link to="/" className={navLinkClass('/')} onClick={onClose}>
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                  </svg>
-                  <span>Shipments</span>
-                </Link>
+              <div className="space-y-0.5">
+                {/* Customer Portal Section */}
+                {(user.role === 'CUSTOMER_OPS' || user.role === 'CUSTOMER_OWNER') && (
+                  <>
+                    {/* Customer Dashboard */}
+                    <Link to="/customer" className={navLinkClass('/customer')} onClick={onClose}>
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                      </svg>
+                      <span>Trang chủ</span>
+                    </Link>
+
+                    {/* My Shipments */}
+                    <Link to="/customer/shipments" className={navLinkClass('/customer/shipments')} onClick={onClose}>
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                      </svg>
+                      <span>Chuyến hàng</span>
+                    </Link>
+
+                    {/* Create Request */}
+                    <Link to="/customer/shipments/create" className={navLinkClass('/customer/shipments/create')} onClick={onClose}>
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      </svg>
+                      <span>Tạo yêu cầu</span>
+                    </Link>
+
+                    {/* My Debts (CUSTOMER_OWNER only) */}
+                    {user.role === 'CUSTOMER_OWNER' && (
+                      <Link to="/customer/debts" className={navLinkClass('/customer/debts')} onClick={onClose}>
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>Công nợ</span>
+                      </Link>
+                    )}
+                  </>
+                )}
+
+                {/* Internal Users - Shipments */}
+                {(user.role === 'OPS' || user.role === 'ADMIN' || user.role === 'DISPATCHER') && (
+                  <Link to="/" className={navLinkClass('/')} onClick={onClose}>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                    </svg>
+                    <span>Shipments</span>
+                  </Link>
+                )}
 
                 {/* Dispatch */}
                 {(user.role === 'DISPATCHER' || user.role === 'ADMIN') && (
@@ -94,11 +157,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                 {/* Accounting Section */}
                 {(user.role === 'ACCOUNTING' || user.role === 'ADMIN' || user.role === 'OPS') && (
                   <>
-                    <div className="pt-4 pb-2">
-                      <p className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                        Kế toán
-                      </p>
-                    </div>
+                    {sectionHeader('Kế toán')}
 
                     {/* Debts */}
                     <Link to="/accounting/debts" className={navLinkClass('/accounting/debts')} onClick={onClose}>
@@ -115,17 +174,21 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                       </svg>
                       <span>Khách hàng</span>
                     </Link>
+
+                    {/* Invoices */}
+                    <Link to="/accounting/invoices" className={navLinkClass('/accounting/invoices')} onClick={onClose}>
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      <span>Hóa đơn</span>
+                    </Link>
                   </>
                 )}
 
                 {/* Resources Section */}
                 {(user.role === 'ADMIN' || user.role === 'OPS' || user.role === 'DISPATCHER') && (
                   <>
-                    <div className="pt-4 pb-2">
-                      <p className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                        Tài nguyên
-                      </p>
-                    </div>
+                    {sectionHeader('Tài nguyên')}
 
                     {/* Vehicles */}
                     <Link to="/resources/vehicles" className={navLinkClass('/resources/vehicles')} onClick={onClose}>
@@ -149,11 +212,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                 {/* Admin Section */}
                 {user.role === 'ADMIN' && (
                   <>
-                    <div className="pt-4 pb-2">
-                      <p className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                        Quản trị
-                      </p>
-                    </div>
+                    {sectionHeader('Quản trị')}
 
                     {/* User Management */}
                     <Link to="/admin/users" className={navLinkClass('/admin/users')} onClick={onClose}>
@@ -166,7 +225,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                 )}
               </div>
             ) : (
-              <div className="space-y-1">
+              <div className="space-y-0.5">
                 <Link to="/login" className={navLinkClass('/login')} onClick={onClose}>
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
@@ -185,23 +244,50 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
 
           {/* Logout Button */}
           {user && (
-            <div className="p-4 border-t border-gray-200">
-              <Button
-                onClick={() => {
-                  logout();
-                  onClose();
-                }}
-                variant="danger"
-                className="w-full justify-center"
-              >
-                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                </svg>
-                Đăng xuất
-              </Button>
+            <div className="px-4 pb-2 pt-2">
+              <div className="border-t border-gray-200 pt-3">
+                <button
+                  onClick={() => {
+                    logout();
+                    onClose();
+                  }}
+                  className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  </svg>
+                  Đăng xuất
+                </button>
+              </div>
             </div>
           )}
+
+          {/* Version info */}
+          <div className="px-4 pb-3">
+            <p className="text-[10px] text-gray-400 text-center">v1.0</p>
+          </div>
         </div>
+
+        {/* Custom scrollbar styles */}
+        <style>{`
+          .sidebar-scroll::-webkit-scrollbar {
+            width: 4px;
+          }
+          .sidebar-scroll::-webkit-scrollbar-track {
+            background: transparent;
+          }
+          .sidebar-scroll::-webkit-scrollbar-thumb {
+            background-color: rgba(156, 163, 175, 0.4);
+            border-radius: 4px;
+          }
+          .sidebar-scroll::-webkit-scrollbar-thumb:hover {
+            background-color: rgba(156, 163, 175, 0.7);
+          }
+          .sidebar-scroll {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(156, 163, 175, 0.4) transparent;
+          }
+        `}</style>
       </aside>
     </>
   );

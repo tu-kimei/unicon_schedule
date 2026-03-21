@@ -68,6 +68,7 @@ export function LocalImageUpload({
         <label className="mb-1 block text-sm font-medium text-gray-700">
           {label}
           {required && <span className="text-red-500"> *</span>}
+          {required && <span className="text-red-500"> *</span>}
         </label>
       )}
 

@@ -11,8 +11,8 @@ interface Shipment {
     vehicle: { licensePlate: string };
     driver: { user: { fullName: string } };
   };
-  order: {
-    customer: { name: string };
+  customer: {
+    name: string;
   };
 }
 
@@ -38,7 +38,7 @@ export const ShipmentCard = ({ shipment, onClick, showActions }: ShipmentCardPro
             {shipment.shipmentNumber}
           </h3>
           <p className="text-sm text-gray-600">
-            Customer: {shipment.order.customer.name}
+            Customer: {shipment.customer.name}
           </p>
         </div>
         <StatusBadge status={shipment.currentStatus as any} />

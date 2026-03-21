@@ -26,10 +26,7 @@ export const DriverDetailsPage = () => {
 
   const handleDelete = async () => {
     if (!driver) return;
-
-    if (!confirm(`Bạn có chắc muốn xóa tài xế "${driver.fullName}"?`)) {
-      return;
-    }
+    if (!confirm(`Bạn có chắc muốn xóa tài xế "${driver.fullName}"?`)) return;
 
     try {
       await deleteDriver({ id: driver.id });
@@ -37,41 +34,6 @@ export const DriverDetailsPage = () => {
     } catch (err: any) {
       alert('Lỗi: ' + err.message);
     }
-  };
-
-  const getStatusVariant = (status: string) => {
-    switch (status) {
-      case 'ACTIVE': return 'success';
-      case 'INACTIVE': return 'default';
-      case 'SUSPENDED': return 'danger';
-      default: return 'default';
-    }
-  };
-
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'ACTIVE': return 'Hoạt động';
-      case 'INACTIVE': return 'Không hoạt động';
-      case 'SUSPENDED': return 'Tạm ngưng';
-      default: return status;
-    }
-  };
-
-  const formatDate = (date: string | Date) => {
-    return new Date(date).toLocaleDateString('vi-VN');
-  };
-
-  const isExpiringSoon = (date: string | Date) => {
-    const expiryDate = new Date(date);
-    const today = new Date();
-    const daysUntilExpiry = Math.ceil((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-    return daysUntilExpiry <= 30 && daysUntilExpiry >= 0;
-  };
-
-  const isExpired = (date: string | Date) => {
-    const expiryDate = new Date(date);
-    const today = new Date();
-    return expiryDate < today;
   };
 
   if (error) {
@@ -98,6 +60,10 @@ export const DriverDetailsPage = () => {
     );
   }
 
+  const expired = isExpired(driver.licenseExpiry);
+  const expiringSoon = isExpiringSoon(driver.licenseExpiry);
+  const daysUntil = getDaysUntilExpiry(driver.licenseExpiry);
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -109,8 +75,13 @@ export const DriverDetailsPage = () => {
                 ← Quay lại
               </Button>
               <div>
-                <h1 className="text-xl sm:text-2xl font-bold text-gray-900">{driver.fullName}</h1>
-                <p className="text-sm text-gray-600">{driver.phone}</p>
+                <div className="flex items-center gap-3">
+                  <h1 className="text-xl sm:text-2xl font-bold text-gray-900">{driver.fullName}</h1>
+                  <Tag variant={getStatusVariant(driver.status)}>
+                    {getStatusLabel(driver.status)}
+                  </Tag>
+                </div>
+                <p className="text-sm text-gray-500 mt-0.5">{driver.phone}</p>
               </div>
             </div>
 
@@ -126,82 +97,163 @@ export const DriverDetailsPage = () => {
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6">
-        {/* Driver Info */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <h2 className="text-lg font-semibold mb-4">Thông tin tài xế</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+        {/* License Alert Banner */}
+        {(expired || expiringSoon) && (
+          <div
+            className={`rounded-lg p-4 flex items-start gap-3 ${
+              expired
+                ? 'bg-red-50 border border-red-200'
+                : 'bg-yellow-50 border border-yellow-200'
+            }`}
+          >
+            <svg
+              className={`w-5 h-5 mt-0.5 flex-shrink-0 ${expired ? 'text-red-500' : 'text-yellow-500'}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"
+              />
+            </svg>
             <div>
-              <label className="text-sm text-gray-600">Họ và tên</label>
-              <p className="font-medium">{driver.fullName}</p>
+              <p className={`font-medium ${expired ? 'text-red-800' : 'text-yellow-800'}`}>
+                {expired
+                  ? `Bằng lái đã hết hạn ${Math.abs(daysUntil)} ngày`
+                  : `Bằng lái sắp hết hạn trong ${daysUntil} ngày`}
+              </p>
+              <p className={`text-sm mt-1 ${expired ? 'text-red-600' : 'text-yellow-600'}`}>
+                Ngày hết hạn: {formatDate(driver.licenseExpiry)}
+              </p>
             </div>
-            <div>
-              <label className="text-sm text-gray-600">Số điện thoại</label>
-              <p className="font-medium">{driver.phone}</p>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Personal Info */}
+          <div className="bg-white rounded-lg shadow">
+            <div className="px-6 py-4 border-b border-gray-100">
+              <h2 className="text-lg font-semibold text-gray-900">Thông tin cá nhân</h2>
             </div>
-            <div>
-              <label className="text-sm text-gray-600">Năm sinh</label>
-              <p className="font-medium">{driver.birthYear || '-'}</p>
+            <div className="p-6 space-y-4">
+              <InfoRow label="Họ và tên" value={driver.fullName} required />
+              <InfoRow label="Số điện thoại" value={driver.phone} required />
+              <InfoRow label="Năm sinh" value={driver.birthYear ? String(driver.birthYear) : null} />
+              <InfoRow label="Quê quán" value={driver.hometown} />
+              <InfoRow
+                label="Trạng thái"
+                required
+                value={
+                  <Tag variant={getStatusVariant(driver.status)}>
+                    {getStatusLabel(driver.status)}
+                  </Tag>
+                }
+              />
             </div>
-            <div>
-              <label className="text-sm text-gray-600">Quê quán</label>
-              <p className="font-medium">{driver.hometown || '-'}</p>
+          </div>
+
+          {/* License Info */}
+          <div className="bg-white rounded-lg shadow">
+            <div className="px-6 py-4 border-b border-gray-100">
+              <h2 className="text-lg font-semibold text-gray-900">Giấy phép lái xe</h2>
             </div>
-            <div>
-              <label className="text-sm text-gray-600">User ID</label>
-              <p className="font-medium text-xs text-gray-500">{driver.userId}</p>
-            </div>
-            <div>
-              <label className="text-sm text-gray-600">Trạng thái</label>
-              <div className="mt-1">
-                <Tag variant={getStatusVariant(driver.status)}>
-                  {getStatusLabel(driver.status)}
-                </Tag>
-              </div>
+            <div className="p-6 space-y-4">
+              <InfoRow
+                label="Ngày hết hạn"
+                required
+                value={
+                  <span
+                    className={`font-semibold ${
+                      expired ? 'text-red-600' : expiringSoon ? 'text-yellow-600' : 'text-gray-900'
+                    }`}
+                  >
+                    {formatDate(driver.licenseExpiry)}
+                    {expired && (
+                      <span className="ml-2 text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full">
+                        Hết hạn
+                      </span>
+                    )}
+                    {expiringSoon && !expired && (
+                      <span className="ml-2 text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full">
+                        Còn {daysUntil} ngày
+                      </span>
+                    )}
+                  </span>
+                }
+              />
+              <InfoRow label="User ID" value={<span className="text-xs font-mono text-gray-400">{driver.userId}</span>} />
+              <InfoRow
+                label="Ngày tạo"
+                value={formatDate(driver.createdAt)}
+              />
+              <InfoRow
+                label="Cập nhật"
+                value={formatDate(driver.updatedAt)}
+              />
             </div>
           </div>
         </div>
 
-        {/* License Expiry */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <h2 className="text-lg font-semibold mb-4">Giấy phép lái xe</h2>
-          <div className={`p-4 rounded-lg ${
-            isExpired(driver.licenseExpiry) ? 'bg-red-50 border border-red-200' :
-            isExpiringSoon(driver.licenseExpiry) ? 'bg-yellow-50 border border-yellow-200' :
-            'bg-gray-50'
-          }`}>
-            <label className="text-sm text-gray-600">Ngày hết hạn</label>
-            <p className={`font-medium text-lg ${
-              isExpired(driver.licenseExpiry) ? 'text-red-600' :
-              isExpiringSoon(driver.licenseExpiry) ? 'text-yellow-600' :
-              'text-gray-900'
-            }`}>
-              {formatDate(driver.licenseExpiry)}
-            </p>
-            {isExpired(driver.licenseExpiry) && (
-              <p className="text-xs text-red-600 mt-1 font-medium">⚠️ Đã hết hạn</p>
-            )}
-            {isExpiringSoon(driver.licenseExpiry) && !isExpired(driver.licenseExpiry) && (
-              <p className="text-xs text-yellow-600 mt-1 font-medium">⚠️ Sắp hết hạn (còn ≤ 30 ngày)</p>
-            )}
+        {/* Documents Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Citizen ID Images */}
+          <div className="bg-white rounded-lg shadow">
+            <div className="px-6 py-4 border-b border-gray-100">
+              <h2 className="text-lg font-semibold text-gray-900">
+                Hình CCCD <span className="text-red-500">*</span>
+              </h2>
+            </div>
+            <div className="p-6">
+              {driver.citizenIdImages && driver.citizenIdImages.length > 0 ? (
+                <ImageGallery images={driver.citizenIdImages} />
+              ) : (
+                <div className="text-center py-8 text-gray-400">
+                  <svg className="w-12 h-12 mx-auto mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <p className="text-sm">Chưa có hình CCCD</p>
+                  <button
+                    onClick={() => setIsEditMode(true)}
+                    className="text-sm text-blue-600 hover:underline mt-1"
+                  >
+                    Tải lên ngay
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* License Images */}
+          <div className="bg-white rounded-lg shadow">
+            <div className="px-6 py-4 border-b border-gray-100">
+              <h2 className="text-lg font-semibold text-gray-900">
+                Hình bằng lái <span className="text-red-500">*</span>
+              </h2>
+            </div>
+            <div className="p-6">
+              {driver.licenseImages && driver.licenseImages.length > 0 ? (
+                <ImageGallery images={driver.licenseImages} />
+              ) : (
+                <div className="text-center py-8 text-gray-400">
+                  <svg className="w-12 h-12 mx-auto mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <p className="text-sm">Chưa có hình bằng lái</p>
+                  <button
+                    onClick={() => setIsEditMode(true)}
+                    className="text-sm text-blue-600 hover:underline mt-1"
+                  >
+                    Tải lên ngay
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
-
-        {/* Citizen ID Images */}
-        {driver.citizenIdImages && driver.citizenIdImages.length > 0 && (
-          <div className="bg-white rounded-lg shadow p-6 mb-6">
-            <h2 className="text-lg font-semibold mb-4">Hình CCCD</h2>
-            <ImageGallery images={driver.citizenIdImages} />
-          </div>
-        )}
-
-        {/* License Images */}
-        {driver.licenseImages && driver.licenseImages.length > 0 && (
-          <div className="bg-white rounded-lg shadow p-6 mb-6">
-            <h2 className="text-lg font-semibold mb-4">Hình bằng lái</h2>
-            <ImageGallery images={driver.licenseImages} />
-          </div>
-        )}
       </div>
 
       {/* Edit Driver Modal */}
@@ -219,9 +271,10 @@ export const DriverDetailsPage = () => {
             birthYear: driver.birthYear,
             hometown: driver.hometown || '',
             licenseImages: driver.licenseImages,
-            licenseExpiry: typeof driver.licenseExpiry === 'string' 
-              ? driver.licenseExpiry.split('T')[0] 
-              : new Date(driver.licenseExpiry).toISOString().split('T')[0],
+            licenseExpiry:
+              typeof driver.licenseExpiry === 'string'
+                ? driver.licenseExpiry.split('T')[0]
+                : new Date(driver.licenseExpiry).toISOString().split('T')[0],
             status: driver.status,
           }}
         />
@@ -229,3 +282,74 @@ export const DriverDetailsPage = () => {
     </div>
   );
 };
+
+// ============================================================================
+// Helper Components & Functions
+// ============================================================================
+
+function InfoRow({
+  label,
+  value,
+  required,
+}: {
+  label: string;
+  value: React.ReactNode;
+  required?: boolean;
+}) {
+  return (
+    <div className="flex justify-between items-start gap-4">
+      <span className="text-sm text-gray-500 whitespace-nowrap">
+        {label}
+        {required && <span className="text-red-500 ml-0.5">*</span>}
+      </span>
+      <span className="text-sm font-medium text-gray-900 text-right">
+        {value || <span className="text-gray-300">-</span>}
+      </span>
+    </div>
+  );
+}
+
+function getStatusVariant(status: string) {
+  switch (status) {
+    case 'ACTIVE':
+      return 'success' as const;
+    case 'INACTIVE':
+      return 'default' as const;
+    case 'SUSPENDED':
+      return 'danger' as const;
+    default:
+      return 'default' as const;
+  }
+}
+
+function getStatusLabel(status: string) {
+  switch (status) {
+    case 'ACTIVE':
+      return 'Hoạt động';
+    case 'INACTIVE':
+      return 'Nghỉ';
+    case 'SUSPENDED':
+      return 'Tạm ngưng';
+    default:
+      return status;
+  }
+}
+
+function formatDate(date: string | Date) {
+  return new Date(date).toLocaleDateString('vi-VN');
+}
+
+function isExpired(date: string | Date) {
+  return new Date(date) < new Date();
+}
+
+function isExpiringSoon(date: string | Date) {
+  const days = getDaysUntilExpiry(date);
+  return days <= 30 && days >= 0;
+}
+
+function getDaysUntilExpiry(date: string | Date) {
+  const expiryDate = new Date(date);
+  const today = new Date();
+  return Math.ceil((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+}

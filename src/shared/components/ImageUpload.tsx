@@ -38,7 +38,10 @@ export function ImageUpload({
         formData.append("files", file);
       });
 
-      const response = await fetch("/api/upload", {
+      // Get API URL from environment or use relative path
+      const apiUrl = import.meta.env.REACT_APP_API_URL || '';
+      const uploadUrl = `${apiUrl}/api/upload`;
+      const response = await fetch(uploadUrl, {
         method: "POST",
         body: formData,
       });

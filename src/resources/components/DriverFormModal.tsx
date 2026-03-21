@@ -77,12 +77,15 @@ export const DriverFormModal = ({
       headers['Authorization'] = `Bearer ${sessionId}`;
     }
 
-    console.log('Uploading driver files to /api/upload...');
+    // Get API URL from environment or use relative path
+    const apiUrl = import.meta.env.REACT_APP_API_URL || '';
+    const uploadUrl = `${apiUrl}/api/upload`;
+    console.log('Uploading driver files to:', uploadUrl);
     console.log('Category: drivers, Type:', type);
     console.log('Files count:', files.length);
     console.log('Has session ID:', !!sessionId);
 
-    const response = await fetch('/api/upload', {
+    const response = await fetch(uploadUrl, {
       method: 'POST',
       body: formData,
       headers,

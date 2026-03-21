@@ -2,6 +2,21 @@
 
 ## Hệ thống quản lý vận chuyển và công nợ Unicon Schedule
 
+**Phiên bản:** 2.1  
+**Cập nhật:** 12/02/2026  
+**Trạng thái:** Updated theo PRD & Implementation Plan v1.1
+
+### 🔄 Thay đổi chính (v2.1)
+- ❌ **XÓA Order entity** - Không cần thiết theo PRD, đơn giản hóa workflow
+- ✅ **Shipment link trực tiếp Customer** - customerId thay vì orderId
+- ✅ Thêm **ShipmentDocument** entity - Quản lý tài liệu shipment (booking, bill of lading, customs)
+- ✅ Thêm **Charge** entity - Quản lý chi phí theo shipment
+- ✅ Thêm **Invoice** entity - Quản lý hóa đơn và billing
+- ✅ Cập nhật quan hệ: Invoice ↔ Debt, Charge ↔ Invoice, Shipment ↔ Documents
+- ✅ Workflow đơn giản: Customer → Shipment (direct, không qua Order)
+- ✅ Thêm các enum mới: DocumentType, ChargeType, InvoiceStatus
+- ❌ Xóa OrderStatus enum
+
 ### Sơ đồ ERD
 
 ```mermaid
@@ -11,24 +26,36 @@ erDiagram
     User ||--o{ ShipmentStatusEvent : "creates"
     User ||--o{ POD : "uploads"
     User ||--o{ Debt : "creates"
+    User ||--o{ ShipmentDocument : "uploads"
+    User ||--o{ ShipmentDocument : "verifies"
+    User ||--o{ Charge : "creates"
+    User ||--o{ Invoice : "creates"
     User }o--o| Customer : "belongs to"
     
     Customer ||--o{ User : "has users"
-    Customer ||--o{ Order : "places"
+    Customer ||--o{ Shipment : "creates"
     Customer ||--o{ Debt : "has"
-    
-    Order ||--o{ Shipment : "contains"
+    Customer ||--o{ Invoice : "receives"
     
     Shipment ||--o{ ShipmentStop : "has"
     Shipment ||--o| Dispatch : "assigned to"
     Shipment ||--o{ ShipmentStatusEvent : "tracks"
     Shipment ||--o{ POD : "has proof"
+    Shipment ||--o{ ShipmentDocument : "has documents"
+    Shipment ||--o{ Charge : "has charges"
+    Shipment ||--o{ Invoice : "generates"
     
     ShipmentStop ||--o{ POD : "has proof at"
     
     Vehicle ||--o{ Dispatch : "used in"
     
     Driver ||--o{ Dispatch : "drives"
+    
+    Charge ||--o| InvoiceItem : "becomes"
+    
+    Invoice ||--o{ InvoiceItem : "contains"
+    
+    Invoice ||--o{ Debt : "creates"
     
     User {
         string id PK "[✓] Mã định danh duy nhất"
@@ -62,23 +89,9 @@ erDiagram
         datetime updatedAt "[✓] Thời gian cập nhật - tự động"
     }
     
-    Order {
-        string id PK "[✓] Mã định danh duy nhất"
-        string customerId FK "[✓] Tham chiếu đến khách hàng"
-        string orderNumber UK "[✓] Mã đơn hàng duy nhất"
-        string description "[○] Mô tả đơn hàng"
-        decimal totalWeight "[○] Tổng trọng lượng (kg)"
-        decimal totalVolume "[○] Tổng thể tích (m3)"
-        string specialInstructions "[○] Hướng dẫn đặc biệt"
-        OrderStatus status "[✓] Trạng thái đơn hàng - mặc định DRAFT"
-        datetime createdAt "[✓] Thời gian tạo - tự động"
-        datetime updatedAt "[✓] Thời gian cập nhật - tự động"
-        datetime deletedAt "[○] Thời gian xóa mềm"
-    }
-    
     Shipment {
         string id PK "[✓] Mã định danh duy nhất"
-        string orderId FK "[✓] Tham chiếu đến đơn hàng"
+        string customerId FK "[✓] Tham chiếu trực tiếp đến khách hàng"
         string shipmentNumber UK "[✓] Mã lô hàng duy nhất"
         ShipmentStatus currentStatus "[✓] Trạng thái hiện tại - mặc định DRAFT"
         Priority priority "[✓] Độ ưu tiên - mặc định NORMAL"
@@ -86,6 +99,11 @@ erDiagram
         datetime plannedEndDate "[✓] Ngày kết thúc dự kiến"
         datetime actualStartDate "[○] Ngày bắt đầu thực tế"
         datetime actualEndDate "[○] Ngày kết thúc thực tế"
+        string createdById FK "[○] Người tạo shipment"
+        UserType createdByType "[○] INTERNAL hoặc CUSTOMER"
+        string specialInstructions "[○] Yêu cầu đặc biệt từ customer"
+        string containerNumber "[○] Số container"
+        string containerType "[○] Loại container - 20ft, 40ft, 40HC"
         datetime createdAt "[✓] Thời gian tạo - tự động"
         datetime updatedAt "[✓] Thời gian cập nhật - tự động"
         datetime deletedAt "[○] Thời gian xóa mềm"
@@ -179,6 +197,7 @@ erDiagram
     Debt {
         string id PK "[✓] Mã định danh duy nhất"
         string customerId FK "[✓] Tham chiếu đến khách hàng"
+        string invoiceId FK "[○] Tham chiếu đến Invoice (nếu có)"
         DebtType debtType "[✓] Loại công nợ"
         string debtMonth "[✓] Tháng công nợ - định dạng YYYY-MM"
         decimal amount "[✓] Số tiền công nợ"
@@ -196,6 +215,114 @@ erDiagram
         datetime createdAt "[✓] Thời gian tạo - tự động"
         datetime updatedAt "[✓] Thời gian cập nhật - tự động"
         datetime deletedAt "[○] Thời gian xóa mềm"
+    }
+    
+    ShipmentDocument {
+        string id PK "[✓] Mã định danh duy nhất"
+        string shipmentId FK "[✓] Tham chiếu đến shipment"
+        DocumentType documentType "[✓] Loại tài liệu"
+        string fileName "[✓] Tên file"
+        string filePath "[✓] URL cloud storage"
+        int fileSize "[✓] Kích thước file bytes"
+        string mimeType "[○] MIME type - image/jpeg, application/pdf"
+        boolean isVerified "[✓] Đã xác minh - mặc định false"
+        string verifiedById FK "[○] Người xác minh"
+        datetime verifiedAt "[○] Thời gian xác minh"
+        string uploadedById FK "[✓] Người tải lên"
+        datetime uploadedAt "[✓] Thời gian tải lên - tự động"
+        string notes "[○] Ghi chú"
+    }
+    
+    Charge {
+        string id PK "[✓] Mã định danh duy nhất"
+        string shipmentId FK "[✓] Tham chiếu đến shipment"
+        ChargeType chargeType "[✓] Loại chi phí"
+        string description "[○] Mô tả chi phí"
+        int quantity "[✓] Số lượng - mặc định 1"
+        decimal unitPrice "[✓] Đơn giá"
+        decimal amount "[✓] Thành tiền - quantity x unitPrice"
+        string currency "[✓] Đơn vị tiền tệ - mặc định VND"
+        string createdById FK "[✓] Người tạo"
+        datetime createdAt "[✓] Thời gian tạo - tự động"
+        datetime updatedAt "[✓] Thời gian cập nhật - tự động"
+    }
+    
+    Invoice {
+        string id PK "[✓] Mã định danh duy nhất"
+        string invoiceNumber UK "[✓] Số hóa đơn duy nhất"
+        string customerId FK "[✓] Tham chiếu đến khách hàng"
+        string shipmentId FK "[○] Tham chiếu đến shipment"
+        decimal subtotal "[✓] Tổng tiền trước thuế"
+        decimal vatRate "[✓] Tỷ lệ VAT - mặc định 10.00"
+        decimal vatAmount "[✓] Tiền thuế VAT"
+        decimal discount "[✓] Giảm giá - mặc định 0"
+        decimal grandTotal "[✓] Tổng tiền sau thuế"
+        datetime invoiceDate "[✓] Ngày lập hóa đơn - mặc định now"
+        datetime dueDate "[✓] Ngày đến hạn thanh toán"
+        datetime sentAt "[○] Ngày gửi cho customer"
+        datetime paidAt "[○] Ngày thanh toán"
+        InvoiceStatus status "[✓] Trạng thái - mặc định DRAFT"
+        string pdfPath "[○] URL file PDF"
+        string paymentMethod "[○] Phương thức thanh toán"
+        string paymentRef "[○] Mã tham chiếu thanh toán"
+        string notes "[○] Ghi chú"
+        string paymentTerms "[○] Điều khoản thanh toán"
+        string createdById FK "[✓] Người tạo"
+        datetime createdAt "[✓] Thời gian tạo - tự động"
+        datetime updatedAt "[✓] Thời gian cập nhật - tự động"
+    }
+    
+    InvoiceItem {
+        string id PK "[✓] Mã định danh duy nhất"
+        string invoiceId FK "[✓] Tham chiếu đến invoice"
+        string chargeId FK "[○] Tham chiếu đến charge"
+        string description "[✓] Mô tả item"
+        int quantity "[✓] Số lượng - mặc định 1"
+        decimal unitPrice "[✓] Đơn giá"
+        decimal amount "[✓] Thành tiền"
+    }
+    
+    ShipmentDocument {
+        string id PK "[✓] Mã định danh duy nhất"
+        string shipmentId FK "[✓] Tham chiếu đến shipment"
+        DocumentType documentType "[✓] Loại tài liệu"
+        string fileName "[✓] Tên file"
+        string filePath "[✓] Đường dẫn lưu trữ URL"
+        int fileSize "[✓] Kích thước file (bytes)"
+        string uploadedById FK "[✓] Người tải lên"
+        datetime uploadedAt "[✓] Thời gian tải lên - tự động"
+        boolean isVerified "[✓] Đã xác minh - mặc định false"
+        string verifiedById FK "[○] Người xác minh"
+        datetime verifiedAt "[○] Thời gian xác minh"
+    }
+    
+    Charge {
+        string id PK "[✓] Mã định danh duy nhất"
+        string shipmentId FK "[✓] Tham chiếu đến shipment"
+        ChargeType chargeType "[✓] Loại chi phí"
+        string description "[○] Mô tả chi phí"
+        decimal amount "[✓] Số tiền"
+        string currency "[✓] Đơn vị tiền tệ - mặc định VND"
+        string createdById FK "[✓] Người tạo"
+        datetime createdAt "[✓] Thời gian tạo - tự động"
+    }
+    
+    Invoice {
+        string id PK "[✓] Mã định danh duy nhất"
+        string invoiceNumber UK "[✓] Số hóa đơn duy nhất"
+        string customerId FK "[✓] Tham chiếu đến khách hàng"
+        string shipmentId FK "[○] Tham chiếu đến shipment"
+        string chargeId FK "[○] Tham chiếu đến charge"
+        decimal totalAmount "[✓] Tổng tiền trước thuế"
+        decimal vatAmount "[○] Tiền thuế VAT"
+        decimal grandTotal "[✓] Tổng tiền sau thuế"
+        datetime invoiceDate "[✓] Ngày lập hóa đơn - mặc định now"
+        datetime dueDate "[✓] Ngày đến hạn thanh toán"
+        InvoiceStatus status "[✓] Trạng thái hóa đơn - mặc định DRAFT"
+        string pdfPath "[○] Đường dẫn file PDF"
+        string createdById FK "[✓] Người tạo"
+        datetime createdAt "[✓] Thời gian tạo - tự động"
+        datetime updatedAt "[✓] Thời gian cập nhật - tự động"
     }
 ```
 
@@ -222,23 +349,28 @@ erDiagram
 - Có nhiều user (chủ hàng, vận hành)
 - Có nhiều đơn hàng và công nợ
 
-### 3. **Order** (Đơn hàng)
-- Đơn hàng từ khách hàng
-- Trạng thái: DRAFT, CONFIRMED, CANCELLED
-- Chứa nhiều shipment
-
-### 4. **Shipment** (Lô hàng)
-- Lô hàng cần vận chuyển
+### 3. **Shipment** (Lô hàng)
+- Lô hàng cần vận chuyển - **Link trực tiếp đến Customer**
+- **Workflow tạo:**
+  - **Option 1:** Customer (CUSTOMER_OPS/CUSTOMER_OWNER) tự tạo shipment request
+  - **Option 2:** Internal users (OPS/DISPATCHER) tạo shipment cho customer
+- **Thông tin mới:**
+  - `createdById`: Người tạo shipment (customer user hoặc internal user)
+  - `createdByType`: INTERNAL hoặc CUSTOMER - để phân biệt nguồn tạo
+  - `specialInstructions`: Yêu cầu đặc biệt từ customer
+  - `containerNumber`: Số container (nếu có)
+  - `containerType`: Loại container (20ft, 40ft, 40HC, etc.)
 - Trạng thái: DRAFT, READY, ASSIGNED, IN_TRANSIT, COMPLETED, CANCELLED
-- Có nhiều điểm dừng (stops)
+- Có nhiều điểm dừng (stops), tài liệu (documents), chi phí (charges)
 - Được gán cho 1 dispatch
+- **Lưu ý:** Không cần qua Order - tạo Shipment trực tiếp cho Customer
 
-### 5. **ShipmentStop** (Điểm dừng)
+### 4. **ShipmentStop** (Điểm dừng)
 - Các điểm trong hành trình vận chuyển
 - Loại: PICKUP, DROPOFF, DEPOT, PORT
 - Có thời gian kế hoạch và thực tế
 
-### 6. **Vehicle** (Phương tiện)
+### 5. **Vehicle** (Phương tiện)
 - **Loại xe**: Đầu kéo (TRACTOR) hoặc Mooc (TRAILER)
 - **Thông tin cơ bản**: Biển số xe, năm sản xuất
 - **Giấy tờ xe**: Hình đăng ký, đăng kiểm, bảo hiểm (multi images)
@@ -247,7 +379,7 @@ erDiagram
 - **Trạng thái**: AVAILABLE, IN_USE, MAINTENANCE, OUT_OF_SERVICE
 - Được sử dụng trong nhiều dispatch
 
-### 7. **Driver** (Tài xế)
+### 6. **Driver** (Tài xế)
 - **Thông tin cá nhân**: Họ tên, số điện thoại, năm sinh, quê quán
 - **Giấy tờ**: CCCD (multi images), Bằng lái (multi images)
 - **Ngày hết hạn**: Giấy phép lái xe
@@ -255,35 +387,103 @@ erDiagram
 - Liên kết với User (quan hệ 1-1)
 - Thực hiện nhiều dispatch
 
-### 8. **Dispatch** (Điều phối)
+### 7. **Dispatch** (Điều phối)
 - Gán shipment cho xe và tài xế
 - Quan hệ 1-1 với Shipment
 - Được tạo bởi User (dispatcher)
 
-### 9. **ShipmentStatusEvent** (Sự kiện trạng thái)
+### 8. **ShipmentStatusEvent** (Sự kiện trạng thái)
 - Theo dõi lịch sử thay đổi trạng thái
 - Loại: STATUS_CHANGE, EXCEPTION, NOTE
 - Ghi nhận vị trí và mô tả
 
-### 10. **POD** (Proof of Delivery)
+### 9. **POD** (Proof of Delivery)
 - Chứng từ giao hàng
 - Hình ảnh hoặc PDF
 - Liên kết với shipment và stop
 - Không thể sửa sau khi submit
 
-### 11. **Debt** (Công nợ)
+### 10. **Debt** (Công nợ)
 - Quản lý công nợ khách hàng
 - Loại: FREIGHT (cước vận chuyển), ADVANCE (chi hộ), OTHER
 - Trạng thái: UNPAID, PAID, OVERDUE, CANCELLED
 - Theo dõi theo tháng (debtMonth)
 - Có hóa đơn và chứng từ thanh toán
+- Có thể được tạo từ Invoice (invoiceId)
+
+### 11. **ShipmentDocument** (Tài liệu Shipment) - NEW ✨
+- Quản lý tài liệu liên quan đến shipment
+- **Loại tài liệu (DocumentType)**:
+  - BOOKING: Booking confirmation
+  - BILL_OF_LADING: Vận đơn
+  - CUSTOMS: Giấy tờ hải quan
+  - DELIVERY_ORDER: Lệnh giao hàng
+  - PACKING_LIST: Packing list
+  - COMMERCIAL_INVOICE: Commercial invoice
+  - OTHER: Tài liệu khác
+- **Workflow xác minh**:
+  - Upload bởi OPS/DISPATCHER/DRIVER
+  - Verify bởi OPS/ADMIN (isVerified: true)
+  - Customer có thể xác nhận đủ chứng từ
+- Lưu trữ trên cloud (S3/Cloudinary)
+- Liên kết với Shipment và User
+
+### 12. **Charge** (Chi phí) - NEW ✨
+- Quản lý các khoản chi phí theo shipment
+- **Loại chi phí (ChargeType)**:
+  - FREIGHT: Cước vận chuyển
+  - FUEL_SURCHARGE: Phụ phí nhiên liệu
+  - DETENTION: Phí lưu container
+  - DEMURRAGE: Phí lưu bãi
+  - LOADING: Phí bốc xếp
+  - UNLOADING: Phí dỡ hàng
+  - CUSTOMS: Phí hải quan
+  - TOLL_FEE: Phí cầu đường
+  - PARKING: Phí đỗ xe
+  - INSURANCE: Phí bảo hiểm
+  - OTHER: Chi phí khác
+- **Tính toán**: amount = quantity × unitPrice
+- Một shipment có thể có nhiều charges
+- Được chuyển thành InvoiceItem khi tạo invoice
+- Tạo bởi ACCOUNTING/OPS/ADMIN
+
+### 13. **Invoice** (Hóa đơn) - NEW ✨
+- Quản lý hóa đơn cho khách hàng
+- **Trạng thái (InvoiceStatus)**:
+  - DRAFT: Nháp
+  - SENT: Đã gửi cho khách hàng
+  - PAID: Đã thanh toán đủ
+  - PARTIAL: Thanh toán một phần
+  - OVERDUE: Quá hạn
+  - CANCELLED: Đã hủy
+- **Thông tin tính toán**:
+  - subtotal: Tổng tiền trước thuế
+  - vatAmount: Tiền thuế VAT (vatRate × subtotal)
+  - discount: Giảm giá (nếu có)
+  - grandTotal: subtotal + vatAmount - discount
+- **Workflow**:
+  1. Tạo charges cho shipment
+  2. Generate invoice từ charges → InvoiceItems
+  3. Tính toán subtotal, VAT, grandTotal
+  4. Gửi invoice cho customer (status: SENT)
+  5. Customer thanh toán → PAID
+  6. Nếu quá hạn → OVERDUE → Auto-create Debt
+- Có thể tạo file PDF (pdfPath)
+- Link với Customer, Shipment, InvoiceItems, Debt
+
+### 14. **InvoiceItem** (Chi tiết hóa đơn) - NEW ✨
+- Line items trong invoice
+- Mỗi item có: description, quantity, unitPrice, amount
+- Có thể link với Charge (chargeId) - tự động tạo từ charge
+- Hoặc tạo manual (không link charge)
+- **Example**:
+  - Item 1: Cước vận chuyển HCM-HN (1 × 5,000,000 = 5,000,000 VND)
+  - Item 2: Phụ phí nhiên liệu (1 × 500,000 = 500,000 VND)
+  - Item 3: Phí lưu container 2 ngày (2 × 100,000 = 200,000 VND)
 
 ---
 
 ## Các Enum quan trọng
-
-### OrderStatus
-- DRAFT, CONFIRMED, CANCELLED
 
 ### ShipmentStatus
 - DRAFT, READY, ASSIGNED, IN_TRANSIT, COMPLETED, CANCELLED
@@ -352,17 +552,129 @@ erDiagram
 - ACTIVE (Đang hợp tác)
 - INACTIVE (Ngưng hợp tác)
 
+### DocumentType - NEW ✨
+- BOOKING (Booking confirmation)
+- BILL_OF_LADING (Vận đơn)
+- CUSTOMS (Giấy tờ hải quan)
+- DELIVERY_ORDER (Lệnh giao hàng)
+- OTHER (Tài liệu khác)
+
+### ChargeType - NEW ✨
+- FREIGHT (Cước vận chuyển)
+- FUEL_SURCHARGE (Phụ phí nhiên liệu)
+- DETENTION (Phí lưu container)
+- LOADING (Phí bốc xếp)
+- CUSTOMS (Phí hải quan)
+- OTHER (Chi phí khác)
+
+### InvoiceStatus - NEW ✨
+- DRAFT (Nháp)
+- SENT (Đã gửi cho khách hàng)
+- PAID (Đã thanh toán)
+- OVERDUE (Quá hạn)
+- CANCELLED (Đã hủy)
+
 ---
 
 ## Quan hệ chính
 
+### Core Relationships
 1. **Customer → User**: Khách hàng có nhiều user (chủ hàng, vận hành)
-2. **Customer → Order → Shipment**: Luồng đơn hàng từ khách hàng
+2. **Customer → Shipment**: Customer tạo Shipment trực tiếp (PRD Flow #1 & #2)
 3. **Shipment → Dispatch → (Vehicle + Driver)**: Điều phối vận chuyển
 4. **Shipment → ShipmentStop → POD**: Theo dõi hành trình và chứng từ
 5. **Shipment → ShipmentStatusEvent**: Lịch sử trạng thái
-6. **Customer → Debt**: Quản lý công nợ khách hàng
-7. **User → Driver**: Tài xế là một loại người dùng đặc biệt (nội bộ)
+6. **User → Driver**: Tài xế là một loại người dùng đặc biệt (nội bộ)
+
+### Document & File Relationships - NEW ✨
+8. **Shipment → ShipmentDocument**: Một shipment có nhiều tài liệu (booking, bill of lading, customs)
+9. **User → ShipmentDocument**: User upload và verify documents
+10. **Shipment → POD**: Proof of Delivery (đã có từ trước)
+
+### Financial Relationships - NEW ✨
+11. **Shipment → Charge**: Một shipment có nhiều charges (freight, fuel, detention, etc.)
+12. **Charge → Invoice**: Nhiều charges được tổng hợp vào một invoice
+13. **Invoice → Debt**: Invoice tạo ra Debt (nếu chưa thanh toán)
+14. **Customer → Invoice**: Khách hàng nhận invoice
+15. **Customer → Debt**: Quản lý công nợ khách hàng
+
+### Workflow Relationships
+16. **Customer (CUSTOMER_OPS/CUSTOMER_OWNER) → Shipment (DRAFT)**: Customer tạo shipment request trực tiếp
+17. **OPS/DISPATCHER → Shipment (DRAFT/READY)**: Internal users tạo shipment cho customer
+18. **OPS/DISPATCHER → Shipment (READY)**: Xác nhận shipment request từ customer
+19. **DISPATCHER → Dispatch**: Gán xe/tài xế cho shipment
+20. **ACCOUNTING → Charge**: Tạo charges cho shipment
+21. **ACCOUNTING → Invoice**: Generate invoice từ charges
+22. **Invoice → Debt**: Tự động tạo debt nếu invoice chưa thanh toán
+
+## 🔄 Core Workflows (theo PRD)
+
+### Workflow 1: Customer tạo Shipment Request (PRD Flow #1)
+```
+Customer (CUSTOMER_OPS/CUSTOMER_OWNER)
+  ↓ createShipmentRequest (customerId)
+Shipment (status: DRAFT, customerId: xxx)
+  ↓ OPS/DISPATCHER xác nhận
+Shipment (status: READY)
+  ↓ DISPATCHER dispatch
+Dispatch + Shipment (status: ASSIGNED)
+  ↓ DRIVER cập nhật
+Shipment (status: IN_TRANSIT)
+  ↓ DRIVER upload POD
+Shipment (status: COMPLETED)
+```
+
+### Workflow 2: Internal tạo Shipment + Dispatch (PRD Flow #2)
+```
+Khách hàng gửi thông tin (Zalo/Email/Phone)
+  ↓ DISPATCHER/OPS chọn Customer
+createAndDispatchShipment (customerId, vehicleId, driverId)
+  ↓ Tạo Shipment + Dispatch cùng lúc
+Shipment (status: ASSIGNED, customerId: xxx) + Dispatch
+  ↓ DRIVER cập nhật
+Shipment (status: IN_TRANSIT → COMPLETED)
+```
+
+### Workflow 3: Document Management (PRD Flow #4)
+```
+DISPATCHER dispatch shipment
+  ↓ uploadShipmentDocument
+ShipmentDocument (BOOKING, BILL_OF_LADING, CUSTOMS)
+  ↓ OPS/ADMIN verify
+ShipmentDocument (isVerified: true)
+  ↓ CUSTOMER xác nhận
+confirmDocuments (Customer confirms all docs received)
+```
+
+### Workflow 4: Charge & Invoice (PRD Flow #7)
+```
+Shipment (status: COMPLETED)
+  ↓ ACCOUNTING tạo charges
+Charge (FREIGHT, FUEL_SURCHARGE, DETENTION, etc.)
+  ↓ ACCOUNTING generate invoice
+Invoice (totalAmount, vatAmount, grandTotal)
+  ↓ Send to Customer
+Invoice (status: SENT)
+  ↓ Customer thanh toán / Quá hạn
+Invoice (status: PAID / OVERDUE)
+  ↓ Nếu chưa thanh toán
+Debt (auto-created from Invoice)
+```
+
+### Workflow 5: Debt Management (PRD Flow #8)
+```
+Invoice (status: OVERDUE)
+  ↓ Auto-create Debt
+Debt (status: UNPAID, dueDate calculated)
+  ↓ ACCOUNTING theo dõi
+Debt reminder notifications
+  ↓ Customer thanh toán
+markDebtAsPaid (upload payment proof)
+  ↓
+Debt (status: PAID, paidDate, paymentProofImages)
+```
+
+---
 
 ## Phân quyền User
 
@@ -398,5 +710,65 @@ Các entity sau hỗ trợ soft delete (deletedAt):
 
 ---
 
+## 📝 Version History
+
+### Version 2.2 (2026-02-12) - CURRENT
+- ✅ **Implemented all PHASE 1 entities** - ShipmentDocument, Charge, Invoice, InvoiceItem
+- ✅ **Updated Shipment** - Thêm createdById, containerNumber, specialInstructions, containerType
+- ✅ **Updated User** - Thêm 5 relations mới
+- ✅ **Updated Customer** - Thêm invoices relation
+- ✅ **Updated Debt** - Thêm invoiceId relation
+- ✅ **Added 3 enums** - DocumentType (7 values), ChargeType (11 values), InvoiceStatus (6 values)
+- ✅ **Database migrations applied** - 4 tables created, 6 columns added
+- ✅ **Total entities: 14** (tăng từ 10)
+
+### Version 2.1 (2026-02-12)
+- ❌ **REMOVED Order entity** - Không cần thiết theo PRD
+- ✅ **Updated Shipment** - Link trực tiếp đến Customer (customerId thay vì orderId)
+- ✅ Simplified workflow: Customer → Shipment (direct)
+- ✅ Updated all relationships to remove Order dependencies
+- ✅ Removed OrderStatus enum
+
+### Version 2.0 (2026-02-12)
+- ✅ Planning: Thêm ShipmentDocument, Charge, Invoice entities vào plan
+- ✅ Thêm Core Workflows theo PRD
+- ✅ Thêm enums: DocumentType, ChargeType, InvoiceStatus
+
+### Version 1.0 (2026-02-05)
+- Initial ERD với core entities
+- User, Customer, Order, Shipment, Vehicle, Driver, Dispatch
+- POD, Debt, ShipmentStatusEvent, ShipmentStop
+
+---
+
 **Ngày tạo**: 2026-02-05  
+**Cập nhật**: 2026-02-12  
+**Phiên bản**: 2.2  
 **Hệ thống**: Unicon Schedule - Quản lý vận chuyển và công nợ
+
+---
+
+## 🎯 Key Changes in v2.2
+
+### ✅ Added PHASE 1 Entities
+- ✨ **ShipmentDocument** - Document management
+- ✨ **Charge** - Charge management
+- ✨ **Invoice** - Invoice management
+- ✨ **InvoiceItem** - Invoice line items
+
+### ✅ Updated Existing Entities
+- **Shipment**: +5 fields (createdById, createdByType, specialInstructions, containerNumber, containerType)
+- **User**: +5 relations
+- **Customer**: +1 relation (invoices)
+- **Debt**: +1 field (invoiceId)
+
+### ✅ Complete Financial Flow
+```
+Shipment → Charge[] → InvoiceItem[] → Invoice → Debt
+```
+
+### 📊 Entity Count
+- **Total entities:** 14 (tăng từ 10)
+- **Total enums:** 14 (tăng từ 11)
+- **New:** ShipmentDocument, Charge, Invoice, InvoiceItem
+- **Active:** User, Customer, Shipment, ShipmentStop, Vehicle, Driver, Dispatch, ShipmentStatusEvent, POD, Debt, ShipmentDocument, Charge, Invoice, InvoiceItem

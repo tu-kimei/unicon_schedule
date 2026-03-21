@@ -11,12 +11,6 @@ generator client {
 // ENUMS
 // ============================================================================
 
-enum OrderStatus {
-  DRAFT
-  CONFIRMED
-  CANCELLED
-}
-
 enum ShipmentStatus {
   DRAFT
   READY
@@ -54,6 +48,7 @@ enum VehicleStatus {
 enum VehicleCompany {
   KHANH_HUY     // Khánh Huy
   UNICON        // Unicon
+  RENTAL        // Xe thuê ngoài
 }
 
 enum DriverStatus {
@@ -122,6 +117,50 @@ enum CustomerStatus {
   INACTIVE      // Ngưng hợp tác
 }
 
+enum ContainerType {
+  CONTAINER_20FT    // Container 20 feet
+  CONTAINER_40FT    // Container 40 feet
+  CONTAINER_40HC    // Container 40 feet High Cube
+  CONTAINER_45FT    // Container 45 feet
+  FLATBED           // Flatbed
+  TANK              // Tank container
+  REFRIGERATED      // Container lạnh
+  OPEN_TOP          // Open top container
+}
+
+enum DocumentType {
+  BOOKING              // Booking confirmation
+  BILL_OF_LADING       // Vận đơn
+  CUSTOMS              // Giấy tờ hải quan
+  DELIVERY_ORDER       // Lệnh giao hàng
+  PACKING_LIST         // Packing list
+  COMMERCIAL_INVOICE   // Commercial invoice
+  OTHER                // Tài liệu khác
+}
+
+enum ChargeType {
+  FREIGHT          // Cước vận chuyển
+  FUEL_SURCHARGE   // Phụ phí nhiên liệu
+  DETENTION        // Phí lưu container
+  DEMURRAGE        // Phí lưu bãi
+  LOADING          // Phí bốc xếp
+  UNLOADING        // Phí dỡ hàng
+  CUSTOMS          // Phí hải quan
+  TOLL_FEE         // Phí cầu đường
+  PARKING          // Phí đỗ xe
+  INSURANCE        // Phí bảo hiểm
+  OTHER            // Chi phí khác
+}
+
+enum InvoiceStatus {
+  DRAFT      // Nháp
+  SENT       // Đã gửi cho khách hàng
+  PAID       // Đã thanh toán đủ
+  PARTIAL    // Thanh toán một phần
+  OVERDUE    // Quá hạn
+  CANCELLED  // Đã hủy
+}
+
 // ============================================================================
 // MODELS
 // ============================================================================
@@ -140,12 +179,18 @@ model User {
   updatedAt   DateTime @updatedAt
 
   // Relations
-  customer              Customer?      @relation("CustomerUsers", fields: [customerId], references: [id])
+  customer              Customer?            @relation("CustomerUsers", fields: [customerId], references: [id])
   driver                Driver?
-  createdDispatches     Dispatch[]     @relation("AssignedBy")
+  createdDispatches     Dispatch[]           @relation("AssignedBy")
   createdStatusEvents   ShipmentStatusEvent[]
   uploadedPODs          POD[]
-  createdDebts          Debt[]         @relation("DebtCreatedBy")
+  createdDebts          Debt[]               @relation("DebtCreatedBy")
+  createdShipments      Shipment[]           @relation("ShipmentCreatedBy")
+  uploadedDocuments     ShipmentDocument[]   @relation("DocumentUploadedBy")
+  verifiedDocuments     ShipmentDocument[]   @relation("DocumentVerifiedBy")
+  createdCharges        Charge[]             @relation("ChargeCreatedBy")
+  createdInvoices       Invoice[]            @relation("InvoiceCreatedBy")
+  createdPayments       DebtPayment[]        @relation("PaymentCreatedBy")
 
   @@map("users")
 }
@@ -177,36 +222,17 @@ model Customer {
   updatedAt       DateTime        @updatedAt
 
   // Relations
-  users  User[]  @relation("CustomerUsers") // Các user thuộc khách hàng này
-  orders Order[]
-  debts  Debt[]
+  users     User[]     @relation("CustomerUsers") // Các user thuộc khách hàng này
+  shipments Shipment[] // Shipments của khách hàng
+  debts     Debt[]
+  invoices  Invoice[]
 
   @@map("customers")
 }
 
-model Order {
-  id                 String       @id @default(uuid())
-  customerId         String
-  orderNumber        String       @unique
-  description        String?
-  totalWeight        Decimal?     @db.Decimal(10, 2)
-  totalVolume        Decimal?     @db.Decimal(10, 2)
-  specialInstructions String?     @db.Text
-  status             OrderStatus  @default(DRAFT)
-  createdAt          DateTime     @default(now())
-  updatedAt          DateTime     @updatedAt
-  deletedAt          DateTime? // Soft delete
-
-  // Relations
-  customer  Customer   @relation(fields: [customerId], references: [id])
-  shipments Shipment[]
-
-  @@map("orders")
-}
-
 model Shipment {
   id                String         @id @default(uuid())
-  orderId           String
+  customerId        String         // Link trực tiếp đến Customer
   shipmentNumber    String         @unique
   currentStatus     ShipmentStatus @default(DRAFT)
   priority          Priority       @default(NORMAL)
@@ -214,19 +240,33 @@ model Shipment {
   plannedEndDate    DateTime
   actualStartDate   DateTime?
   actualEndDate     DateTime?
+  
+  // Additional info for Customer Portal
+  createdById         String?        // Người tạo shipment (customer user hoặc internal user)
+  createdByType       UserType?      // INTERNAL hoặc CUSTOMER - để biết ai tạo
+  specialInstructions String?        @db.Text // Yêu cầu đặc biệt từ customer
+  containerNumber     String?        // Số container (nếu có)
+  containerType       ContainerType? // Loại container
+  
   createdAt         DateTime       @default(now())
   updatedAt         DateTime       @updatedAt
   deletedAt         DateTime? // Soft delete
 
   // Relations
-  order             Order                @relation(fields: [orderId], references: [id])
+  customer          Customer             @relation(fields: [customerId], references: [id])
+  createdBy         User?                @relation("ShipmentCreatedBy", fields: [createdById], references: [id])
   stops             ShipmentStop[]
   dispatch          Dispatch?
   statusEvents      ShipmentStatusEvent[]
   pods              POD[]
+  documents         ShipmentDocument[]
+  charges           Charge[]
+  invoices          Invoice[]
 
   @@map("shipments")
+  @@index([customerId, currentStatus])
   @@index([currentStatus, plannedStartDate])
+  @@index([createdById])
 }
 
 model ShipmentStop {
@@ -251,6 +291,35 @@ model ShipmentStop {
 
   @@map("shipment_stops")
   @@index([shipmentId, sequence])
+}
+
+model ShipmentDocument {
+  id           String       @id @default(uuid())
+  shipmentId   String
+  documentType DocumentType
+  fileName     String
+  filePath     String       // URL to cloud storage
+  fileSize     Int          // bytes
+  mimeType     String?      // image/jpeg, application/pdf
+  
+  // Verification
+  isVerified   Boolean      @default(false)
+  verifiedById String?
+  verifiedAt   DateTime?
+  
+  // Metadata
+  uploadedById String
+  uploadedAt   DateTime     @default(now())
+  notes        String?      @db.Text
+  
+  // Relations
+  shipment     Shipment @relation(fields: [shipmentId], references: [id])
+  uploadedBy   User     @relation("DocumentUploadedBy", fields: [uploadedById], references: [id])
+  verifiedBy   User?    @relation("DocumentVerifiedBy", fields: [verifiedById], references: [id])
+  
+  @@map("shipment_documents")
+  @@index([shipmentId, documentType])
+  @@index([isVerified])
 }
 
 model Vehicle {
@@ -370,6 +439,7 @@ model POD {
 model Debt {
   id                  String     @id @default(uuid())
   customerId          String
+  invoiceId           String?    @unique // Link to Invoice (optional)
   
   // Debt Information
   debtType            DebtType
@@ -401,9 +471,117 @@ model Debt {
   // Relations
   customer            Customer   @relation(fields: [customerId], references: [id])
   createdBy           User       @relation("DebtCreatedBy", fields: [createdById], references: [id])
+  invoice             Invoice?   @relation(fields: [invoiceId], references: [id])
+  payments            DebtPayment[]
 
   @@map("debts")
   @@index([customerId, debtMonth])
   @@index([status, dueDate])
   @@index([debtMonth])
+}
+
+model DebtPayment {
+  id              String   @id @default(uuid())
+  debtId          String
+  amount          Decimal  @db.Decimal(15, 2) // Số tiền thanh toán lần này
+  paidDate        DateTime // Ngày thanh toán
+  proofImages     String[] // Hình ảnh UNC riêng cho lần TT này
+  notes           String?  @db.Text // Ghi chú cho lần TT này
+  createdById     String
+  createdAt       DateTime @default(now())
+
+  // Relations
+  debt            Debt     @relation(fields: [debtId], references: [id])
+  createdBy       User     @relation("PaymentCreatedBy", fields: [createdById], references: [id])
+
+  @@map("debt_payments")
+  @@index([debtId, createdAt])
+}
+
+model Charge {
+  id          String      @id @default(uuid())
+  shipmentId  String
+  chargeType  ChargeType
+  description String?
+  quantity    Int         @default(1)
+  unitPrice   Decimal     @db.Decimal(15, 2)
+  amount      Decimal     @db.Decimal(15, 2) // quantity * unitPrice
+  currency    String      @default("VND")
+  createdById String
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  
+  // Relations
+  shipment    Shipment    @relation(fields: [shipmentId], references: [id])
+  createdBy   User        @relation("ChargeCreatedBy", fields: [createdById], references: [id])
+  invoiceItem InvoiceItem?
+  
+  @@map("charges")
+  @@index([shipmentId])
+}
+
+model Invoice {
+  id              String        @id @default(uuid())
+  invoiceNumber   String        @unique // Format: INV-2026-0001
+  customerId      String
+  shipmentId      String?       // Optional - có thể invoice nhiều shipments
+  
+  // Amounts
+  subtotal        Decimal       @db.Decimal(15, 2) // Tổng trước thuế
+  vatRate         Decimal       @db.Decimal(5, 2) @default(10.00) // Fixed 10%
+  vatAmount       Decimal       @db.Decimal(15, 2) // Tiền VAT
+  grandTotal      Decimal       @db.Decimal(15, 2) // Tổng sau thuế (subtotal + vatAmount)
+  
+  // Dates
+  invoiceDate     DateTime      @default(now())
+  dueDate         DateTime
+  sentAt          DateTime?
+  paidAt          DateTime?
+  
+  // Status & Files
+  status          InvoiceStatus @default(DRAFT)
+  pdfPath         String?       // URL to PDF file
+  
+  // Payment info
+  paymentMethod   String?       // Bank transfer, cash, etc.
+  paymentRef      String?       // Reference number
+  
+  // Notes
+  notes           String?       @db.Text
+  paymentTerms    String?       // Override customer default
+  
+  // Metadata
+  createdById     String
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  
+  // Relations
+  customer        Customer      @relation(fields: [customerId], references: [id])
+  shipment        Shipment?     @relation(fields: [shipmentId], references: [id])
+  createdBy       User          @relation("InvoiceCreatedBy", fields: [createdById], references: [id])
+  items           InvoiceItem[]
+  debts           Debt[]
+  
+  @@map("invoices")
+  @@index([customerId, invoiceDate])
+  @@index([status, dueDate])
+}
+
+model InvoiceItem {
+  id          String   @id @default(uuid())
+  invoiceId   String
+  chargeId    String?  @unique // Link to Charge (optional)
+  
+  // Item details
+  description String
+  quantity    Int      @default(1)
+  unitPrice   Decimal  @db.Decimal(15, 2)
+  amount      Decimal  @db.Decimal(15, 2) // quantity * unitPrice
+  
+  // Relations
+  invoice     Invoice  @relation(fields: [invoiceId], references: [id])
+  charge      Charge?  @relation(fields: [chargeId], references: [id])
+  
+  @@map("invoice_items")
+  @@index([invoiceId])
 }

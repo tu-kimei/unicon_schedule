@@ -84,10 +84,12 @@ export const getAllDebts: GetAllDebts<GetAllDebtsInput, any> = async (args, cont
     include: {
       customer: true,
       createdBy: {
-        select: {
-          id: true,
-          fullName: true,
-          email: true,
+        select: { id: true, fullName: true, email: true },
+      },
+      payments: {
+        orderBy: { createdAt: 'asc' },
+        include: {
+          createdBy: { select: { id: true, fullName: true } },
         },
       },
     },
@@ -167,11 +169,12 @@ export const getDebt: GetDebt<GetDebtInput, any> = async (args, context) => {
     include: {
       customer: true,
       createdBy: {
-        select: {
-          id: true,
-          fullName: true,
-          email: true,
-          role: true,
+        select: { id: true, fullName: true, email: true, role: true },
+      },
+      payments: {
+        orderBy: { createdAt: 'asc' },
+        include: {
+          createdBy: { select: { id: true, fullName: true } },
         },
       },
     },

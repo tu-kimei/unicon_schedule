@@ -37,14 +37,17 @@ export const ImageGallery = ({ images, onRemove, editable = false }: ImageGaller
     <>
       <div className="grid grid-cols-4 gap-2">
         {images.map((url, index) => (
-          <div key={index} className="relative group">
+          <div 
+            key={index} 
+            className="relative group cursor-pointer"
+            onClick={() => openLightbox(index)}
+          >
             <img
               src={url}
               alt={`Image ${index + 1}`}
-              className="w-full h-24 object-cover rounded cursor-pointer border border-gray-200"
-              onClick={() => openLightbox(index)}
+              className="w-full h-24 object-cover rounded border border-gray-200"
             />
-            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all rounded flex items-center justify-center">
+            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all rounded flex items-center justify-center pointer-events-none">
               <svg
                 className="w-6 h-6 text-white opacity-0 group-hover:opacity-100"
                 fill="none"
@@ -65,7 +68,7 @@ export const ImageGallery = ({ images, onRemove, editable = false }: ImageGaller
                   e.stopPropagation();
                   onRemove(index);
                 }}
-                className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600"
+                className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600 z-10"
               >
                 ×
               </button>

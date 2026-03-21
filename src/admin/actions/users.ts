@@ -4,7 +4,7 @@ import type {
   UpdateUserStatus,
   DeleteUser,
 } from 'wasp/server/operations';
-import { HttpError } from 'wasp/server';
+import { HttpError, prisma } from 'wasp/server';
 
 // ============================================================================
 // Types
@@ -358,7 +358,7 @@ export const forceResetPassword = async (
   }
 
   // Import auth utils dynamically to avoid circular dependencies
-  const { createProviderId, findAuthIdentity, updateAuthIdentityProviderData, getProviderDataWithPassword } = 
+  const { createProviderId, findAuthIdentity, updateAuthIdentityProviderData, getProviderDataWithPassword, sanitizeAndSerializeProviderData } =
     await import('wasp/auth/utils');
 
   // Find auth identity for email provider
@@ -366,7 +366,31 @@ export const forceResetPassword = async (
   const authIdentity = await findAuthIdentity(providerId);
 
   if (!authIdentity) {
-    throw new HttpError(404, 'Auth identity not found for this user');
+    // User has no Auth identity (created via SQL, not via Wasp auth)
+    // Create Auth + AuthIdentity for this user
+    const providerData = await sanitizeAndSerializeProviderData({
+      hashedPassword: args.newPassword,
+      isEmailVerified: true,
+      emailVerificationSentAt: null,
+      passwordResetSentAt: null,
+    });
+
+    await prisma.auth.create({
+      data: {
+        userId: targetUser.id,
+        identities: {
+          create: {
+            providerName: 'email',
+            providerUserId: targetUser.email,
+            providerData,
+          },
+        },
+      },
+    });
+
+    return {
+      message: 'Auth identity created and password set. User can now login.',
+    };
   }
 
   // Get current provider data

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from 'wasp/client/operations';
 import type { Customer } from 'wasp/entities';
-import { Modal } from './Modal';
+import { Dialog } from '../../shared/components/Dialog';
 import { Button } from '../../shared/components/Button';
 import { SimpleInput } from './SimpleInput';
 import { MonthPicker } from './MonthPicker';
@@ -84,25 +84,25 @@ export const DebtFormModal = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     setIsUploading(true);
-    
+
     try {
       let finalInvoiceUrls = formData.invoiceImages || [];
       let finalPaymentUrls = formData.paymentProofImages || [];
-      
+
       // Upload invoice files if any
       if (invoiceFiles.length > 0) {
         const uploadedUrls = await uploadFiles(invoiceFiles, 'invoices', formData.debtMonth);
         finalInvoiceUrls = [...finalInvoiceUrls, ...uploadedUrls];
       }
-      
+
       // Upload payment files if any
       if (paymentFiles.length > 0) {
         const uploadedUrls = await uploadFiles(paymentFiles, 'payments', formData.debtMonth);
         finalPaymentUrls = [...finalPaymentUrls, ...uploadedUrls];
       }
-      
+
       // Submit form with all URLs
       onSubmit({
         ...formData,
@@ -130,7 +130,10 @@ export const DebtFormModal = ({
       headers['Authorization'] = `Bearer ${sessionId}`;
     }
 
-    const response = await fetch('/api/upload', {
+    // Get API URL from environment or use relative path
+    const apiUrl = import.meta.env.REACT_APP_API_URL || '';
+    const uploadUrl = `${apiUrl}/api/upload`;
+    const response = await fetch(uploadUrl, {
       method: 'POST',
       body: formData,
       headers,
@@ -166,166 +169,185 @@ export const DebtFormModal = ({
     : null;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={isEdit ? 'Sửa công nợ' : 'Tạo công nợ mới'}>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Customer Select */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Khách hàng <span className="text-red-500">*</span>
-          </label>
-          <select
-            value={formData.customerId}
-            onChange={(e) => handleChange('customerId', e.target.value)}
-            required
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+    <Dialog open={isOpen} onClose={onClose}>
+      <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
+          <h2 className="text-xl font-bold text-gray-900">
+            {isEdit ? 'Sửa công nợ' : 'Tạo công nợ mới'}
+          </h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 transition-colors"
           >
-            <option value="">Chọn khách hàng</option>
-            {customers.map((customer) => (
-              <option key={customer.id} value={customer.id}>
-                {customer.name} ({customer.email})
-              </option>
-            ))}
-          </select>
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
 
-        {/* Debt Type */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Loại công nợ <span className="text-red-500">*</span>
-          </label>
-          <div className="flex gap-4">
-            <label className="flex items-center">
-              <input
-                type="radio"
-                name="debtType"
-                value="FREIGHT"
-                checked={formData.debtType === 'FREIGHT'}
-                onChange={(e) => handleChange('debtType', e.target.value as DebtType)}
-                className="mr-2"
-              />
-              Cước vận chuyển
+        {/* Scrollable Form Body */}
+        <form id="debt-form" onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-4">
+          {/* Customer Select */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Khách hàng <span className="text-red-500">*</span>
             </label>
-            <label className="flex items-center">
-              <input
-                type="radio"
-                name="debtType"
-                value="ADVANCE"
-                checked={formData.debtType === 'ADVANCE'}
-                onChange={(e) => handleChange('debtType', e.target.value as DebtType)}
-                className="mr-2"
-              />
-              Chi hộ
-            </label>
-            <label className="flex items-center">
-              <input
-                type="radio"
-                name="debtType"
-                value="OTHER"
-                checked={formData.debtType === 'OTHER'}
-                onChange={(e) => handleChange('debtType', e.target.value as DebtType)}
-                className="mr-2"
-              />
-              Khác
-            </label>
+            <select
+              value={formData.customerId}
+              onChange={(e) => handleChange('customerId', e.target.value)}
+              required
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Chọn khách hàng</option>
+              {customers.map((customer) => (
+                <option key={customer.id} value={customer.id}>
+                  {customer.name} ({customer.email})
+                </option>
+              ))}
+            </select>
           </div>
-        </div>
 
-        {/* Debt Month */}
-        <MonthPicker
-          label="Tháng"
-          value={formData.debtMonth}
-          onChange={(value) => handleChange('debtMonth', value)}
-          required
-        />
-
-        {/* Amount */}
-        <CurrencyInput
-          label="Số tiền"
-          value={formData.amount}
-          onChange={(value) => handleChange('amount', value)}
-          required
-        />
-
-        {/* Recognition Date */}
-        <SimpleInput
-          label="Ngày ghi nhận"
-          type="date"
-          value={
-            formData.recognitionDate
-              ? formData.recognitionDate.toISOString().split('T')[0]
-              : ''
-          }
-          onChange={(e) => handleChange('recognitionDate', new Date(e.target.value))}
-          required
-        />
-
-        {/* Due Date (Display only) */}
-        {selectedCustomer && calculatedDueDate && (
-          <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
-            <div className="text-sm text-gray-700">
-              <strong>Ngày đến hạn (Tự động tính):</strong>{' '}
-              {calculatedDueDate.toLocaleDateString('vi-VN')}
-            </div>
-            <div className="text-xs text-gray-600 mt-1">
-              Dựa vào thời hạn: {selectedCustomer.paymentTermDays}{' '}
-              {selectedCustomer.paymentTermType === 'DAYS' ? 'ngày' : 'tháng'}
+          {/* Debt Type */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Loại công nợ <span className="text-red-500">*</span>
+            </label>
+            <div className="flex gap-4">
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  name="debtType"
+                  value="FREIGHT"
+                  checked={formData.debtType === 'FREIGHT'}
+                  onChange={(e) => handleChange('debtType', e.target.value as DebtType)}
+                  className="mr-2"
+                />
+                Cước vận chuyển
+              </label>
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  name="debtType"
+                  value="ADVANCE"
+                  checked={formData.debtType === 'ADVANCE'}
+                  onChange={(e) => handleChange('debtType', e.target.value as DebtType)}
+                  className="mr-2"
+                />
+                Chi hộ
+              </label>
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  name="debtType"
+                  value="OTHER"
+                  checked={formData.debtType === 'OTHER'}
+                  onChange={(e) => handleChange('debtType', e.target.value as DebtType)}
+                  className="mr-2"
+                />
+                Khác
+              </label>
             </div>
           </div>
-        )}
 
-        {/* Document Link */}
-        <SimpleInput
-          label="Link bảng kê / Chứng từ"
-          type="url"
-          value={formData.documentLink}
-          onChange={(e) => handleChange('documentLink', e.target.value)}
-          placeholder="https://docs.google.com/..."
-        />
+          {/* Debt Month */}
+          <MonthPicker
+            label="Tháng"
+            value={formData.debtMonth}
+            onChange={(value) => handleChange('debtMonth', value)}
+            required
+          />
 
-        {/* Invoice Images Upload */}
-        <FileUpload
-          label="Hình ảnh Hóa đơn"
-          type="invoice"
-          debtMonth={formData.debtMonth}
-          onFilesChange={setInvoiceFiles}
-          onExistingFilesChange={(urls) => handleChange('invoiceImages', urls)}
-          existingFiles={formData.invoiceImages || []}
-        />
+          {/* Amount */}
+          <CurrencyInput
+            label="Số tiền"
+            value={formData.amount}
+            onChange={(value) => handleChange('amount', value)}
+            required
+          />
 
-        {/* Payment Proof Images Upload (for edit mode) */}
-        {isEdit && (
+          {/* Recognition Date */}
+          <SimpleInput
+            label="Ngày ghi nhận"
+            type="date"
+            value={
+              formData.recognitionDate
+                ? formData.recognitionDate.toISOString().split('T')[0]
+                : ''
+            }
+            onChange={(e) => handleChange('recognitionDate', new Date(e.target.value))}
+            required
+          />
+
+          {/* Due Date (Display only) */}
+          {selectedCustomer && calculatedDueDate && (
+            <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+              <div className="text-sm text-gray-700">
+                <strong>Ngày đến hạn (Tự động tính):</strong>{' '}
+                {calculatedDueDate.toLocaleDateString('vi-VN')}
+              </div>
+              <div className="text-xs text-gray-600 mt-1">
+                Dựa vào thời hạn: {selectedCustomer.paymentTermDays}{' '}
+                {selectedCustomer.paymentTermType === 'DAYS' ? 'ngày' : 'tháng'}
+              </div>
+            </div>
+          )}
+
+          {/* Document Link */}
+          <SimpleInput
+            label="Link bảng kê / Chứng từ"
+            type="url"
+            value={formData.documentLink}
+            onChange={(e) => handleChange('documentLink', e.target.value)}
+            placeholder="https://docs.google.com/..."
+          />
+
+          {/* Invoice Images Upload */}
           <FileUpload
-            label="Hình ảnh UNC (Ủy nhiệm chi)"
-            type="payment"
+            label="Hình ảnh Hóa đơn"
+            type="invoice"
             debtMonth={formData.debtMonth}
-            onFilesChange={setPaymentFiles}
-            onExistingFilesChange={(urls) => handleChange('paymentProofImages', urls)}
-            existingFiles={formData.paymentProofImages || []}
+            onFilesChange={setInvoiceFiles}
+            onExistingFilesChange={(urls) => handleChange('invoiceImages', urls)}
+            existingFiles={formData.invoiceImages || []}
           />
-        )}
 
-        {/* Notes */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Ghi chú</label>
-          <textarea
-            value={formData.notes}
-            onChange={(e) => handleChange('notes', e.target.value)}
-            rows={4}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Nhập ghi chú..."
-          />
-        </div>
+          {/* Payment Proof Images Upload (for edit mode) */}
+          {isEdit && (
+            <FileUpload
+              label="Hình ảnh UNC (Ủy nhiệm chi)"
+              type="payment"
+              debtMonth={formData.debtMonth}
+              onFilesChange={setPaymentFiles}
+              onExistingFilesChange={(urls) => handleChange('paymentProofImages', urls)}
+              existingFiles={formData.paymentProofImages || []}
+            />
+          )}
 
-        {/* Actions */}
-        <div className="flex justify-end gap-2 pt-4">
+          {/* Notes */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Ghi chú</label>
+            <textarea
+              value={formData.notes}
+              onChange={(e) => handleChange('notes', e.target.value)}
+              rows={4}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Nhập ghi chú..."
+            />
+          </div>
+        </form>
+
+        {/* Fixed Footer */}
+        <div className="flex justify-end gap-2 p-6 border-t border-gray-200 flex-shrink-0">
           <Button type="button" variant="ghost" onClick={onClose} disabled={isUploading}>
             Hủy
           </Button>
-          <Button type="submit" variant="primary" disabled={isUploading}>
+          <Button type="submit" variant="primary" form="debt-form" disabled={isUploading}>
             {isUploading ? 'Đang upload files...' : (isEdit ? 'Cập nhật' : 'Tạo công nợ')}
           </Button>
         </div>
-      </form>
-    </Modal>
+      </div>
+    </Dialog>
   );
 };

@@ -1,5 +1,5 @@
 interface CreateShipmentInput {
-  orderId: string;
+  customerId: string;
   priority?: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
   plannedStartDate: Date;
   plannedEndDate: Date;
@@ -22,21 +22,21 @@ export const createShipment = async (args: CreateShipmentInput, context: any) =>
   const { user } = context;
 
   // Validate user permissions
-  if (!['OPS', 'ADMIN'].includes(user.role)) {
-    throw new Error('Unauthorized: Only OPS and ADMIN can create shipments');
+  if (!['OPS', 'ADMIN', 'DISPATCHER'].includes(user.role)) {
+    throw new Error('Unauthorized: Only OPS, ADMIN, and DISPATCHER can create shipments');
   }
 
-  // Validate order exists and is confirmed
-  const order = await context.entities.Order.findUnique({
-    where: { id: args.orderId }
+  // Validate customer exists
+  const customer = await context.entities.Customer.findUnique({
+    where: { id: args.customerId }
   });
 
-  if (!order) {
-    throw new Error('Order not found');
+  if (!customer) {
+    throw new Error('Customer not found');
   }
 
-  if (order.status !== 'CONFIRMED') {
-    throw new Error('Order must be confirmed to create shipment');
+  if (customer.status !== 'ACTIVE') {
+    throw new Error('Customer must be active to create shipment');
   }
 
   // Validate stops
@@ -58,7 +58,7 @@ export const createShipment = async (args: CreateShipmentInput, context: any) =>
   // Create shipment and stops in transaction
   const shipment = await context.entities.Shipment.create({
     data: {
-      orderId: args.orderId,
+      customerId: args.customerId,
       shipmentNumber,
       currentStatus: 'DRAFT',
       priority: args.priority || 'NORMAL',
@@ -79,6 +79,7 @@ export const createShipment = async (args: CreateShipmentInput, context: any) =>
       }
     },
     include: {
+      customer: true,
       stops: {
         orderBy: { sequence: 'asc' }
       }

@@ -1,22 +1,23 @@
 export const getPendingShipments = async (args: any, context: any) => {
-  // Shipments that need dispatch assignment
+  // Shipments that need dispatch assignment:
+  // - READY status (internal shipments ready for dispatch)
+  // - DRAFT status from customers (customer requests awaiting dispatch)
   const shipments = await context.entities.Shipment.findMany({
     where: {
-      currentStatus: 'READY',
+      currentStatus: { in: ['READY', 'DRAFT'] },
       dispatch: null, // Not yet assigned
       deletedAt: null
     },
     include: {
-      order: {
-        include: {
-          customer: true
-        }
-      },
+      customer: true,
       stops: {
         orderBy: { sequence: 'asc' }
       }
     },
-    orderBy: { priority: 'desc' } // High priority first
+    orderBy: [
+      { priority: 'desc' }, // High priority first
+      { createdAt: 'asc' }  // Oldest first within same priority
+    ]
   });
 
   return shipments;

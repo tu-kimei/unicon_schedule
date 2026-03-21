@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery } from 'wasp/client/operations';
 import { getShipment } from 'wasp/client/operations';
 import { StatusBadge } from '../components/StatusBadge';
+import { DocumentSection } from '../components/DocumentSection';
 
 export const ShipmentDetailsPage = ({ shipmentId }: { shipmentId: string }) => {
   const { data: shipment, isLoading, error } = useQuery(getShipment, { id: shipmentId });
@@ -49,7 +50,7 @@ export const ShipmentDetailsPage = ({ shipmentId }: { shipmentId: string }) => {
                   Shipment {shipment.shipmentNumber}
                 </h1>
                 <p className="text-gray-600 mt-1">
-                  Order: {shipment.order.orderNumber} - {shipment.order.customer.name}
+                  Customer: {shipment.customer.name}
                 </p>
               </div>
               <StatusBadge status={shipment.currentStatus} size="lg" />
@@ -237,6 +238,9 @@ export const ShipmentDetailsPage = ({ shipmentId }: { shipmentId: string }) => {
             </div>
           </div>
         )}
+
+        {/* Documents */}
+        <DocumentSection shipmentId={shipmentId} />
       </div>
     </div>
   );

@@ -100,17 +100,17 @@ page DispatcherDashboardPage {
 // Shared Queries
 query getAllShipments {
   fn: import { getAllShipments } from "@src/logistics/queries/shipments",
-  entities: [Shipment, ShipmentStop, Dispatch, Vehicle, Driver, ShipmentStatusEvent, POD]
+  entities: [Shipment, Customer, ShipmentStop, Dispatch, Vehicle, Driver, ShipmentStatusEvent, POD]
 }
 
 query getShipment {
   fn: import { getShipment } from "@src/logistics/queries/shipments",
-  entities: [Shipment, ShipmentStop, Dispatch, Vehicle, Driver, ShipmentStatusEvent, POD]
+  entities: [Shipment, Customer, ShipmentStop, Dispatch, Vehicle, Driver, ShipmentStatusEvent, POD]
 }
 
 query getPendingShipments {
   fn: import { getPendingShipments } from "@src/logistics/queries/dispatch",
-  entities: [Shipment, ShipmentStop]
+  entities: [Shipment, ShipmentStop, Customer]
 }
 
 query getAvailableVehicles {
@@ -123,20 +123,18 @@ query getAvailableDrivers {
   entities: [Driver, User]
 }
 
-query getAvailableOrders {
-  fn: import { getAvailableOrders } from "@src/logistics/queries/orders",
-  entities: [Order, Customer]
-}
+// Removed: getAvailableOrders query - Order entity no longer exists
+// Shipments are now created directly for Customers
 
 // Actions
 action createShipment {
   fn: import { createShipment } from "@src/logistics/actions/shipments",
-  entities: [Shipment, ShipmentStop]
+  entities: [Shipment, Customer, ShipmentStop]
 }
 
 action updateShipment {
   fn: import { updateShipment } from "@src/logistics/actions/shipments",
-  entities: [Shipment, ShipmentStop]
+  entities: [Shipment, Customer, ShipmentStop]
 }
 
 action createDispatch {
@@ -154,7 +152,105 @@ action uploadPOD {
   entities: [POD, Shipment]
 }
 
+// Document Management
+query getShipmentDocuments {
+  fn: import { getShipmentDocuments } from "@src/logistics/queries/documents",
+  entities: [ShipmentDocument, Shipment, User]
+}
+
+action uploadShipmentDocument {
+  fn: import { uploadShipmentDocument } from "@src/logistics/actions/documents",
+  entities: [ShipmentDocument, Shipment, User]
+}
+
+action verifyDocument {
+  fn: import { verifyDocument } from "@src/logistics/actions/documents",
+  entities: [ShipmentDocument, User]
+}
+
+action deleteDocument {
+  fn: import { deleteDocument } from "@src/logistics/actions/documents",
+  entities: [ShipmentDocument, User]
+}
+
+action createAndDispatchShipment {
+  fn: import { createAndDispatchShipment } from "@src/logistics/actions/quickDispatch",
+  entities: [Shipment, ShipmentStop, Dispatch, ShipmentStatusEvent, Vehicle, Driver, Customer, User]
+}
+
 // #endregion Logistics System
+
+// #region Customer Portal
+
+// Customer Routes
+route CustomerDashboardRoute { path: "/customer", to: CustomerDashboardPage }
+page CustomerDashboardPage {
+  authRequired: true,
+  component: import { CustomerDashboardPage } from "@src/customer/pages/CustomerDashboardPage"
+}
+
+route MyShipmentsRoute { path: "/customer/shipments", to: MyShipmentsPage }
+page MyShipmentsPage {
+  authRequired: true,
+  component: import { MyShipmentsPage } from "@src/customer/pages/MyShipmentsPage"
+}
+
+route CreateShipmentRequestRoute { path: "/customer/shipments/create", to: CreateShipmentRequestPage }
+page CreateShipmentRequestPage {
+  authRequired: true,
+  component: import { CreateShipmentRequestPage } from "@src/customer/pages/CreateShipmentRequestPage"
+}
+
+route MyShipmentDetailsRoute { path: "/customer/shipments/:id", to: MyShipmentDetailsPage }
+page MyShipmentDetailsPage {
+  authRequired: true,
+  component: import { MyShipmentDetailsPage } from "@src/customer/pages/MyShipmentDetailsPage"
+}
+
+route MyDebtsRoute { path: "/customer/debts", to: MyDebtsPage }
+page MyDebtsPage {
+  authRequired: true,
+  component: import { MyDebtsPage } from "@src/customer/pages/MyDebtsPage"
+}
+
+// Customer Queries
+query getMyShipments {
+  fn: import { getMyShipments } from "@src/customer/queries/shipments",
+  entities: [Shipment, Customer, User, ShipmentStop, Dispatch, Vehicle, Driver, ShipmentStatusEvent, POD]
+}
+
+query getMyShipmentDetails {
+  fn: import { getMyShipmentDetails } from "@src/customer/queries/shipments",
+  entities: [Shipment, Customer, User, ShipmentStop, Dispatch, Vehicle, Driver, ShipmentStatusEvent, POD]
+}
+
+query getMyShipmentStats {
+  fn: import { getMyShipmentStats } from "@src/customer/queries/shipments",
+  entities: [Shipment]
+}
+
+// Customer Actions
+action createShipmentRequest {
+  fn: import { createShipmentRequest } from "@src/customer/actions/shipments",
+  entities: [Shipment, Customer, User, ShipmentStop]
+}
+
+action updateShipmentRequest {
+  fn: import { updateShipmentRequest } from "@src/customer/actions/shipments",
+  entities: [Shipment, Customer, ShipmentStop]
+}
+
+action cancelShipmentRequest {
+  fn: import { cancelShipmentRequest } from "@src/customer/actions/shipments",
+  entities: [Shipment, ShipmentStatusEvent]
+}
+
+action confirmDocuments {
+  fn: import { confirmDocuments } from "@src/customer/actions/shipments",
+  entities: [Shipment, ShipmentStatusEvent]
+}
+
+// #endregion Customer Portal
 
 // #region Debt Management System
 
@@ -194,12 +290,12 @@ page CustomerDetailsPage {
 // Debt Queries
 query getAllDebts {
   fn: import { getAllDebts } from "@src/debt/queries/debts",
-  entities: [Debt, Customer, User]
+  entities: [Debt, DebtPayment, Customer, User]
 }
 
 query getDebt {
   fn: import { getDebt } from "@src/debt/queries/debts",
-  entities: [Debt, Customer, User]
+  entities: [Debt, DebtPayment, Customer, User]
 }
 
 query getAllCustomers {
@@ -235,7 +331,7 @@ action updateDebt {
 
 action markDebtAsPaid {
   fn: import { markDebtAsPaid } from "@src/debt/actions/payment",
-  entities: [Debt]
+  entities: [Debt, DebtPayment]
 }
 
 action cancelDebt {
@@ -261,7 +357,7 @@ action updateCustomer {
 
 action deleteCustomer {
   fn: import { deleteCustomer } from "@src/debt/actions/customers",
-  entities: [Customer, Debt, Order]
+  entities: [Customer, Debt, Shipment]
 }
 
 action uploadDebtInvoiceImages {
@@ -272,6 +368,62 @@ action uploadDebtInvoiceImages {
 action uploadDebtPaymentProofImages {
   fn: import { uploadDebtPaymentProofImages } from "@src/debt/actions/upload",
   entities: [Debt]
+}
+
+// Charge Operations
+action createCharge {
+  fn: import { createCharge } from "@src/logistics/actions/charges",
+  entities: [Charge, Shipment, User]
+}
+
+action updateCharge {
+  fn: import { updateCharge } from "@src/logistics/actions/charges",
+  entities: [Charge, User]
+}
+
+action deleteCharge {
+  fn: import { deleteCharge } from "@src/logistics/actions/charges",
+  entities: [Charge, InvoiceItem]
+}
+
+// Invoice Routes
+route InvoicesRoute { path: "/accounting/invoices", to: InvoicesListPage }
+page InvoicesListPage {
+  authRequired: true,
+  component: import { InvoicesListPage } from "@src/debt/pages/InvoicesListPage"
+}
+
+route InvoiceDetailsRoute { path: "/accounting/invoices/:id", to: InvoiceDetailsPage }
+page InvoiceDetailsPage {
+  authRequired: true,
+  component: import { InvoiceDetailsPage } from "@src/debt/pages/InvoiceDetailsPage"
+}
+
+// Invoice Queries
+query getAllInvoices {
+  fn: import { getAllInvoices } from "@src/debt/queries/invoices",
+  entities: [Invoice, InvoiceItem, Customer, Shipment, User]
+}
+
+query getInvoice {
+  fn: import { getInvoice } from "@src/debt/queries/invoices",
+  entities: [Invoice, InvoiceItem, Charge, Customer, Shipment, User]
+}
+
+// Invoice Actions
+action createInvoice {
+  fn: import { createInvoice } from "@src/debt/actions/invoices",
+  entities: [Invoice, InvoiceItem, Charge, Customer, Shipment, User]
+}
+
+action updateInvoiceStatus {
+  fn: import { updateInvoiceStatus } from "@src/debt/actions/invoices",
+  entities: [Invoice, User]
+}
+
+action deleteInvoice {
+  fn: import { deleteInvoice } from "@src/debt/actions/invoices",
+  entities: [Invoice, InvoiceItem, Charge]
 }
 
 // #endregion Debt Management System
@@ -334,7 +486,7 @@ action deleteVehicle {
 // Driver Queries
 query getAllDrivers {
   fn: import { getAllDrivers } from "@src/resources/queries/drivers",
-  entities: [Driver, User]
+  entities: [Driver, User, Dispatch]
 }
 
 query getDriver {

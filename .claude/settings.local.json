@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(which wasp:*)",
+      "Bash(wasp start:*)",
+      "Bash(wasp db:*)",
+      "Bash(cd:*)",
+      "Bash(MIGRATION_DIR=\"/Users/nguyentu/workspace/unicon_schedule/migrations/20260315_sync_invoice_fk\" && mkdir -p \"$MIGRATION_DIR\" && cat > \"$MIGRATION_DIR/migration.sql\" << 'EOF'\n-- DropForeignKey\nALTER TABLE \"invoice_items\" DROP CONSTRAINT \"invoice_items_invoiceId_fkey\";\n\n-- AddForeignKey\nALTER TABLE \"invoice_items\" ADD CONSTRAINT \"invoice_items_invoiceId_fkey\" FOREIGN KEY \\(\"invoiceId\"\\) REFERENCES \"invoices\"\\(\"id\"\\) ON DELETE RESTRICT ON UPDATE CASCADE;\nEOF\necho \"Migration file created\")",
+      "Bash(npx prisma:*)",
+      "Bash(cp:*)",
+      "Bash(source:*)",
+      "Bash(wc:*)",
+      "Bash(node:*)",
+      "Bash(sleep:*)",
+      "Bash(pkill:*)",
+      "Bash(curl:*)",
+      "Bash(echo:*)",
+      "Bash(find:*)"
+    ]
+  },
+  "disabledMcpjsonServers": [
+    "contextstream"
+  ]
+}

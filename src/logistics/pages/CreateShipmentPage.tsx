@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from 'wasp/client/operations';
-import { getAvailableOrders, createShipment } from 'wasp/client/operations';
+import { getAllCustomers, createShipment } from 'wasp/client/operations';
 
-interface Order {
+interface Customer {
   id: string;
-  orderNumber: string;
-  customer: { name: string };
+  name: string;
+  email: string;
+  status: string;
 }
 
 interface ShipmentStopInput {
@@ -21,7 +22,7 @@ interface ShipmentStopInput {
 }
 
 interface CreateShipmentForm {
-  orderId: string;
+  customerId: string;
   priority: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
   plannedStartDate: Date;
   plannedEndDate: Date;
@@ -31,7 +32,7 @@ interface CreateShipmentForm {
 export const CreateShipmentPage = () => {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [form, setForm] = useState<CreateShipmentForm>({
-    orderId: '',
+    customerId: '',
     priority: 'NORMAL',
     plannedStartDate: new Date(),
     plannedEndDate: new Date(),
@@ -39,8 +40,8 @@ export const CreateShipmentPage = () => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Fetch available orders
-  const { data: orders, isLoading } = useQuery(getAvailableOrders);
+  // Fetch active customers
+  const { data: customers, isLoading } = useQuery(getAllCustomers);
 
   const updateForm = (updates: Partial<CreateShipmentForm>) => {
     setForm(prev => ({ ...prev, ...updates }));
@@ -78,7 +79,7 @@ export const CreateShipmentPage = () => {
   const validateStep = (currentStep: number): boolean => {
     switch (currentStep) {
       case 1:
-        return !!(form.orderId && form.plannedStartDate && form.plannedEndDate &&
+        return !!(form.customerId && form.plannedStartDate && form.plannedEndDate &&
                  form.plannedEndDate > form.plannedStartDate);
       case 2:
         return form.stops.length > 0 && form.stops.every(stop =>
@@ -134,20 +135,24 @@ export const CreateShipmentPage = () => {
     <div className="space-y-6">
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          Order
+          Customer *
         </label>
         <select
-          value={form.orderId}
-          onChange={(e) => updateForm({ orderId: e.target.value })}
-          className="w-full border border-gray-300 rounded-lg px-3 py-2"
+          value={form.customerId}
+          onChange={(e) => updateForm({ customerId: e.target.value })}
+          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          required
         >
-          <option value="">Select Order</option>
-          {orders?.map((order: Order) => (
-            <option key={order.id} value={order.id}>
-              {order.orderNumber} - {order.customer.name}
+          <option value="">-- Select Customer --</option>
+          {customers?.filter((c: Customer) => c.status === 'ACTIVE').map((customer: Customer) => (
+            <option key={customer.id} value={customer.id}>
+              {customer.name} ({customer.email})
             </option>
           ))}
         </select>
+        <p className="mt-1 text-sm text-gray-500">
+          Select the customer for this shipment
+        </p>
       </div>
 
       <div>
@@ -327,7 +332,7 @@ export const CreateShipmentPage = () => {
   );
 
   const renderReviewStep = () => {
-    const selectedOrder = orders?.find((o: Order) => o.id === form.orderId);
+    const selectedCustomer = customers?.find((c: Customer) => c.id === form.customerId);
 
     return (
       <div className="space-y-6">
@@ -336,24 +341,25 @@ export const CreateShipmentPage = () => {
 
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
-              <span className="font-medium">Order:</span>
-              <p>{selectedOrder?.orderNumber} - {selectedOrder?.customer.name}</p>
+              <span className="font-medium">Customer:</span>
+              <p className="text-gray-900">{selectedCustomer?.name}</p>
+              <p className="text-gray-600 text-xs">{selectedCustomer?.email}</p>
             </div>
             <div>
               <span className="font-medium">Priority:</span>
-              <p>{form.priority}</p>
+              <p className="text-gray-900">{form.priority}</p>
             </div>
             <div>
               <span className="font-medium">Start Date:</span>
-              <p>{form.plannedStartDate.toLocaleString()}</p>
+              <p className="text-gray-900">{form.plannedStartDate.toLocaleString()}</p>
             </div>
             <div>
               <span className="font-medium">End Date:</span>
-              <p>{form.plannedEndDate.toLocaleString()}</p>
+              <p className="text-gray-900">{form.plannedEndDate.toLocaleString()}</p>
             </div>
             <div className="col-span-2">
-              <span className="font-medium">Stops:</span>
-              <p>{form.stops.length} stops</p>
+              <span className="font-medium">Total Stops:</span>
+              <p className="text-gray-900">{form.stops.length} stops</p>
             </div>
           </div>
         </div>

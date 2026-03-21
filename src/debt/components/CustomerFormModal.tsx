@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Modal } from './Modal';
+import { Dialog } from '../../shared/components/Dialog';
 import { Button } from '../../shared/components/Button';
 import { SimpleInput } from './SimpleInput';
 import { Select } from '../../shared/components/Select';
@@ -95,154 +95,173 @@ export const CustomerFormModal = ({
   ];
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={isEdit ? 'Sửa khách hàng' : 'Tạo khách hàng mới'}>
-      <form onSubmit={handleSubmit} className="space-y-4 max-h-[70vh] overflow-y-auto px-1">
-        {/* Name */}
-        <SimpleInput
-          label="Tên khách hàng"
-          type="text"
-          value={formData.name}
-          onChange={(e) => handleChange('name', e.target.value)}
-          required
-          placeholder="VD: Công ty TNHH ABC"
-        />
+    <Dialog open={isOpen} onClose={onClose}>
+      <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] flex flex-col">
+        {/* Fixed Header */}
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
+          <h2 className="text-xl font-bold text-gray-900">
+            {isEdit ? 'Sửa khách hàng' : 'Tạo khách hàng mới'}
+          </h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
 
-        {/* Email */}
-        <SimpleInput
-          label="Email"
-          type="email"
-          value={formData.email}
-          onChange={(e) => handleChange('email', e.target.value)}
-          required
-          placeholder="contact@company.com"
-        />
-
-        {/* Phone */}
-        <SimpleInput
-          label="Số điện thoại"
-          type="tel"
-          value={formData.phone}
-          onChange={(e) => handleChange('phone', e.target.value)}
-          placeholder="0901234567"
-        />
-
-        {/* Address */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Địa chỉ
-          </label>
-          <textarea
-            value={formData.address}
-            onChange={(e) => handleChange('address', e.target.value)}
-            rows={3}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Địa chỉ công ty..."
+        {/* Scrollable Form Body */}
+        <form id="customer-form" onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-4">
+          {/* Name */}
+          <SimpleInput
+            label="Tên khách hàng"
+            type="text"
+            value={formData.name}
+            onChange={(e) => handleChange('name', e.target.value)}
+            required
+            placeholder="VD: Công ty TNHH ABC"
           />
-        </div>
 
-        {/* Payment Terms */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Thời hạn công nợ <span className="text-red-500">*</span>
-          </label>
-          <div className="flex gap-2">
-            <input
-              type="number"
-              min="1"
-              value={formData.paymentTermDays}
-              onChange={(e) => handleChange('paymentTermDays', parseInt(e.target.value))}
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
+          {/* Email */}
+          <SimpleInput
+            label="Email"
+            type="email"
+            value={formData.email}
+            onChange={(e) => handleChange('email', e.target.value)}
+            required
+            placeholder="contact@company.com"
+          />
+
+          {/* Phone */}
+          <SimpleInput
+            label="Số điện thoại"
+            type="tel"
+            value={formData.phone}
+            onChange={(e) => handleChange('phone', e.target.value)}
+            placeholder="0901234567"
+          />
+
+          {/* Address */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Địa chỉ
+            </label>
+            <textarea
+              value={formData.address}
+              onChange={(e) => handleChange('address', e.target.value)}
+              rows={3}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Địa chỉ công ty..."
             />
-            <select
-              value={formData.paymentTermType}
-              onChange={(e) => handleChange('paymentTermType', e.target.value as PaymentTermType)}
-              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="DAYS">Ngày</option>
-              <option value="MONTHS">Tháng</option>
-            </select>
           </div>
-          <p className="text-xs text-gray-500 mt-1">
-            VD: 30 ngày, 1 tháng, 3 tháng
-          </p>
-        </div>
 
-        {/* Statement Frequency */}
-        <Select
-          label="Quy định chốt bảng kê"
-          options={statementFrequencyOptions}
-          value={formData.statementFrequency || ''}
-          onChange={(e) => handleChange('statementFrequency', e.target.value || undefined)}
-          placeholder="Chọn quy định chốt bảng kê"
-        />
-
-        {/* Status */}
-        <Select
-          label="Trạng thái"
-          options={statusOptions}
-          value={formData.status}
-          onChange={(e) => handleChange('status', e.target.value as CustomerStatus)}
-          required
-        />
-
-        {/* VAT Invoice */}
-        <div>
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={formData.hasVATInvoice}
-              onChange={(e) => handleChange('hasVATInvoice', e.target.checked)}
-              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-            />
-            <span className="text-sm font-medium text-gray-700">Có xuất HĐ VAT</span>
-          </label>
-        </div>
-
-        {/* VAT Invoice Details - Only show if hasVATInvoice is true */}
-        {formData.hasVATInvoice && (
-          <div className="space-y-4 pl-6 border-l-2 border-blue-200">
-            <SimpleInput
-              label="Tên trên hóa đơn"
-              type="text"
-              value={formData.invoiceName}
-              onChange={(e) => handleChange('invoiceName', e.target.value)}
-              placeholder="Tên công ty trên hóa đơn"
-            />
-
-            <SimpleInput
-              label="Mã số thuế (MST)"
-              type="text"
-              value={formData.taxCode}
-              onChange={(e) => handleChange('taxCode', e.target.value)}
-              placeholder="0123456789"
-            />
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Địa chỉ thuế
-              </label>
-              <textarea
-                value={formData.taxAddress}
-                onChange={(e) => handleChange('taxAddress', e.target.value)}
-                rows={2}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Địa chỉ trên hóa đơn..."
+          {/* Payment Terms */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Thời hạn công nợ <span className="text-red-500">*</span>
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="number"
+                min="1"
+                value={formData.paymentTermDays}
+                onChange={(e) => handleChange('paymentTermDays', parseInt(e.target.value))}
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
               />
+              <select
+                value={formData.paymentTermType}
+                onChange={(e) => handleChange('paymentTermType', e.target.value as PaymentTermType)}
+                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="DAYS">Ngày</option>
+                <option value="MONTHS">Tháng</option>
+              </select>
             </div>
+            <p className="text-xs text-gray-500 mt-1">
+              VD: 30 ngày, 1 tháng, 3 tháng
+            </p>
           </div>
-        )}
 
-        {/* Actions */}
-        <div className="flex justify-end gap-2 pt-4">
+          {/* Statement Frequency */}
+          <Select
+            label="Quy định chốt bảng kê"
+            options={statementFrequencyOptions}
+            value={formData.statementFrequency || ''}
+            onChange={(e) => handleChange('statementFrequency', e.target.value || undefined)}
+            placeholder="Chọn quy định chốt bảng kê"
+          />
+
+          {/* Status */}
+          <Select
+            label="Trạng thái"
+            options={statusOptions}
+            value={formData.status}
+            onChange={(e) => handleChange('status', e.target.value as CustomerStatus)}
+            required
+          />
+
+          {/* VAT Invoice */}
+          <div>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formData.hasVATInvoice}
+                onChange={(e) => handleChange('hasVATInvoice', e.target.checked)}
+                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              />
+              <span className="text-sm font-medium text-gray-700">Có xuất HĐ VAT</span>
+            </label>
+          </div>
+
+          {/* VAT Invoice Details - Only show if hasVATInvoice is true */}
+          {formData.hasVATInvoice && (
+            <div className="space-y-4 pl-6 border-l-2 border-blue-200">
+              <SimpleInput
+                label="Tên trên hóa đơn"
+                type="text"
+                value={formData.invoiceName}
+                onChange={(e) => handleChange('invoiceName', e.target.value)}
+                placeholder="Tên công ty trên hóa đơn"
+              />
+
+              <SimpleInput
+                label="Mã số thuế (MST)"
+                type="text"
+                value={formData.taxCode}
+                onChange={(e) => handleChange('taxCode', e.target.value)}
+                placeholder="0123456789"
+              />
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Địa chỉ thuế
+                </label>
+                <textarea
+                  value={formData.taxAddress}
+                  onChange={(e) => handleChange('taxAddress', e.target.value)}
+                  rows={2}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Địa chỉ trên hóa đơn..."
+                />
+              </div>
+            </div>
+          )}
+        </form>
+
+        {/* Fixed Footer */}
+        <div className="flex justify-end gap-2 p-6 border-t border-gray-200 flex-shrink-0">
           <Button type="button" variant="ghost" onClick={onClose}>
             Hủy
           </Button>
-          <Button type="submit" variant="primary">
+          <Button type="submit" form="customer-form" variant="primary">
             {isEdit ? 'Cập nhật' : 'Tạo khách hàng'}
           </Button>
         </div>
-      </form>
-    </Modal>
+      </div>
+    </Dialog>
   );
 };

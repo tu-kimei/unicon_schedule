@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useQuery } from 'wasp/client/operations';
 import { getAllCustomers, createUser } from 'wasp/client/operations';
+import { Dialog } from '../../shared/components/Dialog';
+import { Button } from '../../shared/components/Button';
 
 type UserRole = 'ADMIN' | 'ACCOUNTING' | 'OPS' | 'DISPATCHER' | 'DRIVER' | 'CUSTOMER_OWNER' | 'CUSTOMER_OPS';
 type UserType = 'INTERNAL' | 'CUSTOMER';
@@ -55,7 +57,7 @@ export function CreateUserModal({ isOpen, onClose, onSuccess }: CreateUserModalP
         userType,
         customerId: userType === 'CUSTOMER' ? customerId : undefined,
       });
-      
+
       // Reset form
       setEmail('');
       setPassword('');
@@ -64,7 +66,7 @@ export function CreateUserModal({ isOpen, onClose, onSuccess }: CreateUserModalP
       setUserType('INTERNAL');
       setRole('OPS');
       setCustomerId('');
-      
+
       alert('Tạo user thành công!');
       onSuccess();
       onClose();
@@ -88,13 +90,11 @@ export function CreateUserModal({ isOpen, onClose, onSuccess }: CreateUserModalP
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+    <Dialog open={isOpen} onClose={handleClose}>
+      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] flex flex-col">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
           <h2 className="text-xl font-semibold text-gray-900">Tạo User mới</h2>
           <button
             onClick={handleClose}
@@ -107,197 +107,186 @@ export function CreateUserModal({ isOpen, onClose, onSuccess }: CreateUserModalP
           </button>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="px-6 py-4">
-          <div className="space-y-4">
-            {/* Email */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Email <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="user@example.com"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-                disabled={isSubmitting}
-              />
-            </div>
-
-            {/* Full Name */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Họ tên <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder="Nguyễn Văn A"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-                minLength={2}
-                disabled={isSubmitting}
-              />
-            </div>
-
-            {/* Password */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Mật khẩu <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Tối thiểu 8 ký tự"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-                minLength={8}
-                disabled={isSubmitting}
-              />
-            </div>
-
-            {/* Confirm Password */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Xác nhận mật khẩu <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Nhập lại mật khẩu"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-                minLength={8}
-                disabled={isSubmitting}
-              />
-            </div>
-
-            {/* User Type */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Loại User <span className="text-red-500">*</span>
-              </label>
-              <select
-                value={userType}
-                onChange={(e) => {
-                  setUserType(e.target.value as UserType);
-                  // Reset role when changing userType
-                  if (e.target.value === 'INTERNAL') {
-                    setRole('OPS');
-                    setCustomerId('');
-                  } else {
-                    setRole('CUSTOMER_OPS');
-                  }
-                }}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                disabled={isSubmitting}
-              >
-                <option value="INTERNAL">Nội bộ</option>
-                <option value="CUSTOMER">Khách hàng</option>
-              </select>
-            </div>
-
-            {/* Role */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Vai trò <span className="text-red-500">*</span>
-              </label>
-              <select
-                value={role}
-                onChange={(e) => setRole(e.target.value as UserRole)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                disabled={isSubmitting}
-              >
-                {userType === 'INTERNAL' ? (
-                  <>
-                    <option value="ADMIN">Admin</option>
-                    <option value="ACCOUNTING">Kế toán</option>
-                    <option value="OPS">Vận hành</option>
-                    <option value="DISPATCHER">Điều phối</option>
-                    <option value="DRIVER">Tài xế</option>
-                  </>
-                ) : (
-                  <>
-                    <option value="CUSTOMER_OWNER">Chủ hàng</option>
-                    <option value="CUSTOMER_OPS">Vận hành KH</option>
-                  </>
-                )}
-              </select>
-            </div>
-
-            {/* Customer Selection - Only for CUSTOMER userType */}
-            {userType === 'CUSTOMER' && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Khách hàng <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={customerId}
-                  onChange={(e) => setCustomerId(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                  disabled={isSubmitting}
-                >
-                  <option value="">-- Chọn khách hàng --</option>
-                  {customers.map((customer: any) => (
-                    <option key={customer.id} value={customer.id}>
-                      {customer.name} ({customer.email})
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-
-            {/* Info Note */}
-            <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
-              <div className="flex">
-                <div className="flex-shrink-0">
-                  <svg className="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <div className="ml-3">
-                  <h3 className="text-sm font-medium text-blue-800">Lưu ý</h3>
-                  <div className="mt-2 text-sm text-blue-700">
-                    <ul className="list-disc list-inside space-y-1">
-                      <li>User sẽ được tạo với trạng thái Active</li>
-                      <li>Email sẽ được tự động verify</li>
-                      <li>User có thể đăng nhập ngay với mật khẩu đã tạo</li>
-                      {userType === 'CUSTOMER' && (
-                        <li>User khách hàng chỉ xem được data của công ty mình</li>
-                      )}
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            </div>
+        {/* Body */}
+        <form id="create-user-form" onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-4">
+          {/* Email */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Email <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="user@example.com"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+              disabled={isSubmitting}
+            />
           </div>
 
-          {/* Actions */}
-          <div className="mt-6 flex justify-end gap-3">
-            <button
-              type="button"
-              onClick={handleClose}
+          {/* Full Name */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Họ tên <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              placeholder="Nguyễn Văn A"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+              minLength={2}
               disabled={isSubmitting}
-              className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 disabled:bg-gray-100 disabled:cursor-not-allowed"
-            >
-              Hủy
-            </button>
-            <button
-              type="submit"
+            />
+          </div>
+
+          {/* Password */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Mật khẩu <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Tối thiểu 8 ký tự"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+              minLength={8}
               disabled={isSubmitting}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+            />
+          </div>
+
+          {/* Confirm Password */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Xác nhận mật khẩu <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="Nhập lại mật khẩu"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+              minLength={8}
+              disabled={isSubmitting}
+            />
+          </div>
+
+          {/* User Type */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Loại User <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={userType}
+              onChange={(e) => {
+                setUserType(e.target.value as UserType);
+                // Reset role when changing userType
+                if (e.target.value === 'INTERNAL') {
+                  setRole('OPS');
+                  setCustomerId('');
+                } else {
+                  setRole('CUSTOMER_OPS');
+                }
+              }}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              disabled={isSubmitting}
             >
-              {isSubmitting ? 'Đang tạo...' : 'Tạo User'}
-            </button>
+              <option value="INTERNAL">Nội bộ</option>
+              <option value="CUSTOMER">Khách hàng</option>
+            </select>
+          </div>
+
+          {/* Role */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Vai trò <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={role}
+              onChange={(e) => setRole(e.target.value as UserRole)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              disabled={isSubmitting}
+            >
+              {userType === 'INTERNAL' ? (
+                <>
+                  <option value="ADMIN">Admin</option>
+                  <option value="ACCOUNTING">Kế toán</option>
+                  <option value="OPS">Vận hành</option>
+                  <option value="DISPATCHER">Điều phối</option>
+                  <option value="DRIVER">Tài xế</option>
+                </>
+              ) : (
+                <>
+                  <option value="CUSTOMER_OWNER">Chủ hàng</option>
+                  <option value="CUSTOMER_OPS">Vận hành KH</option>
+                </>
+              )}
+            </select>
+          </div>
+
+          {/* Customer Selection - Only for CUSTOMER userType */}
+          {userType === 'CUSTOMER' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Khách hàng <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={customerId}
+                onChange={(e) => setCustomerId(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+                disabled={isSubmitting}
+              >
+                <option value="">-- Chọn khách hàng --</option>
+                {customers.map((customer: any) => (
+                  <option key={customer.id} value={customer.id}>
+                    {customer.name} ({customer.email})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Info Note */}
+          <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-blue-800">Lưu ý</h3>
+                <div className="mt-2 text-sm text-blue-700">
+                  <ul className="list-disc list-inside space-y-1">
+                    <li>User sẽ được tạo với trạng thái Active</li>
+                    <li>Email sẽ được tự động verify</li>
+                    <li>User có thể đăng nhập ngay với mật khẩu đã tạo</li>
+                    {userType === 'CUSTOMER' && (
+                      <li>User khách hàng chỉ xem được data của công ty mình</li>
+                    )}
+                  </ul>
+                </div>
+              </div>
+            </div>
           </div>
         </form>
+
+        {/* Footer */}
+        <div className="flex justify-end gap-2 p-6 border-t border-gray-200 flex-shrink-0">
+          <Button variant="ghost" onClick={handleClose} disabled={isSubmitting}>
+            Hủy
+          </Button>
+          <Button type="submit" form="create-user-form" variant="primary" disabled={isSubmitting}>
+            {isSubmitting ? 'Đang tạo...' : 'Tạo User'}
+          </Button>
+        </div>
       </div>
-    </div>
+    </Dialog>
   );
 }

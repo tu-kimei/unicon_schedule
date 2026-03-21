@@ -7,7 +7,7 @@ import { HttpError } from 'wasp/server';
 
 type VehicleType = 'TRACTOR' | 'TRAILER';
 type VehicleStatus = 'IN_USE' | 'MAINTENANCE' | 'OUT_OF_SERVICE';
-type VehicleCompany = 'KHANH_HUY' | 'UNICON';
+type VehicleCompany = 'KHANH_HUY' | 'UNICON' | 'RENTAL';
 
 type CreateVehicleInput = {
   licensePlate: string;

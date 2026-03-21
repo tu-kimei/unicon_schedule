@@ -186,7 +186,7 @@ export const deleteCustomer: DeleteCustomer<DeleteCustomerInput, Customer> = asy
     where: { id: args.id },
     include: {
       debts: true,
-      orders: true,
+      shipments: true,
     },
   });
 
@@ -199,9 +199,9 @@ export const deleteCustomer: DeleteCustomer<DeleteCustomerInput, Customer> = asy
     throw new HttpError(400, 'Cannot delete customer with existing debts');
   }
 
-  // Check if customer has orders
-  if (existingCustomer.orders.length > 0) {
-    throw new HttpError(400, 'Cannot delete customer with existing orders');
+  // Check if customer has shipments
+  if (existingCustomer.shipments.length > 0) {
+    throw new HttpError(400, 'Cannot delete customer with existing shipments');
   }
 
   // Delete customer
