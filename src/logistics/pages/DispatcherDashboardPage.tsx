@@ -716,6 +716,19 @@ const emptyStop = (): StopFormData => ({
   plannedDeparture: '',
 });
 
+const STOP_TEMPLATES_QUICK: Record<string, { stopType: string; stopCategory: string; label: string }[]> = {
+  EXPORT: [
+    { stopType: 'DEPOT', stopCategory: 'PICKUP_EMPTY', label: 'Lấy container rỗng' },
+    { stopType: 'PICKUP', stopCategory: 'WAREHOUSE_LOAD', label: 'Đóng hàng tại kho' },
+    { stopType: 'PORT', stopCategory: 'PORT_DELIVERY', label: 'Giao tại cảng' },
+  ],
+  IMPORT: [
+    { stopType: 'PORT', stopCategory: 'PORT_PICKUP', label: 'Lấy hàng tại cảng' },
+    { stopType: 'DROPOFF', stopCategory: 'WAREHOUSE_UNLOAD', label: 'Dỡ hàng tại kho' },
+    { stopType: 'DEPOT', stopCategory: 'RETURN_EMPTY', label: 'Trả container rỗng' },
+  ],
+};
+
 const QuickDispatchModal = ({
   open,
   onClose,
@@ -725,36 +738,44 @@ const QuickDispatchModal = ({
   drivers,
 }: QuickDispatchModalProps) => {
   const [customerId, setCustomerId] = useState('');
+  const [shipmentType, setShipmentType] = useState<'EXPORT' | 'IMPORT'>('EXPORT');
   const [priority, setPriority] = useState('NORMAL');
   const [plannedStartDate, setPlannedStartDate] = useState('');
   const [plannedEndDate, setPlannedEndDate] = useState('');
   const [containerNumber, setContainerNumber] = useState('');
   const [containerType, setContainerType] = useState('');
   const [specialInstructions, setSpecialInstructions] = useState('');
-  const [stops, setStops] = useState<StopFormData[]>([
-    { ...emptyStop(), stopType: 'PICKUP' },
-    { ...emptyStop(), stopType: 'DROPOFF' },
-  ]);
-  const [vehicleId, setVehicleId] = useState('');
+  const [stops, setStops] = useState<StopFormData[]>(
+    STOP_TEMPLATES_QUICK.EXPORT.map((t) => ({ ...emptyStop(), stopType: t.stopType }))
+  );
+  const [tractorId, setTractorId] = useState('');
+  const [trailerId, setTrailerId] = useState('');
   const [driverId, setDriverId] = useState('');
   const [dispatchNotes, setDispatchNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const activeCustomers = (customers || []).filter((c) => c.status === 'ACTIVE');
+  const tractors = vehicles.filter((v) => v.vehicleType === 'TRACTOR');
+  const trailers = vehicles.filter((v) => v.vehicleType === 'TRAILER');
+
+  const handleShipmentTypeChange = (type: 'EXPORT' | 'IMPORT') => {
+    setShipmentType(type);
+    const template = STOP_TEMPLATES_QUICK[type];
+    setStops(template.map((t) => ({ ...emptyStop(), stopType: t.stopType })));
+  };
 
   const resetForm = () => {
     setCustomerId('');
+    setShipmentType('EXPORT');
     setPriority('NORMAL');
     setPlannedStartDate('');
     setPlannedEndDate('');
     setContainerNumber('');
     setContainerType('');
     setSpecialInstructions('');
-    setStops([
-      { ...emptyStop(), stopType: 'PICKUP' },
-      { ...emptyStop(), stopType: 'DROPOFF' },
-    ]);
-    setVehicleId('');
+    setStops(STOP_TEMPLATES_QUICK.EXPORT.map((t) => ({ ...emptyStop(), stopType: t.stopType })));
+    setTractorId('');
+    setTrailerId('');
     setDriverId('');
     setDispatchNotes('');
   };
@@ -783,7 +804,7 @@ const QuickDispatchModal = ({
     customerId &&
     plannedStartDate &&
     plannedEndDate &&
-    vehicleId &&
+    tractorId &&
     driverId &&
     stops.every((s) => s.locationName && s.address && s.plannedArrival && s.plannedDeparture);
 
@@ -792,8 +813,10 @@ const QuickDispatchModal = ({
 
     setIsSubmitting(true);
     try {
+      const template = STOP_TEMPLATES_QUICK[shipmentType];
       await onSubmit({
         customerId,
+        shipmentType,
         priority,
         plannedStartDate: new Date(plannedStartDate),
         plannedEndDate: new Date(plannedEndDate),
@@ -803,6 +826,7 @@ const QuickDispatchModal = ({
         stops: stops.map((s, i) => ({
           sequence: i + 1,
           stopType: s.stopType,
+          stopCategory: template[i]?.stopCategory,
           locationName: s.locationName,
           address: s.address,
           contactPerson: s.contactPerson || undefined,
@@ -810,7 +834,8 @@ const QuickDispatchModal = ({
           plannedArrival: new Date(s.plannedArrival),
           plannedDeparture: new Date(s.plannedDeparture),
         })),
-        vehicleId,
+        tractorId,
+        trailerId: trailerId || undefined,
         driverId,
         dispatchNotes: dispatchNotes || undefined,
       });
@@ -834,6 +859,37 @@ const QuickDispatchModal = ({
           </div>
 
           <div className="px-6 py-4 space-y-6">
+            {/* Shipment Type */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Loại vận chuyển <span className="text-red-500">*</span></label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => handleShipmentTypeChange('EXPORT')}
+                  className={`p-3 rounded-lg border-2 text-center cursor-pointer transition-colors duration-200 ${
+                    shipmentType === 'EXPORT'
+                      ? 'border-primary-600 bg-primary-50 text-primary-700'
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <div className="font-medium">Hàng xuất</div>
+                  <div className="text-xs text-gray-500 mt-1">Lấy rỗng → Kho → Cảng</div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleShipmentTypeChange('IMPORT')}
+                  className={`p-3 rounded-lg border-2 text-center cursor-pointer transition-colors duration-200 ${
+                    shipmentType === 'IMPORT'
+                      ? 'border-primary-600 bg-primary-50 text-primary-700'
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <div className="font-medium">Hàng nhập</div>
+                  <div className="text-xs text-gray-500 mt-1">Cảng → Kho → Trả rỗng</div>
+                </button>
+              </div>
+            </div>
+
             {/* Customer & Priority */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -938,70 +994,64 @@ const QuickDispatchModal = ({
 
             {/* Stops */}
             <div>
-              <div className="flex justify-between items-center mb-3">
-                <label className="block text-sm font-medium text-gray-700">
-                  Điểm dừng <span className="text-red-500">*</span>
-                </label>
-                <button type="button" onClick={addStop} className="text-sm text-primary-600 hover:text-primary-700 font-medium">
-                  + Thêm điểm dừng
-                </button>
-              </div>
-              <div className="space-y-4">
-                {stops.map((stop, index) => (
-                  <div key={index} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                    <div className="flex justify-between items-center mb-3">
-                      <h4 className="text-sm font-medium text-gray-700">Điểm #{index + 1}</h4>
-                      <div className="flex items-center gap-2">
-                        <select
-                          value={stop.stopType}
-                          onChange={(e) => updateStop(index, 'stopType', e.target.value)}
-                          className="border border-gray-300 rounded px-2 py-1 text-sm"
-                        >
-                          <option value="PICKUP">Lấy hàng</option>
-                          <option value="DROPOFF">Giao hàng</option>
-                          <option value="DEPOT">Bãi xe</option>
-                          <option value="PORT">Cảng</option>
-                        </select>
-                        {stops.length > 2 && (
-                          <button type="button" onClick={() => removeStop(index)} className="text-red-500 hover:text-red-700 text-sm">
-                            Xóa
-                          </button>
-                        )}
+              <label className="block text-sm font-medium text-gray-700 mb-3">
+                Điểm dừng <span className="text-red-500">*</span>
+              </label>
+              <div className="space-y-3">
+                {stops.map((stop, index) => {
+                  const template = STOP_TEMPLATES_QUICK[shipmentType][index];
+                  return (
+                    <div key={index} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary-100 text-primary-700 text-xs font-bold">{index + 1}</span>
+                        <h4 className="text-sm font-medium text-gray-900">{template?.label || `Điểm #${index + 1}`}</h4>
+                        <span className="px-2 py-0.5 text-xs rounded bg-gray-200 text-gray-600">{template?.stopCategory}</span>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <input type="text" value={stop.locationName} onChange={(e) => updateStop(index, 'locationName', e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2 text-sm" placeholder="Tên địa điểm *" />
+                        <input type="text" value={stop.address} onChange={(e) => updateStop(index, 'address', e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2 text-sm" placeholder="Địa chỉ *" />
+                        <input type="text" value={stop.contactPerson} onChange={(e) => updateStop(index, 'contactPerson', e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2 text-sm" placeholder="Người liên hệ" />
+                        <input type="text" value={stop.contactPhone} onChange={(e) => updateStop(index, 'contactPhone', e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2 text-sm" placeholder="Số điện thoại" />
+                        <div>
+                          <label className="block text-xs text-gray-500 mb-1">Dự kiến đến *</label>
+                          <input type="datetime-local" value={stop.plannedArrival} onChange={(e) => updateStop(index, 'plannedArrival', e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2 text-sm" />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-gray-500 mb-1">Dự kiến đi *</label>
+                          <input type="datetime-local" value={stop.plannedDeparture} onChange={(e) => updateStop(index, 'plannedDeparture', e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2 text-sm" />
+                        </div>
                       </div>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      <input type="text" value={stop.locationName} onChange={(e) => updateStop(index, 'locationName', e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2 text-sm" placeholder="Tên địa điểm *" />
-                      <input type="text" value={stop.address} onChange={(e) => updateStop(index, 'address', e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2 text-sm" placeholder="Địa chỉ *" />
-                      <input type="text" value={stop.contactPerson} onChange={(e) => updateStop(index, 'contactPerson', e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2 text-sm" placeholder="Người liên hệ" />
-                      <input type="text" value={stop.contactPhone} onChange={(e) => updateStop(index, 'contactPhone', e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2 text-sm" placeholder="Số điện thoại" />
-                      <div>
-                        <label className="block text-xs text-gray-500 mb-1">Đến *</label>
-                        <input type="datetime-local" value={stop.plannedArrival} onChange={(e) => updateStop(index, 'plannedArrival', e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2 text-sm" />
-                      </div>
-                      <div>
-                        <label className="block text-xs text-gray-500 mb-1">Đi *</label>
-                        <input type="datetime-local" value={stop.plannedDeparture} onChange={(e) => updateStop(index, 'plannedDeparture', e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2 text-sm" />
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 
             {/* Vehicle & Driver Assignment */}
             <div className="border-t border-gray-200 pt-4">
-              <h3 className="text-sm font-semibold text-gray-700 mb-3">Phân công</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Xe <span className="text-red-500">*</span>
-                  </label>
-                  <select value={vehicleId} onChange={(e) => setVehicleId(e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2">
-                    <option value="">-- Chọn xe --</option>
-                    {vehicles.map((v) => (
-                      <option key={v.id} value={v.id}>{v.licensePlate} - {v.vehicleType.replace('_', ' ')}</option>
-                    ))}
-                  </select>
+              <h3 className="text-sm font-semibold text-gray-700 mb-3">Phân công xe & tài xế</h3>
+              <div className="space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Đầu kéo <span className="text-red-500">*</span>
+                    </label>
+                    <select value={tractorId} onChange={(e) => setTractorId(e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2">
+                      <option value="">-- Chọn đầu kéo --</option>
+                      {tractors.map((v) => (
+                        <option key={v.id} value={v.id}>{v.licensePlate}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Rơ moóc</label>
+                    <select value={trailerId} onChange={(e) => setTrailerId(e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2">
+                      <option value="">-- Không chọn --</option>
+                      {trailers.map((v) => (
+                        <option key={v.id} value={v.id}>{v.licensePlate}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
