@@ -169,15 +169,14 @@ export const DispatcherDashboardPage = () => {
     }
   };
 
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
   const handleQuickDispatchSubmit = async (data: any) => {
-    try {
-      await createAndDispatchShipment(data);
-      setShowQuickDispatchModal(false);
-      refetchAll();
-    } catch (error: any) {
-      console.error('Failed to create quick dispatch:', error);
-      alert(error?.message || 'Không thể tạo điều phối nhanh. Vui lòng thử lại.');
-    }
+    await createAndDispatchShipment(data);
+    setShowQuickDispatchModal(false);
+    setSuccessMessage('Tạo và điều phối chuyến hàng thành công!');
+    setTimeout(() => setSuccessMessage(null), 4000);
+    refetchAll();
   };
 
   const isLoading = shipmentsLoading || vehiclesLoading || driversLoading;
@@ -200,6 +199,14 @@ export const DispatcherDashboardPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Success Toast */}
+      {successMessage && (
+        <div className="fixed top-4 right-4 z-50 bg-primary-600 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-2 animate-fade-in">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+          {successMessage}
+        </div>
+      )}
+
       {/* Header */}
       <div className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-6 py-4">
@@ -808,10 +815,13 @@ const QuickDispatchModal = ({
     driverId &&
     stops.every((s) => s.locationName && s.address && s.plannedArrival && s.plannedDeparture);
 
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
   const handleSubmit = async () => {
     if (!isValid) return;
 
     setIsSubmitting(true);
+    setSubmitError(null);
     try {
       const template = STOP_TEMPLATES_QUICK[shipmentType];
       await onSubmit({
@@ -840,8 +850,10 @@ const QuickDispatchModal = ({
         dispatchNotes: dispatchNotes || undefined,
       });
       resetForm();
-    } catch (error) {
-      // Error handled in parent
+    } catch (error: any) {
+      const msg = error?.message || error?.data?.message || 'Không thể tạo điều phối. Vui lòng thử lại.';
+      setSubmitError(msg);
+      console.error('Quick dispatch error:', error);
     } finally {
       setIsSubmitting(false);
     }
@@ -1074,12 +1086,24 @@ const QuickDispatchModal = ({
             </div>
           </div>
 
+          {/* Error Message */}
+          {submitError && (
+            <div className="mx-6 mb-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-800">{submitError}</p>
+            </div>
+          )}
+
           {/* Footer */}
-          <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3 sticky bottom-0 bg-white">
-            <Button variant="ghost" onClick={handleClose} disabled={isSubmitting}>Hủy</Button>
-            <Button onClick={handleSubmit} disabled={!isValid || isSubmitting}>
-              {isSubmitting ? 'Đang tạo...' : 'Tạo & Điều phối'}
-            </Button>
+          <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between sticky bottom-0 bg-white">
+            <div className="text-xs text-gray-400">
+              {!isValid && 'Vui lòng điền đầy đủ các trường bắt buộc (*)'}
+            </div>
+            <div className="flex space-x-3">
+              <Button variant="ghost" onClick={handleClose} disabled={isSubmitting}>Hủy</Button>
+              <Button onClick={handleSubmit} disabled={!isValid || isSubmitting}>
+                {isSubmitting ? 'Đang tạo...' : 'Tạo & Điều phối'}
+              </Button>
+            </div>
           </div>
         </div>
       </Dialog>
