@@ -3,6 +3,7 @@ import { useQuery } from 'wasp/client/operations';
 import { getAllShipments } from 'wasp/client/operations';
 import { ShipmentCard } from '../components/ShipmentCard';
 import { Link } from 'react-router-dom';
+import { RoleGuard } from '../../shared/components/RoleGuard';
 
 interface ShipmentFilters {
   status?: string;
@@ -83,206 +84,208 @@ export const OpsShipmentsPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-2xl font-heading font-bold text-gray-900">Quản lý chuyến hàng</h1>
-              <p className="text-gray-600">Tất cả chuyến hàng</p>
-            </div>
-            <Link
-              to="/ops/shipments/create"
-              className="bg-primary-600 hover:bg-primary-700 transition-colors duration-200 text-white px-4 py-2 rounded-lg font-medium"
-            >
-              Tạo chuyến hàng
-            </Link>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-6 py-6">
-        {/* Filters */}
-        <div className="bg-white rounded-lg shadow mb-6 p-4">
-          <h2 className="text-lg font-semibold mb-4">Bộ lọc</h2>
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-            {/* Shipment Type Filter */}
-            <select
-              value={filters.shipmentType || ''}
-              onChange={(e) => setFilters(prev => ({
-                ...prev,
-                shipmentType: e.target.value || undefined
-              }))}
-              className="border border-gray-300 rounded-lg px-3 py-2"
-            >
-              <option value="">Tất cả loại</option>
-              <option value="EXPORT">Hàng xuất</option>
-              <option value="IMPORT">Hàng nhập</option>
-            </select>
-
-            {/* Operation Status Filter */}
-            <select
-              value={filters.operationStatus || ''}
-              onChange={(e) => setFilters(prev => ({
-                ...prev,
-                operationStatus: e.target.value || undefined
-              }))}
-              className="border border-gray-300 rounded-lg px-3 py-2"
-            >
-              <option value="">Tất cả trạng thái VH</option>
-              <option value="DRAFT">Nháp</option>
-              <option value="PENDING">Chờ xử lý</option>
-              <option value="DISPATCHED">Đã điều phối</option>
-              <option value="IN_TRANSIT">Đang vận chuyển</option>
-              <option value="DELIVERED">Đã giao</option>
-              <option value="CANCELLED">Đã hủy</option>
-            </select>
-
-            <select
-              value={filters.status || ''}
-              onChange={(e) => setFilters(prev => ({
-                ...prev,
-                status: e.target.value || undefined
-              }))}
-              className="border border-gray-300 rounded-lg px-3 py-2"
-            >
-              <option value="">Tất cả trạng thái</option>
-              <option value="DRAFT">Nháp</option>
-              <option value="READY">Sẵn sàng</option>
-              <option value="ASSIGNED">Đã gán</option>
-              <option value="IN_TRANSIT">Đang vận chuyển</option>
-              <option value="COMPLETED">Hoàn thành</option>
-              <option value="CANCELLED">Đã hủy</option>
-            </select>
-
-            <select
-              value={filters.priority || ''}
-              onChange={(e) => setFilters(prev => ({
-                ...prev,
-                priority: e.target.value || undefined
-              }))}
-              className="border border-gray-300 rounded-lg px-3 py-2"
-            >
-              <option value="">Tất cả mức ưu tiên</option>
-              <option value="LOW">Thấp</option>
-              <option value="NORMAL">Bình thường</option>
-              <option value="HIGH">Cao</option>
-              <option value="URGENT">Khẩn cấp</option>
-            </select>
-
-            <input
-              type="date"
-              onChange={(e) => {
-                const start = e.target.value ? new Date(e.target.value) : undefined;
-                setFilters(prev => ({
-                  ...prev,
-                  dateRange: start ? { ...prev.dateRange, start } : undefined
-                }));
-              }}
-              className="border border-gray-300 rounded-lg px-3 py-2"
-              placeholder="Ngày bắt đầu"
-            />
-          </div>
-        </div>
-
-        {/* Shipments Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {isLoading ? (
-            Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-                <div className="animate-pulse">
-                  <div className="h-4 bg-gray-200 rounded mb-2"></div>
-                  <div className="h-3 bg-gray-200 rounded mb-4"></div>
-                  <div className="space-y-2">
-                    <div className="h-3 bg-gray-200 rounded"></div>
-                    <div className="h-3 bg-gray-200 rounded"></div>
-                    <div className="h-3 bg-gray-200 rounded"></div>
-                  </div>
-                </div>
+    <RoleGuard allowedRoles={['OPS', 'ADMIN', 'DISPATCHER']}>
+      <div className="min-h-screen bg-gray-50">
+        {/* Header */}
+        <div className="bg-white shadow">
+          <div className="max-w-7xl mx-auto px-6 py-4">
+            <div className="flex justify-between items-center">
+              <div>
+                <h1 className="text-2xl font-heading font-bold text-gray-900">Quản lý chuyến hàng</h1>
+                <p className="text-gray-600">Tất cả chuyến hàng</p>
               </div>
-            ))
-          ) : filteredShipments.length > 0 ? (
-            filteredShipments.map((shipment: any) => (
               <Link
-                key={shipment.id}
-                to={`/ops/shipments/${shipment.id}`}
-                className="block cursor-pointer"
+                to="/ops/shipments/create"
+                className="bg-primary-600 hover:bg-primary-700 transition-colors duration-200 text-white px-4 py-2 rounded-lg font-medium"
               >
-                <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
-                  <div className="flex justify-between items-start mb-3">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-lg font-semibold text-gray-900">
-                          {shipment.shipmentNumber}
-                        </h3>
-                        {shipment.shipmentType && (
-                          <span className={`px-1.5 py-0.5 text-[10px] font-medium rounded ${
-                            shipment.shipmentType === 'EXPORT' ? 'bg-green-100 text-green-700' : 'bg-purple-100 text-purple-700'
-                          }`}>
-                            {shipment.shipmentType}
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-sm text-gray-600">
-                        {shipment.customer?.name}
-                      </p>
-                    </div>
-                  </div>
+                Tạo chuyến hàng
+              </Link>
+            </div>
+          </div>
+        </div>
 
-                  {/* 3 Status Badges */}
-                  <div className="flex flex-wrap gap-1 mb-3">
-                    <span className={`px-1.5 py-0.5 text-[10px] rounded font-medium ${
-                      operationStatusStyles[shipment.operationStatus] || 'bg-gray-100 text-gray-700'
-                    }`}>
-                      {operationStatusLabels[shipment.operationStatus] || shipment.operationStatus || 'N/A'}
-                    </span>
-                    <span className={`px-1.5 py-0.5 text-[10px] rounded font-medium ${
-                      documentStatusStyles[shipment.documentStatus] || 'bg-gray-100 text-gray-700'
-                    }`}>
-                      {documentStatusLabels[shipment.documentStatus] || shipment.documentStatus || 'N/A'}
-                    </span>
-                    <span className={`px-1.5 py-0.5 text-[10px] rounded font-medium ${
-                      financialStatusStyles[shipment.financialStatus] || 'bg-gray-100 text-gray-700'
-                    }`}>
-                      {financialStatusLabels[shipment.financialStatus] || shipment.financialStatus || 'N/A'}
-                    </span>
-                  </div>
+        {/* Main Content */}
+        <div className="max-w-7xl mx-auto px-6 py-6">
+          {/* Filters */}
+          <div className="bg-white rounded-lg shadow mb-6 p-4">
+            <h2 className="text-lg font-semibold mb-4">Bộ lọc</h2>
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+              {/* Shipment Type Filter */}
+              <select
+                value={filters.shipmentType || ''}
+                onChange={(e) => setFilters(prev => ({
+                  ...prev,
+                  shipmentType: e.target.value || undefined
+                }))}
+                className="border border-gray-300 rounded-lg px-3 py-2"
+              >
+                <option value="">Tất cả loại</option>
+                <option value="EXPORT">Hàng xuất</option>
+                <option value="IMPORT">Hàng nhập</option>
+              </select>
 
-                  <div className="space-y-1.5 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Mức ưu tiên:</span>
-                      <span className={`font-medium ${
-                        shipment.priority === 'URGENT' ? 'text-red-600' :
-                        shipment.priority === 'HIGH' ? 'text-orange-600' :
-                        'text-gray-600'
-                      }`}>
-                        {shipment.priority}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Điểm dừng:</span>
-                      <span className="font-medium">{shipment.stops?.length || 0}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Bắt đầu:</span>
-                      <span className="font-medium">
-                        {new Date(shipment.plannedStartDate).toLocaleDateString('vi-VN')}
-                      </span>
+              {/* Operation Status Filter */}
+              <select
+                value={filters.operationStatus || ''}
+                onChange={(e) => setFilters(prev => ({
+                  ...prev,
+                  operationStatus: e.target.value || undefined
+                }))}
+                className="border border-gray-300 rounded-lg px-3 py-2"
+              >
+                <option value="">Tất cả trạng thái VH</option>
+                <option value="DRAFT">Nháp</option>
+                <option value="PENDING">Chờ xử lý</option>
+                <option value="DISPATCHED">Đã điều phối</option>
+                <option value="IN_TRANSIT">Đang vận chuyển</option>
+                <option value="DELIVERED">Đã giao</option>
+                <option value="CANCELLED">Đã hủy</option>
+              </select>
+
+              <select
+                value={filters.status || ''}
+                onChange={(e) => setFilters(prev => ({
+                  ...prev,
+                  status: e.target.value || undefined
+                }))}
+                className="border border-gray-300 rounded-lg px-3 py-2"
+              >
+                <option value="">Tất cả trạng thái</option>
+                <option value="DRAFT">Nháp</option>
+                <option value="READY">Sẵn sàng</option>
+                <option value="ASSIGNED">Đã gán</option>
+                <option value="IN_TRANSIT">Đang vận chuyển</option>
+                <option value="COMPLETED">Hoàn thành</option>
+                <option value="CANCELLED">Đã hủy</option>
+              </select>
+
+              <select
+                value={filters.priority || ''}
+                onChange={(e) => setFilters(prev => ({
+                  ...prev,
+                  priority: e.target.value || undefined
+                }))}
+                className="border border-gray-300 rounded-lg px-3 py-2"
+              >
+                <option value="">Tất cả mức ưu tiên</option>
+                <option value="LOW">Thấp</option>
+                <option value="NORMAL">Bình thường</option>
+                <option value="HIGH">Cao</option>
+                <option value="URGENT">Khẩn cấp</option>
+              </select>
+
+              <input
+                type="date"
+                onChange={(e) => {
+                  const start = e.target.value ? new Date(e.target.value) : undefined;
+                  setFilters(prev => ({
+                    ...prev,
+                    dateRange: start ? { ...prev.dateRange, start } : undefined
+                  }));
+                }}
+                className="border border-gray-300 rounded-lg px-3 py-2"
+                placeholder="Ngày bắt đầu"
+              />
+            </div>
+          </div>
+
+          {/* Shipments Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {isLoading ? (
+              Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                  <div className="animate-pulse">
+                    <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                    <div className="h-3 bg-gray-200 rounded mb-4"></div>
+                    <div className="space-y-2">
+                      <div className="h-3 bg-gray-200 rounded"></div>
+                      <div className="h-3 bg-gray-200 rounded"></div>
+                      <div className="h-3 bg-gray-200 rounded"></div>
                     </div>
                   </div>
                 </div>
-              </Link>
-            ))
-          ) : (
-            <div className="col-span-full text-center py-12">
-              <p className="text-gray-500 text-lg">Không tìm thấy chuyến hàng</p>
-              <p className="text-gray-400">Thử điều chỉnh bộ lọc hoặc tạo chuyến hàng mới</p>
-            </div>
-          )}
+              ))
+            ) : filteredShipments.length > 0 ? (
+              filteredShipments.map((shipment: any) => (
+                <Link
+                  key={shipment.id}
+                  to={`/ops/shipments/${shipment.id}`}
+                  className="block cursor-pointer"
+                >
+                  <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
+                    <div className="flex justify-between items-start mb-3">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-lg font-semibold text-gray-900">
+                            {shipment.shipmentNumber}
+                          </h3>
+                          {shipment.shipmentType && (
+                            <span className={`px-1.5 py-0.5 text-[10px] font-medium rounded ${
+                              shipment.shipmentType === 'EXPORT' ? 'bg-green-100 text-green-700' : 'bg-purple-100 text-purple-700'
+                            }`}>
+                              {shipment.shipmentType}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-600">
+                          {shipment.customer?.name}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* 3 Status Badges */}
+                    <div className="flex flex-wrap gap-1 mb-3">
+                      <span className={`px-1.5 py-0.5 text-[10px] rounded font-medium ${
+                        operationStatusStyles[shipment.operationStatus] || 'bg-gray-100 text-gray-700'
+                      }`}>
+                        {operationStatusLabels[shipment.operationStatus] || shipment.operationStatus || 'N/A'}
+                      </span>
+                      <span className={`px-1.5 py-0.5 text-[10px] rounded font-medium ${
+                        documentStatusStyles[shipment.documentStatus] || 'bg-gray-100 text-gray-700'
+                      }`}>
+                        {documentStatusLabels[shipment.documentStatus] || shipment.documentStatus || 'N/A'}
+                      </span>
+                      <span className={`px-1.5 py-0.5 text-[10px] rounded font-medium ${
+                        financialStatusStyles[shipment.financialStatus] || 'bg-gray-100 text-gray-700'
+                      }`}>
+                        {financialStatusLabels[shipment.financialStatus] || shipment.financialStatus || 'N/A'}
+                      </span>
+                    </div>
+
+                    <div className="space-y-1.5 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Mức ưu tiên:</span>
+                        <span className={`font-medium ${
+                          shipment.priority === 'URGENT' ? 'text-red-600' :
+                          shipment.priority === 'HIGH' ? 'text-orange-600' :
+                          'text-gray-600'
+                        }`}>
+                          {shipment.priority}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Điểm dừng:</span>
+                        <span className="font-medium">{shipment.stops?.length || 0}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Bắt đầu:</span>
+                        <span className="font-medium">
+                          {new Date(shipment.plannedStartDate).toLocaleDateString('vi-VN')}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              ))
+            ) : (
+              <div className="col-span-full text-center py-12">
+                <p className="text-gray-500 text-lg">Không tìm thấy chuyến hàng</p>
+                <p className="text-gray-400">Thử điều chỉnh bộ lọc hoặc tạo chuyến hàng mới</p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </RoleGuard>
   );
 };

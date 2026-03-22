@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { createShipmentRequest } from 'wasp/client/operations';
 import { useNavigate } from 'react-router-dom';
+import { RoleGuard } from '../../shared/components/RoleGuard';
 
 type ShipmentType = 'EXPORT' | 'IMPORT';
 
@@ -618,77 +619,79 @@ export const CreateShipmentRequestPage = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <h1 className="text-2xl font-heading font-bold text-gray-900">Tạo yêu cầu vận chuyển</h1>
-          <p className="text-gray-600 mt-1">Gửi yêu cầu vận chuyển mới để được xác nhận</p>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white rounded-lg shadow-lg p-8">
-          {renderStepIndicator()}
-
-          {error && (
-            <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-              {error}
-            </div>
-          )}
-
-          {/* Step Content */}
-          <div className="mb-8">
-            {step === 1 && renderBasicInfoStep()}
-            {step === 2 && renderStopsStep()}
-            {step === 3 && renderReviewStep()}
+    <RoleGuard allowedRoles={['CUSTOMER_OWNER', 'CUSTOMER_OPS', 'ADMIN']}>
+      <div className="min-h-screen bg-gray-50">
+        {/* Header */}
+        <div className="bg-white border-b border-gray-200">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <h1 className="text-2xl font-heading font-bold text-gray-900">Tạo yêu cầu vận chuyển</h1>
+            <p className="text-gray-600 mt-1">Gửi yêu cầu vận chuyển mới để được xác nhận</p>
           </div>
+        </div>
 
-          {/* Navigation Buttons */}
-          <div className="flex items-center justify-between pt-6 border-t border-gray-200">
-            <button
-              onClick={() => {
-                if (step > 1) setStep((step - 1) as any);
-                else navigate('/customer/shipments');
-              }}
-              className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium"
-            >
-              {step === 1 ? 'Hủy' : 'Quay lại'}
-            </button>
+        {/* Main Content */}
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="bg-white rounded-lg shadow-lg p-8">
+            {renderStepIndicator()}
 
-            {step < 3 ? (
-              <button
-                onClick={() => setStep((step + 1) as any)}
-                disabled={!validateStep(step)}
-                className="px-6 py-2 bg-primary-600 hover:bg-primary-700 transition-colors duration-200 text-white rounded-lg font-medium disabled:bg-gray-300 disabled:cursor-not-allowed"
-              >
-                Tiếp theo
-              </button>
-            ) : (
-              <button
-                onClick={handleSubmit}
-                disabled={isSubmitting}
-                className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center gap-2"
-              >
-                {isSubmitting ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    Đang gửi...
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    Gửi yêu cầu
-                  </>
-                )}
-              </button>
+            {error && (
+              <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+                {error}
+              </div>
             )}
+
+            {/* Step Content */}
+            <div className="mb-8">
+              {step === 1 && renderBasicInfoStep()}
+              {step === 2 && renderStopsStep()}
+              {step === 3 && renderReviewStep()}
+            </div>
+
+            {/* Navigation Buttons */}
+            <div className="flex items-center justify-between pt-6 border-t border-gray-200">
+              <button
+                onClick={() => {
+                  if (step > 1) setStep((step - 1) as any);
+                  else navigate('/customer/shipments');
+                }}
+                className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium"
+              >
+                {step === 1 ? 'Hủy' : 'Quay lại'}
+              </button>
+
+              {step < 3 ? (
+                <button
+                  onClick={() => setStep((step + 1) as any)}
+                  disabled={!validateStep(step)}
+                  className="px-6 py-2 bg-primary-600 hover:bg-primary-700 transition-colors duration-200 text-white rounded-lg font-medium disabled:bg-gray-300 disabled:cursor-not-allowed"
+                >
+                  Tiếp theo
+                </button>
+              ) : (
+                <button
+                  onClick={handleSubmit}
+                  disabled={isSubmitting}
+                  className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      Đang gửi...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      Gửi yêu cầu
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </RoleGuard>
   );
 };

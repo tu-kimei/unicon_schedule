@@ -5,6 +5,7 @@ import {
   updateDriverTaskStatus,
 } from 'wasp/client/operations';
 import { StopCheckInOut } from '../components/StopCheckInOut';
+import { RoleGuard } from '../../shared/components/RoleGuard';
 
 interface DriverTask {
   id: string;
@@ -218,100 +219,102 @@ const TaskCard = ({ task, isExpanded, isActive, onToggle, onStartTrip, onComplet
   const allStopsCompleted = stops.every(s => s.actualDeparture);
 
   return (
-    <div className={`bg-white rounded-lg shadow overflow-hidden ${
-      isActive ? 'ring-2 ring-yellow-400' : ''
-    }`}>
-      {/* Card Header */}
-      <div
-        onClick={onToggle}
-        className="px-4 py-4 cursor-pointer hover:bg-gray-50 transition-colors"
-      >
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-1">
-              <h3 className="font-semibold text-gray-900">{task.shipment.shipmentNumber}</h3>
-              {task.shipment.shipmentType && (
-                <span className={`px-2 py-0.5 text-xs font-medium rounded ${
-                  task.shipment.shipmentType === 'EXPORT' ? 'bg-green-100 text-green-700' : 'bg-purple-100 text-purple-700'
+    <RoleGuard allowedRoles={['DRIVER', 'ADMIN']}>
+      <div className={`bg-white rounded-lg shadow overflow-hidden ${
+        isActive ? 'ring-2 ring-yellow-400' : ''
+      }`}>
+        {/* Card Header */}
+        <div
+          onClick={onToggle}
+          className="px-4 py-4 cursor-pointer hover:bg-gray-50 transition-colors"
+        >
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <h3 className="font-semibold text-gray-900">{task.shipment.shipmentNumber}</h3>
+                {task.shipment.shipmentType && (
+                  <span className={`px-2 py-0.5 text-xs font-medium rounded ${
+                    task.shipment.shipmentType === 'EXPORT' ? 'bg-green-100 text-green-700' : 'bg-purple-100 text-purple-700'
+                  }`}>
+                    {task.shipment.shipmentType}
+                  </span>
+                )}
+                <span className={`px-2 py-0.5 text-xs rounded font-medium ${
+                  taskStatusStyles[task.status] || taskStatusStyles.PENDING
                 }`}>
-                  {task.shipment.shipmentType}
+                  {task.status}
                 </span>
+              </div>
+              <p className="text-sm text-gray-600">{task.shipment.customer.name}</p>
+              <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
+                <span>Đầu kéo: {task.tractor.licensePlate}</span>
+                {task.trailer && <span>Rơ moóc: {task.trailer.licensePlate}</span>}
+              </div>
+              {task.instructions && (
+                <p className="text-sm text-primary-600 mt-2 bg-blue-50 px-2 py-1 rounded">
+                  {task.instructions}
+                </p>
               )}
-              <span className={`px-2 py-0.5 text-xs rounded font-medium ${
-                taskStatusStyles[task.status] || taskStatusStyles.PENDING
-              }`}>
-                {task.status}
-              </span>
             </div>
-            <p className="text-sm text-gray-600">{task.shipment.customer.name}</p>
-            <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
-              <span>Đầu kéo: {task.tractor.licensePlate}</span>
-              {task.trailer && <span>Rơ moóc: {task.trailer.licensePlate}</span>}
-            </div>
-            {task.instructions && (
-              <p className="text-sm text-primary-600 mt-2 bg-blue-50 px-2 py-1 rounded">
-                {task.instructions}
-              </p>
-            )}
-          </div>
 
-          <svg
-            className={`w-5 h-5 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
+            <svg
+              className={`w-5 h-5 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
         </div>
+
+        {/* Expanded Content: Stops */}
+        {isExpanded && (
+          <div className="px-4 pb-4 border-t border-gray-200">
+            <div className="mt-4 space-y-3">
+              <h4 className="text-sm font-semibold text-gray-700">Điểm dừng ({stops.length})</h4>
+              {stops.map((stop) => (
+                <StopCheckInOut
+                  key={stop.id}
+                  stop={stop}
+                  taskId={task.id}
+                  shipmentId={task.shipment.id}
+                  pods={task.shipment.pods || []}
+                  onUpdate={onUpdate}
+                />
+              ))}
+            </div>
+
+            {/* Action Buttons */}
+            <div className="mt-4 flex gap-3">
+              {task.status === 'PENDING' && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); onStartTrip(); }}
+                  className="flex-1 bg-primary-600 hover:bg-primary-700 transition-colors duration-200 text-white px-4 py-3 rounded-lg font-medium flex items-center justify-center gap-2"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Bắt đầu chuyến
+                </button>
+              )}
+
+              {task.status === 'IN_PROGRESS' && allStopsCompleted && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); onCompleteTrip(); }}
+                  className="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg font-medium flex items-center justify-center gap-2"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  Hoàn thành chuyến
+                </button>
+              )}
+            </div>
+          </div>
+        )}
       </div>
-
-      {/* Expanded Content: Stops */}
-      {isExpanded && (
-        <div className="px-4 pb-4 border-t border-gray-200">
-          <div className="mt-4 space-y-3">
-            <h4 className="text-sm font-semibold text-gray-700">Điểm dừng ({stops.length})</h4>
-            {stops.map((stop) => (
-              <StopCheckInOut
-                key={stop.id}
-                stop={stop}
-                taskId={task.id}
-                shipmentId={task.shipment.id}
-                pods={task.shipment.pods || []}
-                onUpdate={onUpdate}
-              />
-            ))}
-          </div>
-
-          {/* Action Buttons */}
-          <div className="mt-4 flex gap-3">
-            {task.status === 'PENDING' && (
-              <button
-                onClick={(e) => { e.stopPropagation(); onStartTrip(); }}
-                className="flex-1 bg-primary-600 hover:bg-primary-700 transition-colors duration-200 text-white px-4 py-3 rounded-lg font-medium flex items-center justify-center gap-2"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                Bắt đầu chuyến
-              </button>
-            )}
-
-            {task.status === 'IN_PROGRESS' && allStopsCompleted && (
-              <button
-                onClick={(e) => { e.stopPropagation(); onCompleteTrip(); }}
-                className="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg font-medium flex items-center justify-center gap-2"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                Hoàn thành chuyến
-              </button>
-            )}
-          </div>
-        </div>
-      )}
-    </div>
+    </RoleGuard>
   );
 };

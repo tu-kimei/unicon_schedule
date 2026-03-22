@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useQuery } from 'wasp/client/operations';
+import { RoleGuard } from '../../shared/components/RoleGuard';
 import {
   getPendingShipments,
   getAvailableVehicles,
@@ -822,214 +823,216 @@ const QuickDispatchModal = ({
   };
 
   return (
-    <Dialog open={open} onClose={handleClose} closeOnClickOutside={false}>
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="px-6 py-4 border-b border-gray-200 sticky top-0 bg-white z-10">
-          <h2 className="text-xl font-semibold text-gray-900">Tạo & Điều phối nhanh</h2>
-          <p className="text-sm text-gray-600 mt-1">
-            Tạo chuyến hàng mới và phân công trong một bước
-          </p>
-        </div>
-
-        <div className="px-6 py-4 space-y-6">
-          {/* Customer & Priority */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Khách hàng <span className="text-red-500">*</span>
-              </label>
-              <select
-                value={customerId}
-                onChange={(e) => setCustomerId(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2"
-              >
-                <option value="">-- Chọn khách hàng --</option>
-                {activeCustomers.map((c) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Mức ưu tiên</label>
-              <select
-                value={priority}
-                onChange={(e) => setPriority(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2"
-              >
-                <option value="LOW">Thấp</option>
-                <option value="NORMAL">Bình thường</option>
-                <option value="HIGH">Cao</option>
-                <option value="URGENT">Khẩn cấp</option>
-              </select>
-            </div>
+    <RoleGuard allowedRoles={['DISPATCHER', 'ADMIN']}>
+      <Dialog open={open} onClose={handleClose} closeOnClickOutside={false}>
+        <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+          <div className="px-6 py-4 border-b border-gray-200 sticky top-0 bg-white z-10">
+            <h2 className="text-xl font-semibold text-gray-900">Tạo & Điều phối nhanh</h2>
+            <p className="text-sm text-gray-600 mt-1">
+              Tạo chuyến hàng mới và phân công trong một bước
+            </p>
           </div>
 
-          {/* Planned Dates */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Ngày bắt đầu <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="datetime-local"
-                value={plannedStartDate}
-                onChange={(e) => setPlannedStartDate(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Ngày kết thúc <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="datetime-local"
-                value={plannedEndDate}
-                onChange={(e) => setPlannedEndDate(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2"
-              />
-            </div>
-          </div>
-
-          {/* Container Info */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Số container</label>
-              <input
-                type="text"
-                value={containerNumber}
-                onChange={(e) => setContainerNumber(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                placeholder="e.g. MSKU1234567"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Loại container</label>
-              <select
-                value={containerType}
-                onChange={(e) => setContainerType(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2"
-              >
-                <option value="">-- Chọn loại --</option>
-                <option value="CONTAINER_20FT">Container 20ft</option>
-                <option value="CONTAINER_40FT">Container 40ft</option>
-                <option value="CONTAINER_40HC">Container 40ft HC</option>
-                <option value="CONTAINER_45FT">Container 45ft</option>
-                <option value="FLATBED">Flatbed</option>
-                <option value="TANK">Tank</option>
-                <option value="REFRIGERATED">Refrigerated</option>
-                <option value="OPEN_TOP">Open Top</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Special Instructions */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Yêu cầu đặc biệt</label>
-            <textarea
-              value={specialInstructions}
-              onChange={(e) => setSpecialInstructions(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2"
-              rows={2}
-              placeholder="Ghi chú yêu cầu đặc biệt..."
-            />
-          </div>
-
-          {/* Stops */}
-          <div>
-            <div className="flex justify-between items-center mb-3">
-              <label className="block text-sm font-medium text-gray-700">
-                Điểm dừng <span className="text-red-500">*</span>
-              </label>
-              <button type="button" onClick={addStop} className="text-sm text-primary-600 hover:text-primary-700 font-medium">
-                + Thêm điểm dừng
-              </button>
-            </div>
-            <div className="space-y-4">
-              {stops.map((stop, index) => (
-                <div key={index} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                  <div className="flex justify-between items-center mb-3">
-                    <h4 className="text-sm font-medium text-gray-700">Điểm #{index + 1}</h4>
-                    <div className="flex items-center gap-2">
-                      <select
-                        value={stop.stopType}
-                        onChange={(e) => updateStop(index, 'stopType', e.target.value)}
-                        className="border border-gray-300 rounded px-2 py-1 text-sm"
-                      >
-                        <option value="PICKUP">Lấy hàng</option>
-                        <option value="DROPOFF">Giao hàng</option>
-                        <option value="DEPOT">Bãi xe</option>
-                        <option value="PORT">Cảng</option>
-                      </select>
-                      {stops.length > 2 && (
-                        <button type="button" onClick={() => removeStop(index)} className="text-red-500 hover:text-red-700 text-sm">
-                          Xóa
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <input type="text" value={stop.locationName} onChange={(e) => updateStop(index, 'locationName', e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2 text-sm" placeholder="Tên địa điểm *" />
-                    <input type="text" value={stop.address} onChange={(e) => updateStop(index, 'address', e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2 text-sm" placeholder="Địa chỉ *" />
-                    <input type="text" value={stop.contactPerson} onChange={(e) => updateStop(index, 'contactPerson', e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2 text-sm" placeholder="Người liên hệ" />
-                    <input type="text" value={stop.contactPhone} onChange={(e) => updateStop(index, 'contactPhone', e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2 text-sm" placeholder="Số điện thoại" />
-                    <div>
-                      <label className="block text-xs text-gray-500 mb-1">Đến *</label>
-                      <input type="datetime-local" value={stop.plannedArrival} onChange={(e) => updateStop(index, 'plannedArrival', e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2 text-sm" />
-                    </div>
-                    <div>
-                      <label className="block text-xs text-gray-500 mb-1">Đi *</label>
-                      <input type="datetime-local" value={stop.plannedDeparture} onChange={(e) => updateStop(index, 'plannedDeparture', e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2 text-sm" />
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Vehicle & Driver Assignment */}
-          <div className="border-t border-gray-200 pt-4">
-            <h3 className="text-sm font-semibold text-gray-700 mb-3">Phân công</h3>
+          <div className="px-6 py-4 space-y-6">
+            {/* Customer & Priority */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Xe <span className="text-red-500">*</span>
+                  Khách hàng <span className="text-red-500">*</span>
                 </label>
-                <select value={vehicleId} onChange={(e) => setVehicleId(e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2">
-                  <option value="">-- Chọn xe --</option>
-                  {vehicles.map((v) => (
-                    <option key={v.id} value={v.id}>{v.licensePlate} - {v.vehicleType.replace('_', ' ')}</option>
+                <select
+                  value={customerId}
+                  onChange={(e) => setCustomerId(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                >
+                  <option value="">-- Chọn khách hàng --</option>
+                  {activeCustomers.map((c) => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
                   ))}
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Tài xế <span className="text-red-500">*</span>
-                </label>
-                <select value={driverId} onChange={(e) => setDriverId(e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2">
-                  <option value="">-- Chọn tài xế --</option>
-                  {drivers.map((d) => (
-                    <option key={d.id} value={d.id}>{d.fullName}</option>
-                  ))}
+                <label className="block text-sm font-medium text-gray-700 mb-1">Mức ưu tiên</label>
+                <select
+                  value={priority}
+                  onChange={(e) => setPriority(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                >
+                  <option value="LOW">Thấp</option>
+                  <option value="NORMAL">Bình thường</option>
+                  <option value="HIGH">Cao</option>
+                  <option value="URGENT">Khẩn cấp</option>
                 </select>
               </div>
             </div>
+
+            {/* Planned Dates */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Ngày bắt đầu <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="datetime-local"
+                  value={plannedStartDate}
+                  onChange={(e) => setPlannedStartDate(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Ngày kết thúc <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="datetime-local"
+                  value={plannedEndDate}
+                  onChange={(e) => setPlannedEndDate(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                />
+              </div>
+            </div>
+
+            {/* Container Info */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Số container</label>
+                <input
+                  type="text"
+                  value={containerNumber}
+                  onChange={(e) => setContainerNumber(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                  placeholder="e.g. MSKU1234567"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Loại container</label>
+                <select
+                  value={containerType}
+                  onChange={(e) => setContainerType(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                >
+                  <option value="">-- Chọn loại --</option>
+                  <option value="CONTAINER_20FT">Container 20ft</option>
+                  <option value="CONTAINER_40FT">Container 40ft</option>
+                  <option value="CONTAINER_40HC">Container 40ft HC</option>
+                  <option value="CONTAINER_45FT">Container 45ft</option>
+                  <option value="FLATBED">Flatbed</option>
+                  <option value="TANK">Tank</option>
+                  <option value="REFRIGERATED">Refrigerated</option>
+                  <option value="OPEN_TOP">Open Top</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Special Instructions */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Yêu cầu đặc biệt</label>
+              <textarea
+                value={specialInstructions}
+                onChange={(e) => setSpecialInstructions(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                rows={2}
+                placeholder="Ghi chú yêu cầu đặc biệt..."
+              />
+            </div>
+
+            {/* Stops */}
+            <div>
+              <div className="flex justify-between items-center mb-3">
+                <label className="block text-sm font-medium text-gray-700">
+                  Điểm dừng <span className="text-red-500">*</span>
+                </label>
+                <button type="button" onClick={addStop} className="text-sm text-primary-600 hover:text-primary-700 font-medium">
+                  + Thêm điểm dừng
+                </button>
+              </div>
+              <div className="space-y-4">
+                {stops.map((stop, index) => (
+                  <div key={index} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                    <div className="flex justify-between items-center mb-3">
+                      <h4 className="text-sm font-medium text-gray-700">Điểm #{index + 1}</h4>
+                      <div className="flex items-center gap-2">
+                        <select
+                          value={stop.stopType}
+                          onChange={(e) => updateStop(index, 'stopType', e.target.value)}
+                          className="border border-gray-300 rounded px-2 py-1 text-sm"
+                        >
+                          <option value="PICKUP">Lấy hàng</option>
+                          <option value="DROPOFF">Giao hàng</option>
+                          <option value="DEPOT">Bãi xe</option>
+                          <option value="PORT">Cảng</option>
+                        </select>
+                        {stops.length > 2 && (
+                          <button type="button" onClick={() => removeStop(index)} className="text-red-500 hover:text-red-700 text-sm">
+                            Xóa
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <input type="text" value={stop.locationName} onChange={(e) => updateStop(index, 'locationName', e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2 text-sm" placeholder="Tên địa điểm *" />
+                      <input type="text" value={stop.address} onChange={(e) => updateStop(index, 'address', e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2 text-sm" placeholder="Địa chỉ *" />
+                      <input type="text" value={stop.contactPerson} onChange={(e) => updateStop(index, 'contactPerson', e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2 text-sm" placeholder="Người liên hệ" />
+                      <input type="text" value={stop.contactPhone} onChange={(e) => updateStop(index, 'contactPhone', e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2 text-sm" placeholder="Số điện thoại" />
+                      <div>
+                        <label className="block text-xs text-gray-500 mb-1">Đến *</label>
+                        <input type="datetime-local" value={stop.plannedArrival} onChange={(e) => updateStop(index, 'plannedArrival', e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2 text-sm" />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-500 mb-1">Đi *</label>
+                        <input type="datetime-local" value={stop.plannedDeparture} onChange={(e) => updateStop(index, 'plannedDeparture', e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2 text-sm" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Vehicle & Driver Assignment */}
+            <div className="border-t border-gray-200 pt-4">
+              <h3 className="text-sm font-semibold text-gray-700 mb-3">Phân công</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Xe <span className="text-red-500">*</span>
+                  </label>
+                  <select value={vehicleId} onChange={(e) => setVehicleId(e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2">
+                    <option value="">-- Chọn xe --</option>
+                    {vehicles.map((v) => (
+                      <option key={v.id} value={v.id}>{v.licensePlate} - {v.vehicleType.replace('_', ' ')}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Tài xế <span className="text-red-500">*</span>
+                  </label>
+                  <select value={driverId} onChange={(e) => setDriverId(e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2">
+                    <option value="">-- Chọn tài xế --</option>
+                    {drivers.map((d) => (
+                      <option key={d.id} value={d.id}>{d.fullName}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Dispatch Notes */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Ghi chú điều phối</label>
+              <textarea value={dispatchNotes} onChange={(e) => setDispatchNotes(e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2" rows={2} placeholder="Ghi chú cho tài xế..." />
+            </div>
           </div>
 
-          {/* Dispatch Notes */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Ghi chú điều phối</label>
-            <textarea value={dispatchNotes} onChange={(e) => setDispatchNotes(e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2" rows={2} placeholder="Ghi chú cho tài xế..." />
+          {/* Footer */}
+          <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3 sticky bottom-0 bg-white">
+            <Button variant="ghost" onClick={handleClose} disabled={isSubmitting}>Hủy</Button>
+            <Button onClick={handleSubmit} disabled={!isValid || isSubmitting}>
+              {isSubmitting ? 'Đang tạo...' : 'Tạo & Điều phối'}
+            </Button>
           </div>
         </div>
-
-        {/* Footer */}
-        <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3 sticky bottom-0 bg-white">
-          <Button variant="ghost" onClick={handleClose} disabled={isSubmitting}>Hủy</Button>
-          <Button onClick={handleSubmit} disabled={!isValid || isSubmitting}>
-            {isSubmitting ? 'Đang tạo...' : 'Tạo & Điều phối'}
-          </Button>
-        </div>
-      </div>
-    </Dialog>
+      </Dialog>
+    </RoleGuard>
   );
 };

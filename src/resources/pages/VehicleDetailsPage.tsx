@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from 'wasp/client/operations';
 import { getVehicle, updateVehicle, deleteVehicle } from 'wasp/client/operations';
+import { RoleGuard } from '../../shared/components/RoleGuard';
 import { Button } from '../../shared/components/Button';
 import { Tag } from '../../shared/components/Tag';
 import { VehicleFormModal, type VehicleFormData } from '../components/VehicleFormModal';
@@ -69,206 +70,208 @@ export const VehicleDetailsPage = () => {
   const alerts = expiryItems.filter((item) => isExpired(item.date) || isExpiringSoon(item.date));
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <Button variant="ghost" onClick={() => navigate('/resources/vehicles')}>
-                ← Quay lại
-              </Button>
-              <div>
-                <div className="flex items-center gap-3">
-                  <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
-                    {vehicle.licensePlate}
-                  </h1>
-                  <Tag variant={getStatusVariant(vehicle.status)}>
-                    {getStatusLabel(vehicle.status)}
-                  </Tag>
-                </div>
-                <p className="text-sm text-gray-500 mt-0.5">
-                  {getVehicleTypeLabel(vehicle.vehicleType)} - {getCompanyLabel(vehicle.company)}
-                  {vehicle.manufacturingYear && ` - SX ${vehicle.manufacturingYear}`}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex gap-2">
-              <Button variant="primary" onClick={() => setIsEditMode(true)}>
-                Chỉnh sửa
-              </Button>
-              <Button variant="danger" onClick={handleDelete}>
-                Xóa
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 space-y-6">
-        {/* Alert Banner */}
-        {alerts.length > 0 && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-            <div className="flex items-start gap-3">
-              <svg className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
-              </svg>
-              <div>
-                <p className="font-medium text-red-800">Cảnh báo giấy tờ</p>
-                <ul className="mt-1 text-sm text-red-700 space-y-0.5">
-                  {alerts.map((item) => (
-                    <li key={item.label}>
-                      {item.label}: {formatDate(item.date)}
-                      {isExpired(item.date) ? ' (Hết hạn)' : ` (Còn ${getDaysUntil(item.date)} ngày)`}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Vehicle Info */}
-          <div className="bg-white rounded-lg shadow">
-            <div className="px-6 py-4 border-b border-gray-100">
-              <h2 className="text-lg font-semibold text-gray-900">Thông tin phương tiện</h2>
-            </div>
-            <div className="p-6 space-y-4">
-              <InfoRow label="Biển số xe" value={vehicle.licensePlate} required />
-              <InfoRow label="Loại xe" value={getVehicleTypeLabel(vehicle.vehicleType)} required />
-              <InfoRow label="Trực thuộc" value={getCompanyLabel(vehicle.company)} required />
-              <InfoRow label="Năm sản xuất" value={vehicle.manufacturingYear ? String(vehicle.manufacturingYear) : null} />
-              <InfoRow label="Vị trí hiện tại" value={vehicle.currentLocation} />
-              <InfoRow
-                label="Trạng thái"
-                required
-                value={
-                  <Tag variant={getStatusVariant(vehicle.status)}>
-                    {getStatusLabel(vehicle.status)}
-                  </Tag>
-                }
-              />
-            </div>
-          </div>
-
-          {/* Expiry Dates */}
-          <div className="bg-white rounded-lg shadow">
-            <div className="px-6 py-4 border-b border-gray-100">
-              <h2 className="text-lg font-semibold text-gray-900">Ngày hết hạn</h2>
-            </div>
-            <div className="p-6 space-y-3">
-              {expiryItems.map((item) => {
-                const expired = isExpired(item.date);
-                const expiring = isExpiringSoon(item.date);
-                return (
-                  <div
-                    key={item.label}
-                    className={`flex items-center justify-between p-3 rounded-lg ${
-                      expired
-                        ? 'bg-red-50 border border-red-200'
-                        : expiring
-                          ? 'bg-yellow-50 border border-yellow-200'
-                          : 'bg-gray-50'
-                    }`}
-                  >
-                    <span className="text-sm text-gray-600">
-                      {item.label} <span className="text-red-500">*</span>
-                    </span>
-                    <div className="text-right">
-                      <span
-                        className={`text-sm font-semibold ${
-                          expired ? 'text-red-600' : expiring ? 'text-yellow-600' : 'text-gray-900'
-                        }`}
-                      >
-                        {formatDate(item.date)}
-                      </span>
-                      {expired && (
-                        <span className="ml-2 text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full">
-                          Hết hạn
-                        </span>
-                      )}
-                      {expiring && !expired && (
-                        <span className="ml-2 text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full">
-                          Còn {getDaysUntil(item.date)} ngày
-                        </span>
-                      )}
-                    </div>
+    <RoleGuard allowedRoles={['ADMIN', 'OPS', 'DISPATCHER']}>
+      <div className="min-h-screen bg-gray-50">
+        {/* Header */}
+        <div className="bg-white shadow">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <Button variant="ghost" onClick={() => navigate('/resources/vehicles')}>
+                  ← Quay lại
+                </Button>
+                <div>
+                  <div className="flex items-center gap-3">
+                    <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
+                      {vehicle.licensePlate}
+                    </h1>
+                    <Tag variant={getStatusVariant(vehicle.status)}>
+                      {getStatusLabel(vehicle.status)}
+                    </Tag>
                   </div>
-                );
-              })}
+                  <p className="text-sm text-gray-500 mt-0.5">
+                    {getVehicleTypeLabel(vehicle.vehicleType)} - {getCompanyLabel(vehicle.company)}
+                    {vehicle.manufacturingYear && ` - SX ${vehicle.manufacturingYear}`}
+                  </p>
+                </div>
+              </div>
 
-              <div className="pt-2 space-y-2 text-sm text-gray-500">
-                <div className="flex justify-between">
-                  <span>Ngày tạo</span>
-                  <span>{formatDate(vehicle.createdAt)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Cập nhật</span>
-                  <span>{formatDate(vehicle.updatedAt)}</span>
-                </div>
+              <div className="flex gap-2">
+                <Button variant="primary" onClick={() => setIsEditMode(true)}>
+                  Chỉnh sửa
+                </Button>
+                <Button variant="danger" onClick={handleDelete}>
+                  Xóa
+                </Button>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Documents - 3 columns */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <DocSection
-            title="Hình đăng ký"
-            required
-            images={vehicle.registrationImages}
-            onUpload={() => setIsEditMode(true)}
-          />
-          <DocSection
-            title="Hình đăng kiểm"
-            required
-            images={vehicle.inspectionImages}
-            onUpload={() => setIsEditMode(true)}
-          />
-          <DocSection
-            title="Hình bảo hiểm"
-            required
-            images={vehicle.insuranceImages}
-            onUpload={() => setIsEditMode(true)}
-          />
-        </div>
-      </div>
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+          {/* Alert Banner */}
+          {alerts.length > 0 && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <svg className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+                <div>
+                  <p className="font-medium text-red-800">Cảnh báo giấy tờ</p>
+                  <ul className="mt-1 text-sm text-red-700 space-y-0.5">
+                    {alerts.map((item) => (
+                      <li key={item.label}>
+                        {item.label}: {formatDate(item.date)}
+                        {isExpired(item.date) ? ' (Hết hạn)' : ` (Còn ${getDaysUntil(item.date)} ngày)`}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          )}
 
-      {/* Edit Vehicle Modal */}
-      {vehicle && (
-        <VehicleFormModal
-          isOpen={isEditMode}
-          onClose={() => setIsEditMode(false)}
-          onSubmit={handleEdit}
-          isEdit={true}
-          initialData={{
-            licensePlate: vehicle.licensePlate,
-            vehicleType: vehicle.vehicleType,
-            manufacturingYear: vehicle.manufacturingYear,
-            status: vehicle.status,
-            registrationImages: vehicle.registrationImages,
-            inspectionImages: vehicle.inspectionImages,
-            insuranceImages: vehicle.insuranceImages,
-            operationExpiryDate:
-              typeof vehicle.operationExpiryDate === 'string'
-                ? vehicle.operationExpiryDate.split('T')[0]
-                : new Date(vehicle.operationExpiryDate).toISOString().split('T')[0],
-            inspectionExpiryDate:
-              typeof vehicle.inspectionExpiryDate === 'string'
-                ? vehicle.inspectionExpiryDate.split('T')[0]
-                : new Date(vehicle.inspectionExpiryDate).toISOString().split('T')[0],
-            insuranceExpiryDate:
-              typeof vehicle.insuranceExpiryDate === 'string'
-                ? vehicle.insuranceExpiryDate.split('T')[0]
-                : new Date(vehicle.insuranceExpiryDate).toISOString().split('T')[0],
-            company: vehicle.company,
-            currentLocation: vehicle.currentLocation || '',
-          }}
-        />
-      )}
-    </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Vehicle Info */}
+            <div className="bg-white rounded-lg shadow">
+              <div className="px-6 py-4 border-b border-gray-100">
+                <h2 className="text-lg font-semibold text-gray-900">Thông tin phương tiện</h2>
+              </div>
+              <div className="p-6 space-y-4">
+                <InfoRow label="Biển số xe" value={vehicle.licensePlate} required />
+                <InfoRow label="Loại xe" value={getVehicleTypeLabel(vehicle.vehicleType)} required />
+                <InfoRow label="Trực thuộc" value={getCompanyLabel(vehicle.company)} required />
+                <InfoRow label="Năm sản xuất" value={vehicle.manufacturingYear ? String(vehicle.manufacturingYear) : null} />
+                <InfoRow label="Vị trí hiện tại" value={vehicle.currentLocation} />
+                <InfoRow
+                  label="Trạng thái"
+                  required
+                  value={
+                    <Tag variant={getStatusVariant(vehicle.status)}>
+                      {getStatusLabel(vehicle.status)}
+                    </Tag>
+                  }
+                />
+              </div>
+            </div>
+
+            {/* Expiry Dates */}
+            <div className="bg-white rounded-lg shadow">
+              <div className="px-6 py-4 border-b border-gray-100">
+                <h2 className="text-lg font-semibold text-gray-900">Ngày hết hạn</h2>
+              </div>
+              <div className="p-6 space-y-3">
+                {expiryItems.map((item) => {
+                  const expired = isExpired(item.date);
+                  const expiring = isExpiringSoon(item.date);
+                  return (
+                    <div
+                      key={item.label}
+                      className={`flex items-center justify-between p-3 rounded-lg ${
+                        expired
+                          ? 'bg-red-50 border border-red-200'
+                          : expiring
+                            ? 'bg-yellow-50 border border-yellow-200'
+                            : 'bg-gray-50'
+                      }`}
+                    >
+                      <span className="text-sm text-gray-600">
+                        {item.label} <span className="text-red-500">*</span>
+                      </span>
+                      <div className="text-right">
+                        <span
+                          className={`text-sm font-semibold ${
+                            expired ? 'text-red-600' : expiring ? 'text-yellow-600' : 'text-gray-900'
+                          }`}
+                        >
+                          {formatDate(item.date)}
+                        </span>
+                        {expired && (
+                          <span className="ml-2 text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full">
+                            Hết hạn
+                          </span>
+                        )}
+                        {expiring && !expired && (
+                          <span className="ml-2 text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full">
+                            Còn {getDaysUntil(item.date)} ngày
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+
+                <div className="pt-2 space-y-2 text-sm text-gray-500">
+                  <div className="flex justify-between">
+                    <span>Ngày tạo</span>
+                    <span>{formatDate(vehicle.createdAt)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Cập nhật</span>
+                    <span>{formatDate(vehicle.updatedAt)}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Documents - 3 columns */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <DocSection
+              title="Hình đăng ký"
+              required
+              images={vehicle.registrationImages}
+              onUpload={() => setIsEditMode(true)}
+            />
+            <DocSection
+              title="Hình đăng kiểm"
+              required
+              images={vehicle.inspectionImages}
+              onUpload={() => setIsEditMode(true)}
+            />
+            <DocSection
+              title="Hình bảo hiểm"
+              required
+              images={vehicle.insuranceImages}
+              onUpload={() => setIsEditMode(true)}
+            />
+          </div>
+        </div>
+
+        {/* Edit Vehicle Modal */}
+        {vehicle && (
+          <VehicleFormModal
+            isOpen={isEditMode}
+            onClose={() => setIsEditMode(false)}
+            onSubmit={handleEdit}
+            isEdit={true}
+            initialData={{
+              licensePlate: vehicle.licensePlate,
+              vehicleType: vehicle.vehicleType,
+              manufacturingYear: vehicle.manufacturingYear,
+              status: vehicle.status,
+              registrationImages: vehicle.registrationImages,
+              inspectionImages: vehicle.inspectionImages,
+              insuranceImages: vehicle.insuranceImages,
+              operationExpiryDate:
+                typeof vehicle.operationExpiryDate === 'string'
+                  ? vehicle.operationExpiryDate.split('T')[0]
+                  : new Date(vehicle.operationExpiryDate).toISOString().split('T')[0],
+              inspectionExpiryDate:
+                typeof vehicle.inspectionExpiryDate === 'string'
+                  ? vehicle.inspectionExpiryDate.split('T')[0]
+                  : new Date(vehicle.inspectionExpiryDate).toISOString().split('T')[0],
+              insuranceExpiryDate:
+                typeof vehicle.insuranceExpiryDate === 'string'
+                  ? vehicle.insuranceExpiryDate.split('T')[0]
+                  : new Date(vehicle.insuranceExpiryDate).toISOString().split('T')[0],
+              company: vehicle.company,
+              currentLocation: vehicle.currentLocation || '',
+            }}
+          />
+        )}
+      </div>
+    </RoleGuard>
   );
 };
 

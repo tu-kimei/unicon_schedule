@@ -138,7 +138,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
 
                 {/* Internal Users - Shipments */}
                 {(user.role === 'OPS' || user.role === 'ADMIN' || user.role === 'DISPATCHER') && (
-                  <Link to="/" className={navLinkClass('/')} onClick={onClose}>
+                  <Link to="/ops/shipments" className={navLinkClass('/ops/shipments')} onClick={onClose}>
                     <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                     </svg>
@@ -157,7 +157,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                 )}
 
                 {/* Accounting Section */}
-                {(user.role === 'ACCOUNTING' || user.role === 'ADMIN' || user.role === 'OPS') && (
+                {(user.role === 'ACCOUNTING' || user.role === 'ADMIN') && (
                   <>
                     {sectionHeader('Kế toán')}
 

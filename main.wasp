@@ -76,8 +76,15 @@ page EmailVerificationPage {
 
 // #region Logistics System
 
+// Auth Redirect
+route AuthRedirectRoute { path: "/", to: AuthRedirectPage }
+page AuthRedirectPage {
+  component: import { AuthRedirectPage } from "@src/shared/pages/AuthRedirectPage",
+  authRequired: true
+}
+
 // Ops Routes
-route OpsShipmentsRoute { path: "/", to: OpsShipmentsPage }
+route OpsShipmentsRoute { path: "/ops/shipments", to: OpsShipmentsPage }
 page OpsShipmentsPage {
   authRequired: true,
   component: import { OpsShipmentsPage } from "@src/logistics/pages/OpsShipmentsPage"

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from 'wasp/client/operations';
 import { getAllCustomers, createShipment } from 'wasp/client/operations';
+import { RoleGuard } from '../../shared/components/RoleGuard';
 
 interface Customer {
   id: string;
@@ -398,55 +399,57 @@ export const CreateShipmentPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto px-6 py-8">
-        <div className="bg-white rounded-lg shadow">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h1 className="text-2xl font-heading font-bold text-gray-900">Tạo chuyến hàng mới</h1>
-            <p className="text-gray-600">Điền thông tin chuyến hàng theo từng bước</p>
-          </div>
-
-          <div className="px-6 py-6">
-            {renderStepIndicator()}
-
-            <div className="mb-8">
-              {step === 1 && renderBasicInfoStep()}
-              {step === 2 && renderStopsStep()}
-              {step === 3 && renderReviewStep()}
+    <RoleGuard allowedRoles={['OPS', 'ADMIN', 'DISPATCHER']}>
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-4xl mx-auto px-6 py-8">
+          <div className="bg-white rounded-lg shadow">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h1 className="text-2xl font-heading font-bold text-gray-900">Tạo chuyến hàng mới</h1>
+              <p className="text-gray-600">Điền thông tin chuyến hàng theo từng bước</p>
             </div>
 
-            <div className="flex justify-between">
-              <button
-                onClick={() => setStep((step - 1) as 1 | 2 | 3)}
-                disabled={step === 1}
-                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Quay lại
-              </button>
+            <div className="px-6 py-6">
+              {renderStepIndicator()}
 
-              <div className="flex space-x-3">
-                {step < 3 ? (
-                  <button
-                    onClick={() => setStep((step + 1) as 1 | 2 | 3)}
-                    disabled={!validateStep(step)}
-                    className="px-4 py-2 bg-primary-600 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Tiếp theo
-                  </button>
-                ) : (
-                  <button
-                    onClick={handleSubmit}
-                    disabled={isSubmitting}
-                    className="px-6 py-2 bg-green-600 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isSubmitting ? 'Đang tạo...' : 'Tạo chuyến hàng'}
-                  </button>
-                )}
+              <div className="mb-8">
+                {step === 1 && renderBasicInfoStep()}
+                {step === 2 && renderStopsStep()}
+                {step === 3 && renderReviewStep()}
+              </div>
+
+              <div className="flex justify-between">
+                <button
+                  onClick={() => setStep((step - 1) as 1 | 2 | 3)}
+                  disabled={step === 1}
+                  className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Quay lại
+                </button>
+
+                <div className="flex space-x-3">
+                  {step < 3 ? (
+                    <button
+                      onClick={() => setStep((step + 1) as 1 | 2 | 3)}
+                      disabled={!validateStep(step)}
+                      className="px-4 py-2 bg-primary-600 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Tiếp theo
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleSubmit}
+                      disabled={isSubmitting}
+                      className="px-6 py-2 bg-green-600 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isSubmitting ? 'Đang tạo...' : 'Tạo chuyến hàng'}
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </RoleGuard>
   );
 };
