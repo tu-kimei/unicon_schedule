@@ -4,6 +4,9 @@ interface CreateShipmentInput {
   priority?: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
   plannedStartDate: Date;
   plannedEndDate: Date;
+  containerNumber?: string;
+  containerType?: string;
+  specialInstructions?: string;
   stops: ShipmentStopInput[];
 }
 
@@ -84,26 +87,26 @@ export const createShipment = async (args: CreateShipmentInput, context: any) =>
         requiredPhotos: template.requiredPhotos,
         locationName: providedStop?.locationName || '',
         address: providedStop?.address || '',
-        contactPerson: providedStop?.contactPerson,
-        contactPhone: providedStop?.contactPhone,
-        plannedArrival: providedStop?.plannedArrival || args.plannedStartDate,
-        plannedDeparture: providedStop?.plannedDeparture || args.plannedEndDate,
-        specialInstructions: providedStop?.specialInstructions,
+        contactPerson: providedStop?.contactPerson || null,
+        contactPhone: providedStop?.contactPhone || null,
+        plannedArrival: new Date(providedStop?.plannedArrival || args.plannedStartDate),
+        plannedDeparture: new Date(providedStop?.plannedDeparture || args.plannedEndDate),
+        specialInstructions: providedStop?.specialInstructions || null,
       };
     });
   } else {
     stopsToCreate = args.stops.map(stop => ({
       sequence: stop.sequence,
       stopType: stop.stopType,
-      stopCategory: stop.stopCategory,
+      stopCategory: stop.stopCategory || null,
       requiredPhotos: stop.requiredPhotos || [],
       locationName: stop.locationName,
       address: stop.address,
-      contactPerson: stop.contactPerson,
-      contactPhone: stop.contactPhone,
-      plannedArrival: stop.plannedArrival,
-      plannedDeparture: stop.plannedDeparture,
-      specialInstructions: stop.specialInstructions,
+      contactPerson: stop.contactPerson || null,
+      contactPhone: stop.contactPhone || null,
+      plannedArrival: new Date(stop.plannedArrival),
+      plannedDeparture: new Date(stop.plannedDeparture),
+      specialInstructions: stop.specialInstructions || null,
     }));
   }
 
@@ -113,10 +116,16 @@ export const createShipment = async (args: CreateShipmentInput, context: any) =>
       customerId: args.customerId,
       shipmentNumber,
       currentStatus: 'DRAFT',
-      ...(args.shipmentType ? { shipmentType: args.shipmentType, operationStatus: 'DRAFT' } : {}),
+      operationStatus: 'DRAFT',
+      ...(args.shipmentType ? { shipmentType: args.shipmentType } : {}),
       priority: args.priority || 'NORMAL',
-      plannedStartDate: args.plannedStartDate,
-      plannedEndDate: args.plannedEndDate,
+      plannedStartDate: new Date(args.plannedStartDate),
+      plannedEndDate: new Date(args.plannedEndDate),
+      containerNumber: args.containerNumber || null,
+      containerType: args.containerType || null,
+      specialInstructions: args.specialInstructions || null,
+      createdById: user.id,
+      createdByType: 'INTERNAL',
       stops: {
         create: stopsToCreate
       }

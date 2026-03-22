@@ -70,7 +70,7 @@ export const createAndDispatchShipment = async (
   if (tractor.status === 'OUT_OF_SERVICE') throw new HttpError(400, 'Đầu kéo đang ngưng hoạt động');
 
   // Validate trailer if provided
-  let trailer = null;
+  let trailer: any = null;
   if (args.trailerId) {
     trailer = await context.entities.Vehicle.findUnique({
       where: { id: args.trailerId },

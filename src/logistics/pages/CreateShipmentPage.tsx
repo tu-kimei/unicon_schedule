@@ -165,7 +165,7 @@ export const CreateShipmentPage = () => {
       await createShipment({
         customerId,
         shipmentType: shipmentType!,
-        priority,
+        priority: priority as any,
         plannedStartDate: startOfDay,
         plannedEndDate: endOfDay,
         ...(containerNumber ? { containerNumber } : {}),
@@ -173,7 +173,7 @@ export const CreateShipmentPage = () => {
         ...(specialInstructions ? { specialInstructions } : {}),
         stops: stops.map((s) => ({
           sequence: s.sequence,
-          stopType: s.stopType,
+          stopType: s.stopType as any,
           stopCategory: s.stopCategory,
           requiredPhotos: s.requiredPhotos,
           locationName: s.locationName.trim(),

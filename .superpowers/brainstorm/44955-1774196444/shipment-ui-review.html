@@ -1,0 +1,147 @@
+<h2>Review & Đề xuất cải thiện 3 trang Quản lý Chuyến hàng</h2>
+<p class="subtitle">Phân tích UX hiện tại và đề xuất redesign</p>
+
+<div class="section">
+  <h3>1. Trang Danh sách chuyến hàng (/ops/shipments)</h3>
+  <div class="split">
+    <div class="mockup">
+      <div class="mockup-header">Hiện tại - Vấn đề</div>
+      <div class="mockup-body" style="padding:16px; font-size:13px;">
+        <div style="background:#fee; border:1px solid #fcc; padding:8px; border-radius:6px; margin-bottom:8px;">
+          <strong style="color:#c00;">5 bộ lọc trên 1 hàng</strong> - quá chật, khó dùng trên mobile
+        </div>
+        <div style="background:#fee; border:1px solid #fcc; padding:8px; border-radius:6px; margin-bottom:8px;">
+          <strong style="color:#c00;">3 status badges/card</strong> - rối mắt, không biết nhìn cái nào
+        </div>
+        <div style="background:#fee; border:1px solid #fcc; padding:8px; border-radius:6px; margin-bottom:8px;">
+          <strong style="color:#c00;">Không sort được</strong> - chỉ filter, không sắp xếp
+        </div>
+        <div style="background:#fee; border:1px solid #fcc; padding:8px; border-radius:6px;">
+          <strong style="color:#c00;">Card grid 3 cột</strong> - thông tin bị cắt, khó scan nhanh
+        </div>
+      </div>
+    </div>
+    <div class="mockup">
+      <div class="mockup-header">Đề xuất - Cải thiện</div>
+      <div class="mockup-body" style="padding:16px; font-size:13px;">
+        <div style="background:#efe; border:1px solid #cfc; padding:8px; border-radius:6px; margin-bottom:8px;">
+          <strong style="color:#060;">Dạng bảng (table)</strong> - dễ scan, sort theo cột
+        </div>
+        <div style="background:#efe; border:1px solid #cfc; padding:8px; border-radius:6px; margin-bottom:8px;">
+          <strong style="color:#060;">1 status chính</strong> - hiển thị Operation Status, hover xem thêm
+        </div>
+        <div style="background:#efe; border:1px solid #cfc; padding:8px; border-radius:6px; margin-bottom:8px;">
+          <strong style="color:#060;">Tabs filter</strong> - Tất cả / Chờ / Đang chạy / Hoàn tất / Đã hủy
+        </div>
+        <div style="background:#efe; border:1px solid #cfc; padding:8px; border-radius:6px;">
+          <strong style="color:#060;">Search bar</strong> - tìm theo mã chuyến, tên KH, số cont
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>2. Trang Chi tiết chuyến hàng (/ops/shipments/:id)</h3>
+  <div class="split">
+    <div class="mockup">
+      <div class="mockup-header">Hiện tại - Vấn đề</div>
+      <div class="mockup-body" style="padding:16px; font-size:13px;">
+        <div style="background:#fee; border:1px solid #fcc; padding:8px; border-radius:6px; margin-bottom:8px;">
+          <strong style="color:#c00;">Scroll dài vô tận</strong> - tất cả sections xếp dọc
+        </div>
+        <div style="background:#fee; border:1px solid #fcc; padding:8px; border-radius:6px; margin-bottom:8px;">
+          <strong style="color:#c00;">Không sửa được</strong> - chỉ xem, muốn sửa phải quay lại
+        </div>
+        <div style="background:#fee; border:1px solid #fcc; padding:8px; border-radius:6px; margin-bottom:8px;">
+          <strong style="color:#c00;">3 status sections rời rạc</strong> - không có tổng quan nhanh
+        </div>
+        <div style="background:#fee; border:1px solid #fcc; padding:8px; border-radius:6px;">
+          <strong style="color:#c00;">Legacy code hiển thị</strong> - Dispatch cũ vẫn show
+        </div>
+      </div>
+    </div>
+    <div class="mockup">
+      <div class="mockup-header">Đề xuất - Cải thiện</div>
+      <div class="mockup-body" style="padding:16px; font-size:13px;">
+        <div style="background:#efe; border:1px solid #cfc; padding:8px; border-radius:6px; margin-bottom:8px;">
+          <strong style="color:#060;">Tabs nội dung</strong> - Tổng quan / Điểm dừng / Chứng từ / Lịch sử
+        </div>
+        <div style="background:#efe; border:1px solid #cfc; padding:8px; border-radius:6px; margin-bottom:8px;">
+          <strong style="color:#060;">Inline edit</strong> - click vào field để sửa (DRAFT/PENDING)
+        </div>
+        <div style="background:#efe; border:1px solid #cfc; padding:8px; border-radius:6px; margin-bottom:8px;">
+          <strong style="color:#060;">Progress bar</strong> - 1 thanh tiến trình hiển thị 3 status
+        </div>
+        <div style="background:#efe; border:1px solid #cfc; padding:8px; border-radius:6px;">
+          <strong style="color:#060;">Bỏ legacy</strong> - chỉ hiển thị DriverTask
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>3. Trang Tạo chuyến hàng (/ops/shipments/create)</h3>
+  <div class="split">
+    <div class="mockup">
+      <div class="mockup-header">Hiện tại - Vấn đề</div>
+      <div class="mockup-body" style="padding:16px; font-size:13px;">
+        <div style="background:#fee; border:1px solid #fcc; padding:8px; border-radius:6px; margin-bottom:8px;">
+          <strong style="color:#c00;">Thiếu loại vận chuyển</strong> - không chọn Xuất/Nhập
+        </div>
+        <div style="background:#fee; border:1px solid #fcc; padding:8px; border-radius:6px; margin-bottom:8px;">
+          <strong style="color:#c00;">Stop form 8 fields</strong> - mỗi stop phải nhập quá nhiều
+        </div>
+        <div style="background:#fee; border:1px solid #fcc; padding:8px; border-radius:6px; margin-bottom:8px;">
+          <strong style="color:#c00;">Validation im lặng</strong> - nút Next bị disabled nhưng không nói lý do
+        </div>
+        <div style="background:#fee; border:1px solid #cfc; padding:8px; border-radius:6px;">
+          <strong style="color:#c00;">3 bước cứng nhắc</strong> - bước 1 quá ít, bước 2 quá nhiều
+        </div>
+      </div>
+    </div>
+    <div class="mockup">
+      <div class="mockup-header">Đề xuất - Cải thiện</div>
+      <div class="mockup-body" style="padding:16px; font-size:13px;">
+        <div style="background:#efe; border:1px solid #cfc; padding:8px; border-radius:6px; margin-bottom:8px;">
+          <strong style="color:#060;">Chọn Xuất/Nhập đầu tiên</strong> - auto tạo 3 stops từ template
+        </div>
+        <div style="background:#efe; border:1px solid #cfc; padding:8px; border-radius:6px; margin-bottom:8px;">
+          <strong style="color:#060;">Stop rút gọn</strong> - chỉ cần tên + địa chỉ, còn lại tùy chọn
+        </div>
+        <div style="background:#efe; border:1px solid #cfc; padding:8px; border-radius:6px; margin-bottom:8px;">
+          <strong style="color:#060;">Validation rõ ràng</strong> - hiện lỗi cụ thể từng field
+        </div>
+        <div style="background:#efe; border:1px solid #cfc; padding:8px; border-radius:6px;">
+          <strong style="color:#060;">1 trang duy nhất</strong> - scroll form thay vì wizard 3 bước
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h3>Bạn đồng ý với hướng cải thiện này không?</h3>
+<div class="options">
+  <div class="option" data-choice="agree" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Đồng ý tất cả</h3>
+      <p>Triển khai cải thiện cả 3 trang theo đề xuất</p>
+    </div>
+  </div>
+  <div class="option" data-choice="partial" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Đồng ý một phần</h3>
+      <p>Cần điều chỉnh một số đề xuất</p>
+    </div>
+  </div>
+  <div class="option" data-choice="different" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Hướng khác</h3>
+      <p>Muốn đề xuất cách làm khác</p>
+    </div>
+  </div>
+</div>

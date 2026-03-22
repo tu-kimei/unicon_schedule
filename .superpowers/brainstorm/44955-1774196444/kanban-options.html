@@ -1,0 +1,222 @@
+<h2>Danh sách chuyến hàng - Kanban & Chế độ xem</h2>
+<p class="subtitle">3 chế độ xem: Kanban trạng thái, theo Ngày, theo Khách hàng</p>
+
+<div class="section">
+  <h3>Thanh chuyển đổi chế độ xem</h3>
+  <div class="mockup">
+    <div class="mockup-header">View Switcher + Search</div>
+    <div class="mockup-body" style="padding:16px;">
+      <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        <div style="display:flex; border:2px solid #2DB553; border-radius:8px; overflow:hidden; font-size:13px;">
+          <div style="background:#2DB553; color:white; padding:8px 16px; font-weight:600;">Trạng thái</div>
+          <div style="padding:8px 16px; color:#666; cursor:pointer;">Ngày</div>
+          <div style="padding:8px 16px; color:#666; cursor:pointer;">Khách hàng</div>
+        </div>
+        <div style="flex:1; min-width:200px;">
+          <div style="border:1px solid #ddd; border-radius:8px; padding:8px 12px; color:#999; font-size:13px;">🔍 Tìm mã chuyến, KH, số cont...</div>
+        </div>
+        <div style="background:#2DB553; color:white; padding:8px 16px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer;">+ Tạo chuyến</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Chế độ 1: Kanban theo Trạng thái</h3>
+  <div class="mockup">
+    <div class="mockup-header">Kéo thả chuyến giữa các cột trạng thái</div>
+    <div class="mockup-body" style="padding:16px;">
+      <div style="display:flex; gap:12px; overflow-x:auto; min-height:280px;">
+        <!-- Nháp -->
+        <div style="min-width:200px; flex:1; background:#f8f9fa; border-radius:8px; padding:12px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <div style="font-weight:600; font-size:13px; color:#666;">Nháp</div>
+            <div style="background:#e2e8f0; color:#666; font-size:11px; padding:2px 8px; border-radius:10px;">3</div>
+          </div>
+          <div style="background:white; border:1px solid #e2e8f0; border-radius:6px; padding:10px; margin-bottom:8px; font-size:12px; cursor:grab;">
+            <div style="font-weight:600;">SHP-2026-0012</div>
+            <div style="color:#666; margin-top:2px;">An Phát Thịnh</div>
+            <div style="display:flex; gap:4px; margin-top:6px;">
+              <span style="background:#dcfce7; color:#166534; padding:1px 6px; border-radius:4px; font-size:10px;">Xuất</span>
+            </div>
+          </div>
+          <div style="background:white; border:1px solid #e2e8f0; border-radius:6px; padding:10px; margin-bottom:8px; font-size:12px; cursor:grab;">
+            <div style="font-weight:600;">SHP-2026-0013</div>
+            <div style="color:#666; margin-top:2px;">Vinamilk</div>
+            <div style="display:flex; gap:4px; margin-top:6px;">
+              <span style="background:#f3e8ff; color:#7c3aed; padding:1px 6px; border-radius:4px; font-size:10px;">Nhập</span>
+            </div>
+          </div>
+        </div>
+        <!-- Chờ -->
+        <div style="min-width:200px; flex:1; background:#eff6ff; border-radius:8px; padding:12px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <div style="font-weight:600; font-size:13px; color:#2563eb;">Chờ điều phối</div>
+            <div style="background:#bfdbfe; color:#2563eb; font-size:11px; padding:2px 8px; border-radius:10px;">2</div>
+          </div>
+          <div style="background:white; border:1px solid #bfdbfe; border-radius:6px; padding:10px; margin-bottom:8px; font-size:12px; cursor:grab;">
+            <div style="font-weight:600;">SHP-2026-0010</div>
+            <div style="color:#666; margin-top:2px;">Macstar HCM</div>
+            <div style="display:flex; gap:4px; margin-top:6px;">
+              <span style="background:#dcfce7; color:#166534; padding:1px 6px; border-radius:4px; font-size:10px;">Xuất</span>
+              <span style="background:#fef3c7; color:#92400e; padding:1px 6px; border-radius:4px; font-size:10px;">Cao</span>
+            </div>
+          </div>
+        </div>
+        <!-- Đã điều phối -->
+        <div style="min-width:200px; flex:1; background:#faf5ff; border-radius:8px; padding:12px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <div style="font-weight:600; font-size:13px; color:#7c3aed;">Đã điều phối</div>
+            <div style="background:#e9d5ff; color:#7c3aed; font-size:11px; padding:2px 8px; border-radius:10px;">4</div>
+          </div>
+          <div style="background:white; border:1px solid #e9d5ff; border-radius:6px; padding:10px; margin-bottom:8px; font-size:12px;">
+            <div style="font-weight:600;">SHP-2026-0008</div>
+            <div style="color:#666; margin-top:2px;">Thái Sơn</div>
+            <div style="color:#888; margin-top:4px; font-size:11px;">🚛 Minh (51C-123)</div>
+          </div>
+        </div>
+        <!-- Đang chạy -->
+        <div style="min-width:200px; flex:1; background:#fefce8; border-radius:8px; padding:12px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <div style="font-weight:600; font-size:13px; color:#ca8a04;">Đang vận chuyển</div>
+            <div style="background:#fef08a; color:#ca8a04; font-size:11px; padding:2px 8px; border-radius:10px;">1</div>
+          </div>
+          <div style="background:white; border:1px solid #fef08a; border-radius:6px; padding:10px; font-size:12px;">
+            <div style="font-weight:600;">SHP-2026-0005</div>
+            <div style="color:#666; margin-top:2px;">LST Enterprise</div>
+            <div style="color:#888; margin-top:4px; font-size:11px;">🚛 Đoàn (60C-456)</div>
+            <div style="color:#ca8a04; margin-top:4px; font-size:11px;">📍 Đang tại Cảng Cát Lái</div>
+          </div>
+        </div>
+        <!-- Hoàn tất -->
+        <div style="min-width:200px; flex:1; background:#ecfdf5; border-radius:8px; padding:12px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <div style="font-weight:600; font-size:13px; color:#059669;">Đã giao</div>
+            <div style="background:#a7f3d0; color:#059669; font-size:11px; padding:2px 8px; border-radius:10px;">5</div>
+          </div>
+          <div style="background:white; border:1px solid #a7f3d0; border-radius:6px; padding:10px; font-size:12px; opacity:0.7;">
+            <div style="font-weight:600;">SHP-2026-0001</div>
+            <div style="color:#666; margin-top:2px;">Vinamilk</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Chế độ 2: Theo Ngày (Timeline)</h3>
+  <div class="mockup">
+    <div class="mockup-header">Xem chuyến hàng theo ngày, dễ quản lý lịch trình</div>
+    <div class="mockup-body" style="padding:16px; font-size:12px;">
+      <div style="display:flex; gap:8px; margin-bottom:16px; align-items:center;">
+        <div style="padding:4px 8px; border:1px solid #ddd; border-radius:4px; cursor:pointer;">◀</div>
+        <div style="font-weight:700; font-size:16px;">Thứ 7, 22/03/2026</div>
+        <div style="padding:4px 8px; border:1px solid #ddd; border-radius:4px; cursor:pointer;">▶</div>
+        <div style="padding:4px 12px; border:1px solid #2DB553; color:#2DB553; border-radius:4px; cursor:pointer; font-size:12px;">Hôm nay</div>
+      </div>
+      <div style="border-left:3px solid #e2e8f0; padding-left:16px; space-y:8px;">
+        <div style="background:white; border:1px solid #e2e8f0; border-radius:6px; padding:12px; margin-bottom:8px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <span style="font-weight:600;">SHP-2026-0010</span>
+              <span style="background:#dcfce7; color:#166534; padding:1px 6px; border-radius:4px; font-size:10px; margin-left:6px;">Xuất</span>
+              <span style="background:#bfdbfe; color:#2563eb; padding:1px 6px; border-radius:4px; font-size:10px; margin-left:4px;">Chờ</span>
+            </div>
+            <span style="color:#666;">Macstar HCM</span>
+          </div>
+        </div>
+        <div style="background:white; border:1px solid #e2e8f0; border-radius:6px; padding:12px; margin-bottom:8px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <span style="font-weight:600;">SHP-2026-0008</span>
+              <span style="background:#f3e8ff; color:#7c3aed; padding:1px 6px; border-radius:4px; font-size:10px; margin-left:6px;">Nhập</span>
+              <span style="background:#e9d5ff; color:#7c3aed; padding:1px 6px; border-radius:4px; font-size:10px; margin-left:4px;">Đã điều phối</span>
+            </div>
+            <span style="color:#666;">Thái Sơn • Minh (51C-123)</span>
+          </div>
+        </div>
+        <div style="background:white; border:1px solid #fef08a; border-radius:6px; padding:12px; margin-bottom:8px; border-left:3px solid #ca8a04;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <span style="font-weight:600;">SHP-2026-0005</span>
+              <span style="background:#dcfce7; color:#166534; padding:1px 6px; border-radius:4px; font-size:10px; margin-left:6px;">Xuất</span>
+              <span style="background:#fef08a; color:#ca8a04; padding:1px 6px; border-radius:4px; font-size:10px; margin-left:4px;">Đang chạy</span>
+            </div>
+            <span style="color:#666;">LST Enterprise • Đoàn (60C-456)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Chế độ 3: Theo Khách hàng (Grouped)</h3>
+  <div class="mockup">
+    <div class="mockup-header">Nhóm chuyến theo từng khách hàng</div>
+    <div class="mockup-body" style="padding:16px; font-size:12px;">
+      <div style="margin-bottom:16px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 12px; background:#f0fdf4; border-radius:8px 8px 0 0; border:1px solid #bbf7d0;">
+          <div style="font-weight:700; color:#166534;">An Phát Thịnh</div>
+          <div style="font-size:11px; color:#666;">3 chuyến (1 đang chạy)</div>
+        </div>
+        <div style="border:1px solid #e2e8f0; border-top:0; border-radius:0 0 8px 8px; padding:8px;">
+          <div style="display:flex; justify-content:space-between; padding:6px 8px; border-bottom:1px solid #f1f5f9;">
+            <div><span style="font-weight:500;">SHP-2026-0012</span> <span style="background:#dcfce7; color:#166534; padding:0 4px; border-radius:3px; font-size:10px;">Xuất</span></div>
+            <span style="background:#e2e8f0; color:#666; padding:0 6px; border-radius:3px; font-size:10px;">Nháp</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; padding:6px 8px; border-bottom:1px solid #f1f5f9;">
+            <div><span style="font-weight:500;">SHP-2026-0011</span> <span style="background:#f3e8ff; color:#7c3aed; padding:0 4px; border-radius:3px; font-size:10px;">Nhập</span></div>
+            <span style="background:#fef08a; color:#ca8a04; padding:0 6px; border-radius:3px; font-size:10px;">Đang chạy</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; padding:6px 8px;">
+            <div><span style="font-weight:500;">SHP-2026-0009</span> <span style="background:#dcfce7; color:#166534; padding:0 4px; border-radius:3px; font-size:10px;">Xuất</span></div>
+            <span style="background:#a7f3d0; color:#059669; padding:0 6px; border-radius:3px; font-size:10px;">Đã giao</span>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 12px; background:#eff6ff; border-radius:8px 8px 0 0; border:1px solid #bfdbfe;">
+          <div style="font-weight:700; color:#1e40af;">Vinamilk</div>
+          <div style="font-size:11px; color:#666;">2 chuyến</div>
+        </div>
+        <div style="border:1px solid #e2e8f0; border-top:0; border-radius:0 0 8px 8px; padding:8px;">
+          <div style="display:flex; justify-content:space-between; padding:6px 8px; border-bottom:1px solid #f1f5f9;">
+            <div><span style="font-weight:500;">SHP-2026-0010</span> <span style="background:#dcfce7; color:#166534; padding:0 4px; border-radius:3px; font-size:10px;">Xuất</span></div>
+            <span style="background:#bfdbfe; color:#2563eb; padding:0 6px; border-radius:3px; font-size:10px;">Chờ</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; padding:6px 8px;">
+            <div><span style="font-weight:500;">SHP-2026-0001</span> <span style="background:#f3e8ff; color:#7c3aed; padding:0 4px; border-radius:3px; font-size:10px;">Nhập</span></div>
+            <span style="background:#a7f3d0; color:#059669; padding:0 6px; border-radius:3px; font-size:10px;">Đã giao</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h3>Bạn thích hướng nào?</h3>
+<div class="options" data-multiselect>
+  <div class="option" data-choice="kanban" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Kanban là view chính</h3>
+      <p>Mặc định hiển thị Kanban theo trạng thái, có thể chuyển sang Ngày/KH</p>
+    </div>
+  </div>
+  <div class="option" data-choice="day" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Theo Ngày là view chính</h3>
+      <p>Mặc định xem theo ngày (hôm nay), có thể chuyển sang Kanban/KH</p>
+    </div>
+  </div>
+  <div class="option" data-choice="all3" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Cả 3 view ngang nhau</h3>
+      <p>Tabs chuyển đổi, không có view mặc định</p>
+    </div>
+  </div>
+</div>

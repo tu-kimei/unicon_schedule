@@ -141,7 +141,7 @@ query getAvailableDrivers {
 // Actions
 action createShipment {
   fn: import { createShipment } from "@src/logistics/actions/shipments",
-  entities: [Shipment, Customer, ShipmentStop]
+  entities: [Shipment, Customer, ShipmentStop, User]
 }
 
 action updateShipment {
