@@ -341,10 +341,14 @@ export const CreateShipmentPage = () => {
                   className="cursor-pointer w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors duration-200"
                 >
                   <option value="">-- Chọn --</option>
-                  <option value="20FT">20 feet</option>
-                  <option value="40FT">40 feet</option>
-                  <option value="40HC">40 feet High Cube</option>
-                  <option value="45HC">45 feet High Cube</option>
+                  <option value="CONTAINER_20FT">Container 20ft</option>
+                  <option value="CONTAINER_40FT">Container 40ft</option>
+                  <option value="CONTAINER_40HC">Container 40ft HC</option>
+                  <option value="CONTAINER_45FT">Container 45ft</option>
+                  <option value="FLATBED">Flatbed</option>
+                  <option value="TANK">Tank</option>
+                  <option value="REFRIGERATED">Đông lạnh</option>
+                  <option value="OPEN_TOP">Open Top</option>
                 </select>
               </div>
               <div>
