@@ -20,7 +20,7 @@ export const getDriverTasks = async (args: GetDriverTasksInput, context: any) =>
     where,
     include: {
       driver: {
-        include: { user: true }
+        include: { user: true, defaultTractor: true, defaultTrailer: true }
       },
       shipment: {
         include: {
@@ -73,7 +73,7 @@ export const getDriverTasksByDriver = async (args: GetDriverTasksByDriverInput, 
     where,
     include: {
       driver: {
-        include: { user: true }
+        include: { user: true, defaultTractor: true, defaultTrailer: true }
       },
       shipment: {
         include: {

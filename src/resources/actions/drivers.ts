@@ -29,6 +29,8 @@ type UpdateDriverInput = {
   licenseImages?: string[];
   licenseExpiry?: string;
   status?: DriverStatus;
+  defaultTractorId?: string | null;
+  defaultTrailerId?: string | null;
 };
 
 type DeleteDriverInput = {
@@ -118,6 +120,8 @@ export const updateDriver = async (args: UpdateDriverInput, context: any) => {
   if (args.licenseImages !== undefined) updateData.licenseImages = args.licenseImages;
   if (args.licenseExpiry !== undefined) updateData.licenseExpiry = new Date(args.licenseExpiry);
   if (args.status !== undefined) updateData.status = args.status;
+  if (args.defaultTractorId !== undefined) updateData.defaultTractorId = args.defaultTractorId;
+  if (args.defaultTrailerId !== undefined) updateData.defaultTrailerId = args.defaultTrailerId;
 
   // Update driver
   const updatedDriver = await context.entities.Driver.update({

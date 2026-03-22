@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery } from 'wasp/client/operations';
 import { RoleGuard } from '../../shared/components/RoleGuard';
 import {
@@ -8,11 +8,14 @@ import {
   getAllCustomers,
   getDriverTasks,
   createDriverTask,
-  updateDriverTaskSequence,
   createAndDispatchShipment,
 } from 'wasp/client/operations';
 import { Dialog } from '../../shared/components/Dialog';
 import { Button } from '../../shared/components/Button';
+
+// ============================================================================
+// Types
+// ============================================================================
 
 interface Shipment {
   id: string;
@@ -27,6 +30,7 @@ interface Shipment {
   specialInstructions?: string | null;
   containerNumber?: string | null;
   containerType?: string | null;
+  createdAt: string;
   stops: Array<{ locationName: string; stopType: string; address: string }>;
   customer: { id: string; name: string };
 }
@@ -43,6 +47,8 @@ interface DriverItem {
   fullName: string;
   status: string;
   user: { fullName: string };
+  defaultTractor?: Vehicle | null;
+  defaultTrailer?: Vehicle | null;
 }
 
 interface CustomerItem {
@@ -71,10 +77,32 @@ interface DriverTaskItem {
   trailer?: { licensePlate: string } | null;
 }
 
+// ============================================================================
+// Stop templates for quick dispatch
+// ============================================================================
+
+const STOP_TEMPLATES: Record<string, { stopType: string; stopCategory: string; label: string }[]> = {
+  EXPORT: [
+    { stopType: 'DEPOT', stopCategory: 'PICKUP_EMPTY', label: 'Lấy container rỗng' },
+    { stopType: 'PICKUP', stopCategory: 'WAREHOUSE_LOAD', label: 'Đóng hàng tại kho' },
+    { stopType: 'PORT', stopCategory: 'PORT_DELIVERY', label: 'Giao tại cảng' },
+  ],
+  IMPORT: [
+    { stopType: 'PORT', stopCategory: 'PORT_PICKUP', label: 'Lấy hàng tại cảng' },
+    { stopType: 'DROPOFF', stopCategory: 'WAREHOUSE_UNLOAD', label: 'Dỡ hàng tại kho' },
+    { stopType: 'DEPOT', stopCategory: 'RETURN_EMPTY', label: 'Trả container rỗng' },
+  ],
+};
+
+// ============================================================================
+// Main Page
+// ============================================================================
+
 export const DispatcherDashboardPage = () => {
   const [selectedShipment, setSelectedShipment] = useState<Shipment | null>(null);
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [showQuickDispatchModal, setShowQuickDispatchModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   // Fetch data
   const { data: pendingShipments, isLoading: shipmentsLoading, refetch: refetchShipments } = useQuery(getPendingShipments);
@@ -83,34 +111,26 @@ export const DispatcherDashboardPage = () => {
   const { data: allCustomers } = useQuery(getAllCustomers);
   const { data: allDriverTasks, refetch: refetchTasks } = useQuery(getDriverTasks, {});
 
-  // Group driver tasks by driver
-  const tasksByDriver = useMemo(() => {
-    const grouped: Record<string, { driver: DriverTaskItem['driver']; tasks: DriverTaskItem[] }> = {};
+  // Today's active tasks per driver
+  const todayTasksByDriver = useMemo(() => {
+    const grouped: Record<string, DriverTaskItem[]> = {};
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
     (allDriverTasks || []).forEach((task: DriverTaskItem) => {
       if (!grouped[task.driverId]) {
-        grouped[task.driverId] = { driver: task.driver, tasks: [] };
+        grouped[task.driverId] = [];
       }
-      grouped[task.driverId].tasks.push(task);
-    });
-    // Sort tasks by sequence within each driver
-    Object.values(grouped).forEach(group => {
-      group.tasks.sort((a, b) => a.sequence - b.sequence);
+      grouped[task.driverId].push(task);
     });
     return grouped;
   }, [allDriverTasks]);
 
-  // Separate customer requests from internal shipments
-  const customerRequests = useMemo(
-    () => (pendingShipments || []).filter(
-      (s: Shipment) => s.createdByType === 'CUSTOMER' && s.currentStatus === 'DRAFT'
-    ),
-    [pendingShipments]
-  );
-
-  const internalPending = useMemo(
-    () => (pendingShipments || []).filter(
-      (s: Shipment) => !(s.createdByType === 'CUSTOMER' && s.currentStatus === 'DRAFT')
-    ),
+  // All pending shipments (DRAFT/READY)
+  const allPending = useMemo(
+    () => (pendingShipments || []) as Shipment[],
     [pendingShipments]
   );
 
@@ -135,8 +155,7 @@ export const DispatcherDashboardPage = () => {
     if (!selectedShipment) return;
 
     try {
-      // Determine sequence: max current sequence for this driver + 1
-      const driverTasks = tasksByDriver[data.driverId]?.tasks || [];
+      const driverTasks = todayTasksByDriver[data.driverId] || [];
       const maxSeq = driverTasks.reduce((max, t) => Math.max(max, t.sequence), 0);
 
       await createDriverTask({
@@ -150,26 +169,14 @@ export const DispatcherDashboardPage = () => {
 
       setShowAssignModal(false);
       setSelectedShipment(null);
+      setSuccessMessage('Phân công tài xế thành công!');
+      setTimeout(() => setSuccessMessage(null), 4000);
       refetchAll();
     } catch (error: any) {
       console.error('Failed to create driver task:', error);
       alert(error?.message || 'Không thể phân công tài xế. Vui lòng thử lại.');
     }
   };
-
-  const handleReorderTasks = async (driverId: string, reorderedTasks: DriverTaskItem[]) => {
-    try {
-      await updateDriverTaskSequence({
-        tasks: reorderedTasks.map((t, i) => ({ id: t.id, sequence: i + 1 })),
-      });
-      refetchTasks();
-    } catch (error: any) {
-      console.error('Failed to reorder tasks:', error);
-      alert(error?.message || 'Không thể sắp xếp lại. Vui lòng thử lại.');
-    }
-  };
-
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const handleQuickDispatchSubmit = async (data: any) => {
     await createAndDispatchShipment(data);
@@ -187,9 +194,9 @@ export const DispatcherDashboardPage = () => {
         <div className="max-w-7xl mx-auto">
           <div className="animate-pulse">
             <div className="h-8 bg-gray-200 rounded mb-6"></div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="h-96 bg-gray-200 rounded"></div>
-              <div className="h-96 bg-gray-200 rounded"></div>
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+              <div className="lg:col-span-3 h-96 bg-gray-200 rounded"></div>
+              <div className="lg:col-span-2 h-96 bg-gray-200 rounded"></div>
             </div>
           </div>
         </div>
@@ -198,142 +205,157 @@ export const DispatcherDashboardPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Success Toast */}
-      {successMessage && (
-        <div className="fixed top-4 right-4 z-50 bg-primary-600 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-2 animate-fade-in">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-          {successMessage}
-        </div>
-      )}
-
-      {/* Header */}
-      <div className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-2xl font-heading font-bold text-gray-900">Bảng điều phối</h1>
-              <p className="text-gray-600">Phân công tài xế và quản lý chuyến</p>
-            </div>
-            <Button onClick={() => setShowQuickDispatchModal(true)}>
-              + Tạo & Điều phối nhanh
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-6 py-6">
-        {/* Customer Requests Section */}
-        {customerRequests.length > 0 && (
-          <div className="bg-white rounded-lg shadow mb-6 border-l-4 border-amber-400">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <div className="flex items-center gap-2">
-                <h2 className="text-xl font-semibold text-gray-900">
-                  Yêu cầu từ Khách hàng ({customerRequests.length})
-                </h2>
-                <span className="px-2 py-1 bg-amber-100 text-amber-800 text-xs font-medium rounded">
-                  Yêu cầu từ KH
-                </span>
-              </div>
-            </div>
-            <div className="px-6 py-4 max-h-72 overflow-y-auto">
-              <div className="space-y-3">
-                {customerRequests.map((shipment: Shipment) => (
-                  <PendingShipmentCard
-                    key={shipment.id}
-                    shipment={shipment}
-                    onClick={() => handleShipmentClick(shipment)}
-                    isCustomerRequest
-                  />
-                ))}
-              </div>
-            </div>
+    <RoleGuard allowedRoles={['ADMIN', 'DISPATCHER']}>
+      <div className="min-h-screen bg-gray-50">
+        {/* Success Toast */}
+        {successMessage && (
+          <div className="fixed top-4 right-4 z-50 bg-primary-600 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-2 animate-fade-in">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+            {successMessage}
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Left Panel: Pending Shipments */}
-          <div className="bg-white rounded-lg shadow">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-xl font-semibold text-gray-900">
-                Chuyến chờ điều phối ({internalPending.length})
-              </h2>
-              <p className="text-sm text-gray-600 mt-1">Nhấn để phân công tài xế</p>
-            </div>
-            <div className="px-6 py-4 max-h-[500px] overflow-y-auto">
-              {internalPending.length > 0 ? (
-                <div className="space-y-3">
-                  {internalPending.map((shipment: Shipment) => (
-                    <PendingShipmentCard
-                      key={shipment.id}
-                      shipment={shipment}
-                      onClick={() => handleShipmentClick(shipment)}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <p className="text-gray-500">Không có chuyến chờ điều phối</p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Right Panel: Driver Tasks */}
-          <div className="bg-white rounded-lg shadow">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-xl font-semibold text-gray-900">
-                Danh sách chuyến tài xế
-              </h2>
-              <p className="text-sm text-gray-600 mt-1">Kéo thả để sắp xếp thứ tự</p>
-            </div>
-            <div className="px-6 py-4 max-h-[500px] overflow-y-auto">
-              {Object.keys(tasksByDriver).length > 0 ? (
-                <div className="space-y-6">
-                  {Object.entries(tasksByDriver).map(([driverId, { driver, tasks }]) => (
-                    <DriverTaskGroup
-                      key={driverId}
-                      driver={driver}
-                      tasks={tasks}
-                      onReorder={(reordered) => handleReorderTasks(driverId, reordered)}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <p className="text-gray-500">Chưa có chuyến nào được gán</p>
-                </div>
-              )}
+        {/* Header */}
+        <div className="bg-white shadow">
+          <div className="max-w-7xl mx-auto px-6 py-4">
+            <div className="flex justify-between items-center">
+              <div>
+                <h1 className="text-2xl font-heading font-bold text-gray-900">Bảng điều phối</h1>
+                <p className="text-gray-600 text-sm mt-1">Phân công tài xế và quản lý chuyến</p>
+              </div>
+              <Button
+                onClick={() => setShowQuickDispatchModal(true)}
+                className="cursor-pointer transition-colors duration-200"
+              >
+                + Tạo & Điều phối nhanh
+              </Button>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Assign Driver Task Modal */}
-      {showAssignModal && selectedShipment && (
-        <AssignDriverTaskModal
-          shipment={selectedShipment}
+        {/* Main 2-column layout: 60% / 40% */}
+        <div className="max-w-7xl mx-auto px-6 py-6">
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+
+            {/* Left side (60%): Chuyến chờ điều phối */}
+            <div className="lg:col-span-3 bg-white rounded-lg shadow">
+              <div className="px-6 py-4 border-b border-gray-200">
+                <h2 className="text-xl font-semibold text-gray-900">
+                  Chuyến chờ điều phối ({allPending.length})
+                </h2>
+                <p className="text-sm text-gray-600 mt-1">Nhấn "Gán tài xế" để phân công</p>
+              </div>
+              <div className="px-6 py-4 max-h-[calc(100vh-220px)] overflow-y-auto">
+                {allPending.length > 0 ? (
+                  <div className="space-y-3">
+                    {allPending.map((shipment: Shipment) => (
+                      <PendingShipmentCard
+                        key={shipment.id}
+                        shipment={shipment}
+                        onAssign={() => handleShipmentClick(shipment)}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <svg className="w-12 h-12 mx-auto text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <p className="text-gray-500">Không có chuyến chờ điều phối</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Right side (40%): Danh sách tài xế */}
+            <div className="lg:col-span-2 bg-white rounded-lg shadow">
+              <div className="px-6 py-4 border-b border-gray-200">
+                <h2 className="text-xl font-semibold text-gray-900">
+                  Danh sách tài xế
+                </h2>
+              </div>
+              <div className="px-4 py-4 max-h-[calc(100vh-220px)] overflow-y-auto">
+                {(availableDrivers || []).length > 0 ? (
+                  <div className="space-y-2">
+                    {(availableDrivers as DriverItem[] || []).map((driver) => {
+                      const driverTasks = todayTasksByDriver[driver.id] || [];
+                      const activeTasks = driverTasks.filter(
+                        (t) => t.status === 'PENDING' || t.status === 'IN_PROGRESS'
+                      );
+                      const isAvailable = activeTasks.length === 0;
+
+                      return (
+                        <div
+                          key={driver.id}
+                          className="flex items-center justify-between px-4 py-3 rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors duration-200"
+                        >
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium text-gray-900 truncate">
+                                {driver.fullName}
+                              </span>
+                              {driver.defaultTractor && (
+                                <span className="text-xs text-gray-500">
+                                  ({driver.defaultTractor.licensePlate})
+                                </span>
+                              )}
+                            </div>
+                            {driverTasks.length > 0 && (
+                              <p className="text-xs text-gray-500 mt-0.5 truncate">
+                                {driverTasks.map(t => t.shipment.shipmentNumber).join(', ')}
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex-shrink-0 ml-2">
+                            {isAvailable ? (
+                              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                Rảnh
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                Đang chạy ({activeTasks.length} chuyến)
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <p className="text-gray-500">Không có tài xế</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Assign Driver Task Modal */}
+        {showAssignModal && selectedShipment && (
+          <AssignDriverTaskModal
+            shipment={selectedShipment}
+            vehicles={(availableVehicles || []) as Vehicle[]}
+            drivers={(availableDrivers || []) as DriverItem[]}
+            onAssign={handleAssignDriverTask}
+            onClose={() => {
+              setShowAssignModal(false);
+              setSelectedShipment(null);
+            }}
+          />
+        )}
+
+        {/* Quick Dispatch Modal */}
+        <QuickDispatchModal
+          open={showQuickDispatchModal}
+          onClose={() => setShowQuickDispatchModal(false)}
+          onSubmit={handleQuickDispatchSubmit}
+          customers={(allCustomers || []) as CustomerItem[]}
           vehicles={(availableVehicles || []) as Vehicle[]}
           drivers={(availableDrivers || []) as DriverItem[]}
-          onAssign={handleAssignDriverTask}
-          onClose={() => {
-            setShowAssignModal(false);
-            setSelectedShipment(null);
-          }}
         />
-      )}
-
-      {/* Quick Dispatch Modal */}
-      <QuickDispatchModal
-        open={showQuickDispatchModal}
-        onClose={() => setShowQuickDispatchModal(false)}
-        onSubmit={handleQuickDispatchSubmit}
-        customers={(allCustomers || []) as CustomerItem[]}
-        vehicles={(availableVehicles || []) as Vehicle[]}
-        drivers={(availableDrivers || []) as DriverItem[]}
-      />
-    </div>
+      </div>
+    </RoleGuard>
   );
 };
 
@@ -343,11 +365,10 @@ export const DispatcherDashboardPage = () => {
 
 interface PendingShipmentCardProps {
   shipment: Shipment;
-  onClick: () => void;
-  isCustomerRequest?: boolean;
+  onAssign: () => void;
 }
 
-const PendingShipmentCard = ({ shipment, onClick, isCustomerRequest }: PendingShipmentCardProps) => {
+const PendingShipmentCard = ({ shipment, onAssign }: PendingShipmentCardProps) => {
   const formatDate = (dateStr: string) => {
     try {
       return new Date(dateStr).toLocaleDateString('vi-VN', {
@@ -361,184 +382,43 @@ const PendingShipmentCard = ({ shipment, onClick, isCustomerRequest }: PendingSh
   };
 
   return (
-    <div
-      onClick={onClick}
-      className="border border-gray-200 rounded-lg p-4 cursor-pointer hover:bg-gray-50 transition-colors"
-    >
+    <div className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors duration-200">
       <div className="flex justify-between items-start mb-2">
-        <div>
-          <div className="flex items-center gap-2">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2 flex-wrap">
             <h3 className="font-medium text-gray-900">{shipment.shipmentNumber}</h3>
             {shipment.shipmentType && (
               <span className={`px-2 py-0.5 text-xs font-medium rounded ${
-                shipment.shipmentType === 'EXPORT' ? 'bg-green-100 text-green-800' : 'bg-purple-100 text-purple-800'
+                shipment.shipmentType === 'EXPORT'
+                  ? 'bg-green-100 text-green-800'
+                  : 'bg-purple-100 text-purple-800'
               }`}>
-                {shipment.shipmentType}
-              </span>
-            )}
-            {isCustomerRequest && (
-              <span className="px-2 py-0.5 bg-amber-100 text-amber-800 text-xs font-medium rounded">
-                KH
+                {shipment.shipmentType === 'EXPORT' ? 'Xuất' : 'Nhập'}
               </span>
             )}
           </div>
-          <p className="text-sm text-gray-600">{shipment.customer?.name}</p>
+          <p className="text-sm text-gray-600 mt-0.5">{shipment.customer?.name}</p>
         </div>
-        <PriorityBadge priority={shipment.priority} />
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onAssign();
+          }}
+          className="px-3 py-1.5 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg cursor-pointer transition-colors duration-200 flex-shrink-0"
+        >
+          Gán tài xế
+        </button>
       </div>
-      <div className="text-sm text-gray-600 space-y-1">
-        <p>{formatDate(shipment.plannedStartDate)} - {formatDate(shipment.plannedEndDate)}</p>
-        <p>{shipment.stops.length} điểm dừng</p>
-        <p className="truncate">
-          {shipment.stops.slice(0, 2).map(s => s.locationName).join(' -> ')}
-          {shipment.stops.length > 2 && '...'}
-        </p>
+      <div className="text-sm text-gray-500 flex items-center gap-3 flex-wrap">
+        <span>{shipment.stops.length} điểm dừng</span>
+        <span>{formatDate(shipment.createdAt || shipment.plannedStartDate)}</span>
       </div>
     </div>
   );
 };
 
 // ============================================================================
-// Priority Badge
-// ============================================================================
-
-const PriorityBadge = ({ priority }: { priority: string }) => {
-  const styles: Record<string, string> = {
-    URGENT: 'bg-red-100 text-red-800',
-    HIGH: 'bg-orange-100 text-orange-800',
-    NORMAL: 'bg-blue-100 text-blue-800',
-    LOW: 'bg-gray-100 text-gray-800',
-  };
-
-  return (
-    <span className={`px-2 py-1 text-xs rounded font-medium ${styles[priority] || styles.NORMAL}`}>
-      {priority}
-    </span>
-  );
-};
-
-// ============================================================================
-// Driver Task Group (with drag-drop)
-// ============================================================================
-
-interface DriverTaskGroupProps {
-  driver: DriverTaskItem['driver'];
-  tasks: DriverTaskItem[];
-  onReorder: (tasks: DriverTaskItem[]) => void;
-}
-
-const DriverTaskGroup = ({ driver, tasks, onReorder }: DriverTaskGroupProps) => {
-  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
-  const [dragIndex, setDragIndex] = useState<number | null>(null);
-
-  const handleDragStart = (e: React.DragEvent, index: number) => {
-    setDragIndex(index);
-    e.dataTransfer.effectAllowed = 'move';
-  };
-
-  const handleDragOver = (e: React.DragEvent, index: number) => {
-    e.preventDefault();
-    setDragOverIndex(index);
-  };
-
-  const handleDrop = (e: React.DragEvent, dropIndex: number) => {
-    e.preventDefault();
-    if (dragIndex === null || dragIndex === dropIndex) {
-      setDragIndex(null);
-      setDragOverIndex(null);
-      return;
-    }
-
-    const reordered = [...tasks];
-    const [removed] = reordered.splice(dragIndex, 1);
-    reordered.splice(dropIndex, 0, removed);
-
-    setDragIndex(null);
-    setDragOverIndex(null);
-    onReorder(reordered);
-  };
-
-  const handleDragEnd = () => {
-    setDragIndex(null);
-    setDragOverIndex(null);
-  };
-
-  const taskStatusStyles: Record<string, string> = {
-    PENDING: 'bg-gray-100 text-gray-700',
-    IN_PROGRESS: 'bg-yellow-100 text-yellow-800',
-    COMPLETED: 'bg-green-100 text-green-800',
-    SKIPPED: 'bg-red-100 text-red-700',
-  };
-
-  return (
-    <div className="border border-gray-200 rounded-lg">
-      <div className="px-4 py-3 bg-gray-50 rounded-t-lg border-b border-gray-200">
-        <div className="flex items-center gap-2">
-          <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-          </svg>
-          <span className="font-medium text-gray-900">{driver.fullName}</span>
-          <span className="text-xs text-gray-500">({tasks.length} chuyến)</span>
-        </div>
-      </div>
-
-      <div className="p-2 space-y-1">
-        {tasks.map((task, index) => (
-          <div
-            key={task.id}
-            draggable
-            onDragStart={(e) => handleDragStart(e, index)}
-            onDragOver={(e) => handleDragOver(e, index)}
-            onDrop={(e) => handleDrop(e, index)}
-            onDragEnd={handleDragEnd}
-            className={`flex items-center gap-2 px-3 py-2 rounded cursor-grab active:cursor-grabbing transition-colors ${
-              dragOverIndex === index ? 'bg-blue-50 border-2 border-blue-300 border-dashed' :
-              dragIndex === index ? 'opacity-50 bg-gray-100' :
-              'bg-white hover:bg-gray-50'
-            }`}
-          >
-            <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M8 6h2v2H8zm6 0h2v2h-2zM8 11h2v2H8zm6 0h2v2h-2zM8 16h2v2H8zm6 0h2v2h-2z" />
-            </svg>
-
-            <span className="text-xs text-gray-400 w-5">{task.sequence}.</span>
-
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-gray-900 truncate">
-                  {task.shipment.shipmentNumber}
-                </span>
-                {task.shipment.shipmentType && (
-                  <span className={`px-1.5 py-0.5 text-[10px] font-medium rounded ${
-                    task.shipment.shipmentType === 'EXPORT' ? 'bg-green-100 text-green-700' : 'bg-purple-100 text-purple-700'
-                  }`}>
-                    {task.shipment.shipmentType}
-                  </span>
-                )}
-              </div>
-              <p className="text-xs text-gray-500 truncate">
-                {task.shipment.customer.name} | {task.tractor.licensePlate}
-                {task.trailer && ` + ${task.trailer.licensePlate}`}
-              </p>
-              {task.instructions && (
-                <p className="text-xs text-primary-600 truncate mt-0.5">{task.instructions}</p>
-              )}
-            </div>
-
-            <span className={`px-2 py-0.5 text-[10px] rounded font-medium flex-shrink-0 ${
-              taskStatusStyles[task.status] || taskStatusStyles.PENDING
-            }`}>
-              {task.status}
-            </span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
-
-// ============================================================================
-// Assign Driver Task Modal
+// Assign Driver Task Modal (simplified)
 // ============================================================================
 
 interface AssignDriverTaskModalProps {
@@ -550,18 +430,40 @@ interface AssignDriverTaskModalProps {
 }
 
 const AssignDriverTaskModal = ({ shipment, vehicles, drivers, onAssign, onClose }: AssignDriverTaskModalProps) => {
+  const [selectedDriver, setSelectedDriver] = useState('');
   const [selectedTractor, setSelectedTractor] = useState('');
   const [selectedTrailer, setSelectedTrailer] = useState('');
-  const [selectedDriver, setSelectedDriver] = useState('');
   const [instructions, setInstructions] = useState('');
   const [isAssigning, setIsAssigning] = useState(false);
 
   const tractors = vehicles.filter(v => v.vehicleType === 'TRACTOR');
   const trailers = vehicles.filter(v => v.vehicleType === 'TRAILER');
 
+  // When driver changes, auto-fill default vehicles
+  const handleDriverChange = (driverId: string) => {
+    setSelectedDriver(driverId);
+    if (driverId) {
+      const driver = drivers.find(d => d.id === driverId);
+      if (driver?.defaultTractor) {
+        setSelectedTractor(driver.defaultTractor.id);
+      } else {
+        setSelectedTractor('');
+      }
+      if (driver?.defaultTrailer) {
+        setSelectedTrailer(driver.defaultTrailer.id);
+      } else {
+        setSelectedTrailer('');
+      }
+    } else {
+      setSelectedTractor('');
+      setSelectedTrailer('');
+    }
+  };
+
+  const selectedDriverObj = drivers.find(d => d.id === selectedDriver);
+
   const handleAssign = async () => {
     if (!selectedTractor || !selectedDriver) return;
-
     setIsAssigning(true);
     try {
       await onAssign({
@@ -582,64 +484,12 @@ const AssignDriverTaskModal = ({ shipment, vehicles, drivers, onAssign, onClose 
       <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
         <div className="px-6 py-4 border-b border-gray-200">
           <h2 className="text-xl font-semibold text-gray-900">Phân công tài xế</h2>
+          <p className="text-sm text-gray-500 mt-1">
+            {shipment.shipmentNumber} - {shipment.customer?.name}
+          </p>
         </div>
 
         <div className="px-6 py-4 space-y-4">
-          {/* Shipment Info */}
-          <div className="bg-gray-50 rounded-lg p-3">
-            <div className="flex items-center gap-2 mb-1">
-              <h3 className="font-medium text-gray-900">{shipment.shipmentNumber}</h3>
-              <PriorityBadge priority={shipment.priority} />
-              {shipment.shipmentType && (
-                <span className={`px-2 py-0.5 text-xs rounded font-medium ${
-                  shipment.shipmentType === 'EXPORT' ? 'bg-green-100 text-green-700' : 'bg-purple-100 text-purple-700'
-                }`}>
-                  {shipment.shipmentType}
-                </span>
-              )}
-            </div>
-            <p className="text-sm text-gray-600">{shipment.customer?.name}</p>
-            <p className="text-sm text-gray-600">{shipment.stops.length} điểm dừng</p>
-          </div>
-
-          {/* Tractor Selection */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Đầu kéo <span className="text-red-500">*</span>
-            </label>
-            <select
-              value={selectedTractor}
-              onChange={(e) => setSelectedTractor(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2"
-            >
-              <option value="">-- Chọn đầu kéo --</option>
-              {tractors.map((v) => (
-                <option key={v.id} value={v.id}>
-                  {v.licensePlate}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Trailer Selection */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Rơ moóc (Tùy chọn)
-            </label>
-            <select
-              value={selectedTrailer}
-              onChange={(e) => setSelectedTrailer(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2"
-            >
-              <option value="">-- Chọn rơ moóc --</option>
-              {trailers.map((v) => (
-                <option key={v.id} value={v.id}>
-                  {v.licensePlate}
-                </option>
-              ))}
-            </select>
-          </div>
-
           {/* Driver Selection */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -647,40 +497,84 @@ const AssignDriverTaskModal = ({ shipment, vehicles, drivers, onAssign, onClose 
             </label>
             <select
               value={selectedDriver}
-              onChange={(e) => setSelectedDriver(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2"
+              onChange={(e) => handleDriverChange(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 cursor-pointer transition-colors duration-200"
             >
               <option value="">-- Chọn tài xế --</option>
               {drivers.map((driver) => (
                 <option key={driver.id} value={driver.id}>
-                  {driver.fullName}
+                  {driver.fullName}{driver.defaultTractor ? ` - ${driver.defaultTractor.licensePlate}` : ''}
                 </option>
               ))}
             </select>
           </div>
 
+          {/* Vehicle info (auto-filled from driver defaults) */}
+          {selectedDriver && (
+            <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Đầu kéo <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={selectedTractor}
+                  onChange={(e) => setSelectedTractor(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 cursor-pointer transition-colors duration-200"
+                >
+                  <option value="">-- Chọn đầu kéo --</option>
+                  {tractors.map((v) => (
+                    <option key={v.id} value={v.id}>{v.licensePlate}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Rơ moóc
+                </label>
+                <select
+                  value={selectedTrailer}
+                  onChange={(e) => setSelectedTrailer(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 cursor-pointer transition-colors duration-200"
+                >
+                  <option value="">-- Không chọn --</option>
+                  {trailers.map((v) => (
+                    <option key={v.id} value={v.id}>{v.licensePlate}</option>
+                  ))}
+                </select>
+              </div>
+
+              {selectedDriverObj?.defaultTractor && (
+                <p className="text-xs text-gray-500">
+                  Xe mặc định của tài xế. Thay đổi nếu cần.
+                </p>
+              )}
+            </div>
+          )}
+
           {/* Instructions */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Chỉ dẫn cho tài xế
+              Ghi chú
             </label>
             <textarea
               value={instructions}
               onChange={(e) => setInstructions(e.target.value)}
               className="w-full border border-gray-300 rounded-lg px-3 py-2"
-              rows={3}
-              placeholder="Chỉ dẫn đặc biệt cho tài xế..."
+              rows={2}
+              placeholder="Ghi chú cho tài xế..."
             />
           </div>
         </div>
 
         <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
-          <Button variant="ghost" onClick={onClose} disabled={isAssigning}>
+          <Button variant="ghost" onClick={onClose} disabled={isAssigning} className="cursor-pointer transition-colors duration-200">
             Hủy
           </Button>
           <Button
             onClick={handleAssign}
             disabled={!selectedTractor || !selectedDriver || isAssigning}
+            className="cursor-pointer transition-colors duration-200"
           >
             {isAssigning ? 'Đang phân công...' : 'Phân công'}
           </Button>
@@ -691,7 +585,7 @@ const AssignDriverTaskModal = ({ shipment, vehicles, drivers, onAssign, onClose 
 };
 
 // ============================================================================
-// Quick Dispatch Modal (create shipment + dispatch in one step)
+// Quick Dispatch Modal (simplified - 5 fields)
 // ============================================================================
 
 interface QuickDispatchModalProps {
@@ -703,39 +597,6 @@ interface QuickDispatchModalProps {
   drivers: DriverItem[];
 }
 
-interface StopFormData {
-  stopType: string;
-  locationName: string;
-  address: string;
-  contactPerson: string;
-  contactPhone: string;
-  plannedArrival: string;
-  plannedDeparture: string;
-}
-
-const emptyStop = (): StopFormData => ({
-  stopType: 'PICKUP',
-  locationName: '',
-  address: '',
-  contactPerson: '',
-  contactPhone: '',
-  plannedArrival: '',
-  plannedDeparture: '',
-});
-
-const STOP_TEMPLATES_QUICK: Record<string, { stopType: string; stopCategory: string; label: string }[]> = {
-  EXPORT: [
-    { stopType: 'DEPOT', stopCategory: 'PICKUP_EMPTY', label: 'Lấy container rỗng' },
-    { stopType: 'PICKUP', stopCategory: 'WAREHOUSE_LOAD', label: 'Đóng hàng tại kho' },
-    { stopType: 'PORT', stopCategory: 'PORT_DELIVERY', label: 'Giao tại cảng' },
-  ],
-  IMPORT: [
-    { stopType: 'PORT', stopCategory: 'PORT_PICKUP', label: 'Lấy hàng tại cảng' },
-    { stopType: 'DROPOFF', stopCategory: 'WAREHOUSE_UNLOAD', label: 'Dỡ hàng tại kho' },
-    { stopType: 'DEPOT', stopCategory: 'RETURN_EMPTY', label: 'Trả container rỗng' },
-  ],
-};
-
 const QuickDispatchModal = ({
   open,
   onClose,
@@ -746,45 +607,51 @@ const QuickDispatchModal = ({
 }: QuickDispatchModalProps) => {
   const [customerId, setCustomerId] = useState('');
   const [shipmentType, setShipmentType] = useState<'EXPORT' | 'IMPORT'>('EXPORT');
-  const [priority, setPriority] = useState('NORMAL');
-  const [plannedStartDate, setPlannedStartDate] = useState('');
-  const [plannedEndDate, setPlannedEndDate] = useState('');
-  const [containerNumber, setContainerNumber] = useState('');
-  const [containerType, setContainerType] = useState('');
-  const [specialInstructions, setSpecialInstructions] = useState('');
-  const [stops, setStops] = useState<StopFormData[]>(
-    STOP_TEMPLATES_QUICK.EXPORT.map((t) => ({ ...emptyStop(), stopType: t.stopType }))
-  );
+  const [selectedDate, setSelectedDate] = useState(() => {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+  });
+  const [driverId, setDriverId] = useState('');
   const [tractorId, setTractorId] = useState('');
   const [trailerId, setTrailerId] = useState('');
-  const [driverId, setDriverId] = useState('');
-  const [dispatchNotes, setDispatchNotes] = useState('');
+  const [containerNumber, setContainerNumber] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const activeCustomers = (customers || []).filter((c) => c.status === 'ACTIVE');
   const tractors = vehicles.filter((v) => v.vehicleType === 'TRACTOR');
   const trailers = vehicles.filter((v) => v.vehicleType === 'TRAILER');
 
-  const handleShipmentTypeChange = (type: 'EXPORT' | 'IMPORT') => {
-    setShipmentType(type);
-    const template = STOP_TEMPLATES_QUICK[type];
-    setStops(template.map((t) => ({ ...emptyStop(), stopType: t.stopType })));
+  // When driver changes, auto-fill default vehicles
+  const handleDriverChange = (newDriverId: string) => {
+    setDriverId(newDriverId);
+    if (newDriverId) {
+      const driver = drivers.find(d => d.id === newDriverId);
+      if (driver?.defaultTractor) {
+        setTractorId(driver.defaultTractor.id);
+      } else {
+        setTractorId('');
+      }
+      if (driver?.defaultTrailer) {
+        setTrailerId(driver.defaultTrailer.id);
+      } else {
+        setTrailerId('');
+      }
+    } else {
+      setTractorId('');
+      setTrailerId('');
+    }
   };
 
   const resetForm = () => {
     setCustomerId('');
     setShipmentType('EXPORT');
-    setPriority('NORMAL');
-    setPlannedStartDate('');
-    setPlannedEndDate('');
-    setContainerNumber('');
-    setContainerType('');
-    setSpecialInstructions('');
-    setStops(STOP_TEMPLATES_QUICK.EXPORT.map((t) => ({ ...emptyStop(), stopType: t.stopType })));
+    setSelectedDate(new Date().toISOString().split('T')[0]);
+    setDriverId('');
     setTractorId('');
     setTrailerId('');
-    setDriverId('');
-    setDispatchNotes('');
+    setContainerNumber('');
+    setSubmitError(null);
   };
 
   const handleClose = () => {
@@ -792,30 +659,7 @@ const QuickDispatchModal = ({
     onClose();
   };
 
-  const updateStop = (index: number, field: keyof StopFormData, value: string) => {
-    const newStops = [...stops];
-    newStops[index] = { ...newStops[index], [field]: value };
-    setStops(newStops);
-  };
-
-  const addStop = () => {
-    setStops([...stops, { ...emptyStop(), stopType: 'DROPOFF' }]);
-  };
-
-  const removeStop = (index: number) => {
-    if (stops.length <= 2) return;
-    setStops(stops.filter((_, i) => i !== index));
-  };
-
-  const isValid =
-    customerId &&
-    plannedStartDate &&
-    plannedEndDate &&
-    tractorId &&
-    driverId &&
-    stops.every((s) => s.locationName && s.address && s.plannedArrival && s.plannedDeparture);
-
-  const [submitError, setSubmitError] = useState<string | null>(null);
+  const isValid = customerId && selectedDate && driverId && tractorId;
 
   const handleSubmit = async () => {
     if (!isValid) return;
@@ -823,31 +667,32 @@ const QuickDispatchModal = ({
     setIsSubmitting(true);
     setSubmitError(null);
     try {
-      const template = STOP_TEMPLATES_QUICK[shipmentType];
+      const startOfDay = new Date(selectedDate);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(selectedDate);
+      endOfDay.setHours(23, 59, 59, 999);
+
+      const template = STOP_TEMPLATES[shipmentType];
+
       await onSubmit({
         customerId,
         shipmentType,
-        priority,
-        plannedStartDate: new Date(plannedStartDate),
-        plannedEndDate: new Date(plannedEndDate),
+        priority: 'NORMAL',
+        plannedStartDate: startOfDay,
+        plannedEndDate: endOfDay,
         containerNumber: containerNumber || undefined,
-        containerType: containerType || undefined,
-        specialInstructions: specialInstructions || undefined,
-        stops: stops.map((s, i) => ({
+        stops: template.map((t, i) => ({
           sequence: i + 1,
-          stopType: s.stopType,
-          stopCategory: template[i]?.stopCategory,
-          locationName: s.locationName,
-          address: s.address,
-          contactPerson: s.contactPerson || undefined,
-          contactPhone: s.contactPhone || undefined,
-          plannedArrival: new Date(s.plannedArrival),
-          plannedDeparture: new Date(s.plannedDeparture),
+          stopType: t.stopType,
+          stopCategory: t.stopCategory,
+          locationName: '',
+          address: '',
+          plannedArrival: startOfDay,
+          plannedDeparture: endOfDay,
         })),
         tractorId,
         trailerId: trailerId || undefined,
         driverId,
-        dispatchNotes: dispatchNotes || undefined,
       });
       resetForm();
     } catch (error: any) {
@@ -859,254 +704,175 @@ const QuickDispatchModal = ({
     }
   };
 
+  const selectedDriverObj = drivers.find(d => d.id === driverId);
+
   return (
-    <RoleGuard allowedRoles={['DISPATCHER', 'ADMIN']}>
-      <Dialog open={open} onClose={handleClose} closeOnClickOutside={false}>
-        <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-          <div className="px-6 py-4 border-b border-gray-200 sticky top-0 bg-white z-10">
-            <h2 className="text-xl font-semibold text-gray-900">Tạo & Điều phối nhanh</h2>
-            <p className="text-sm text-gray-600 mt-1">
-              Tạo chuyến hàng mới và phân công trong một bước
-            </p>
+    <Dialog open={open} onClose={handleClose} closeOnClickOutside={false}>
+      <div className="bg-white rounded-lg shadow-xl max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div className="px-6 py-4 border-b border-gray-200 sticky top-0 bg-white z-10">
+          <h2 className="text-xl font-semibold text-gray-900">Tạo & Điều phối nhanh</h2>
+          <p className="text-sm text-gray-600 mt-1">
+            Tạo chuyến hàng mới và phân công trong một bước
+          </p>
+        </div>
+
+        <div className="px-6 py-4 space-y-5">
+          {/* 1. Khách hàng */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Khách hàng <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={customerId}
+              onChange={(e) => setCustomerId(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 cursor-pointer transition-colors duration-200"
+            >
+              <option value="">-- Chọn khách hàng --</option>
+              {activeCustomers.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
           </div>
 
-          <div className="px-6 py-4 space-y-6">
-            {/* Shipment Type */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Loại vận chuyển <span className="text-red-500">*</span></label>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => handleShipmentTypeChange('EXPORT')}
-                  className={`p-3 rounded-lg border-2 text-center cursor-pointer transition-colors duration-200 ${
-                    shipmentType === 'EXPORT'
-                      ? 'border-primary-600 bg-primary-50 text-primary-700'
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                >
-                  <div className="font-medium">Hàng xuất</div>
-                  <div className="text-xs text-gray-500 mt-1">Lấy rỗng → Kho → Cảng</div>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleShipmentTypeChange('IMPORT')}
-                  className={`p-3 rounded-lg border-2 text-center cursor-pointer transition-colors duration-200 ${
-                    shipmentType === 'IMPORT'
-                      ? 'border-primary-600 bg-primary-50 text-primary-700'
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                >
-                  <div className="font-medium">Hàng nhập</div>
-                  <div className="text-xs text-gray-500 mt-1">Cảng → Kho → Trả rỗng</div>
-                </button>
-              </div>
+          {/* 2. Loại vận chuyển */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Loại vận chuyển <span className="text-red-500">*</span>
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setShipmentType('EXPORT')}
+                className={`p-3 rounded-lg border-2 text-center cursor-pointer transition-colors duration-200 ${
+                  shipmentType === 'EXPORT'
+                    ? 'border-primary-600 bg-primary-50 text-primary-700'
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                <div className="font-medium">Hàng xuất</div>
+                <div className="text-xs text-gray-500 mt-1">Lấy rỗng &rarr; Kho &rarr; Cảng</div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setShipmentType('IMPORT')}
+                className={`p-3 rounded-lg border-2 text-center cursor-pointer transition-colors duration-200 ${
+                  shipmentType === 'IMPORT'
+                    ? 'border-primary-600 bg-primary-50 text-primary-700'
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                <div className="font-medium">Hàng nhập</div>
+                <div className="text-xs text-gray-500 mt-1">Cảng &rarr; Kho &rarr; Trả rỗng</div>
+              </button>
             </div>
+          </div>
 
-            {/* Customer & Priority */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Khách hàng <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={customerId}
-                  onChange={(e) => setCustomerId(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                >
-                  <option value="">-- Chọn khách hàng --</option>
-                  {activeCustomers.map((c) => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Mức ưu tiên</label>
-                <select
-                  value={priority}
-                  onChange={(e) => setPriority(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                >
-                  <option value="LOW">Thấp</option>
-                  <option value="NORMAL">Bình thường</option>
-                  <option value="HIGH">Cao</option>
-                  <option value="URGENT">Khẩn cấp</option>
-                </select>
-              </div>
-            </div>
+          {/* 3. Ngày */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Ngày <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2"
+            />
+          </div>
 
-            {/* Planned Dates */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Ngày bắt đầu <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="datetime-local"
-                  value={plannedStartDate}
-                  onChange={(e) => setPlannedStartDate(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Ngày kết thúc <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="datetime-local"
-                  value={plannedEndDate}
-                  onChange={(e) => setPlannedEndDate(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                />
-              </div>
-            </div>
+          {/* 4. Tài xế */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Tài xế <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={driverId}
+              onChange={(e) => handleDriverChange(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 cursor-pointer transition-colors duration-200"
+            >
+              <option value="">-- Chọn tài xế --</option>
+              {drivers.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.fullName}{d.defaultTractor ? ` (${d.defaultTractor.licensePlate})` : ''}
+                </option>
+              ))}
+            </select>
 
-            {/* Container Info */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Số container</label>
-                <input
-                  type="text"
-                  value={containerNumber}
-                  onChange={(e) => setContainerNumber(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                  placeholder="e.g. MSKU1234567"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Loại container</label>
-                <select
-                  value={containerType}
-                  onChange={(e) => setContainerType(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                >
-                  <option value="">-- Chọn loại --</option>
-                  <option value="CONTAINER_20FT">Container 20ft</option>
-                  <option value="CONTAINER_40FT">Container 40ft</option>
-                  <option value="CONTAINER_40HC">Container 40ft HC</option>
-                  <option value="CONTAINER_45FT">Container 45ft</option>
-                  <option value="FLATBED">Flatbed</option>
-                  <option value="TANK">Tank</option>
-                  <option value="REFRIGERATED">Refrigerated</option>
-                  <option value="OPEN_TOP">Open Top</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Special Instructions */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Yêu cầu đặc biệt</label>
-              <textarea
-                value={specialInstructions}
-                onChange={(e) => setSpecialInstructions(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                rows={2}
-                placeholder="Ghi chú yêu cầu đặc biệt..."
-              />
-            </div>
-
-            {/* Stops */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-3">
-                Điểm dừng <span className="text-red-500">*</span>
-              </label>
-              <div className="space-y-3">
-                {stops.map((stop, index) => {
-                  const template = STOP_TEMPLATES_QUICK[shipmentType][index];
-                  return (
-                    <div key={index} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                      <div className="flex items-center gap-2 mb-3">
-                        <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary-100 text-primary-700 text-xs font-bold">{index + 1}</span>
-                        <h4 className="text-sm font-medium text-gray-900">{template?.label || `Điểm #${index + 1}`}</h4>
-                        <span className="px-2 py-0.5 text-xs rounded bg-gray-200 text-gray-600">{template?.stopCategory}</span>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <input type="text" value={stop.locationName} onChange={(e) => updateStop(index, 'locationName', e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2 text-sm" placeholder="Tên địa điểm *" />
-                        <input type="text" value={stop.address} onChange={(e) => updateStop(index, 'address', e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2 text-sm" placeholder="Địa chỉ *" />
-                        <input type="text" value={stop.contactPerson} onChange={(e) => updateStop(index, 'contactPerson', e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2 text-sm" placeholder="Người liên hệ" />
-                        <input type="text" value={stop.contactPhone} onChange={(e) => updateStop(index, 'contactPhone', e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2 text-sm" placeholder="Số điện thoại" />
-                        <div>
-                          <label className="block text-xs text-gray-500 mb-1">Dự kiến đến *</label>
-                          <input type="datetime-local" value={stop.plannedArrival} onChange={(e) => updateStop(index, 'plannedArrival', e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2 text-sm" />
-                        </div>
-                        <div>
-                          <label className="block text-xs text-gray-500 mb-1">Dự kiến đi *</label>
-                          <input type="datetime-local" value={stop.plannedDeparture} onChange={(e) => updateStop(index, 'plannedDeparture', e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2 text-sm" />
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Vehicle & Driver Assignment */}
-            <div className="border-t border-gray-200 pt-4">
-              <h3 className="text-sm font-semibold text-gray-700 mb-3">Phân công xe & tài xế</h3>
-              <div className="space-y-3">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Đầu kéo <span className="text-red-500">*</span>
-                    </label>
-                    <select value={tractorId} onChange={(e) => setTractorId(e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2">
-                      <option value="">-- Chọn đầu kéo --</option>
-                      {tractors.map((v) => (
-                        <option key={v.id} value={v.id}>{v.licensePlate}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Rơ moóc</label>
-                    <select value={trailerId} onChange={(e) => setTrailerId(e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2">
-                      <option value="">-- Không chọn --</option>
-                      {trailers.map((v) => (
-                        <option key={v.id} value={v.id}>{v.licensePlate}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Tài xế <span className="text-red-500">*</span>
-                  </label>
-                  <select value={driverId} onChange={(e) => setDriverId(e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2">
-                    <option value="">-- Chọn tài xế --</option>
-                    {drivers.map((d) => (
-                      <option key={d.id} value={d.id}>{d.fullName}</option>
+            {/* Auto-filled vehicle info */}
+            {driverId && (
+              <div className="mt-2 bg-gray-50 rounded-lg p-3 space-y-2">
+                <div className="flex items-center gap-2">
+                  <label className="text-xs text-gray-600 w-20">Đầu kéo:</label>
+                  <select
+                    value={tractorId}
+                    onChange={(e) => setTractorId(e.target.value)}
+                    className="flex-1 border border-gray-300 rounded px-2 py-1 text-sm cursor-pointer transition-colors duration-200"
+                  >
+                    <option value="">-- Chọn --</option>
+                    {tractors.map((v) => (
+                      <option key={v.id} value={v.id}>{v.licensePlate}</option>
                     ))}
                   </select>
                 </div>
+                <div className="flex items-center gap-2">
+                  <label className="text-xs text-gray-600 w-20">Rơ moóc:</label>
+                  <select
+                    value={trailerId}
+                    onChange={(e) => setTrailerId(e.target.value)}
+                    className="flex-1 border border-gray-300 rounded px-2 py-1 text-sm cursor-pointer transition-colors duration-200"
+                  >
+                    <option value="">-- Không chọn --</option>
+                    {trailers.map((v) => (
+                      <option key={v.id} value={v.id}>{v.licensePlate}</option>
+                    ))}
+                  </select>
+                </div>
+                {selectedDriverObj?.defaultTractor && (
+                  <p className="text-xs text-gray-400">
+                    Xe mặc định của tài xế. Thay đổi nếu cần.
+                  </p>
+                )}
               </div>
-            </div>
-
-            {/* Dispatch Notes */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Ghi chú điều phối</label>
-              <textarea value={dispatchNotes} onChange={(e) => setDispatchNotes(e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2" rows={2} placeholder="Ghi chú cho tài xế..." />
-            </div>
+            )}
           </div>
 
-          {/* Error Message */}
-          {submitError && (
-            <div className="mx-6 mb-2 p-3 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-sm text-red-800">{submitError}</p>
-            </div>
-          )}
-
-          {/* Footer */}
-          <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between sticky bottom-0 bg-white">
-            <div className="text-xs text-gray-400">
-              {!isValid && 'Vui lòng điền đầy đủ các trường bắt buộc (*)'}
-            </div>
-            <div className="flex space-x-3">
-              <Button variant="ghost" onClick={handleClose} disabled={isSubmitting}>Hủy</Button>
-              <Button onClick={handleSubmit} disabled={!isValid || isSubmitting}>
-                {isSubmitting ? 'Đang tạo...' : 'Tạo & Điều phối'}
-              </Button>
-            </div>
+          {/* 5. Số container */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Số container
+            </label>
+            <input
+              type="text"
+              value={containerNumber}
+              onChange={(e) => setContainerNumber(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2"
+              placeholder="VD: MSKU1234567"
+            />
           </div>
         </div>
-      </Dialog>
-    </RoleGuard>
+
+        {/* Error Message */}
+        {submitError && (
+          <div className="mx-6 mb-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-sm text-red-800">{submitError}</p>
+          </div>
+        )}
+
+        {/* Footer */}
+        <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between sticky bottom-0 bg-white">
+          <div className="text-xs text-gray-400">
+            {!isValid && 'Vui lòng điền đầy đủ các trường bắt buộc (*)'}
+          </div>
+          <div className="flex space-x-3">
+            <Button variant="ghost" onClick={handleClose} disabled={isSubmitting} className="cursor-pointer transition-colors duration-200">
+              Hủy
+            </Button>
+            <Button onClick={handleSubmit} disabled={!isValid || isSubmitting} className="cursor-pointer transition-colors duration-200">
+              {isSubmitting ? 'Đang tạo...' : 'Tạo & Điều phối'}
+            </Button>
+          </div>
+        </div>
+      </div>
+    </Dialog>
   );
 };

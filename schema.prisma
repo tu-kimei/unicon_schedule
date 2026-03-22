@@ -358,6 +358,8 @@ model Vehicle {
   dispatches Dispatch[]
   tractorTasks  DriverTask[] @relation("TractorTasks")
   trailerTasks  DriverTask[] @relation("TrailerTasks")
+  defaultTractorDrivers  Driver[]  @relation("DefaultTractor")
+  defaultTrailerDrivers  Driver[]  @relation("DefaultTrailer")
 
   @@map("vehicles")
 }
@@ -378,6 +380,13 @@ model Driver {
   licenseExpiry     DateTime     // Ngày hết hạn giấy phép
   
   status            DriverStatus @default(ACTIVE)
+
+  // Xe mặc định
+  defaultTractorId  String?
+  defaultTractor    Vehicle?  @relation("DefaultTractor", fields: [defaultTractorId], references: [id])
+  defaultTrailerId  String?
+  defaultTrailer    Vehicle?  @relation("DefaultTrailer", fields: [defaultTrailerId], references: [id])
+
   createdAt         DateTime     @default(now())
   updatedAt         DateTime     @updatedAt
 

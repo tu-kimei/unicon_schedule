@@ -13,6 +13,8 @@ export const getAllDrivers = async (_args: void, context: any) => {
   const drivers = await context.entities.Driver.findMany({
     include: {
       user: true,
+      defaultTractor: true,
+      defaultTrailer: true,
       dispatches: {
         select: { id: true },
       },
@@ -46,6 +48,8 @@ export const getDriver = async (args: GetDriverInput, context: any) => {
     where: { id: args.id },
     include: {
       user: true,
+      defaultTractor: true,
+      defaultTrailer: true,
     },
   });
 

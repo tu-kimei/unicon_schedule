@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from 'wasp/client/operations';
-import { getDriver, updateDriver, deleteDriver } from 'wasp/client/operations';
+import { getDriver, updateDriver, deleteDriver, getAllVehicles } from 'wasp/client/operations';
 import { RoleGuard } from '../../shared/components/RoleGuard';
 import { Button } from '../../shared/components/Button';
 import { Tag } from '../../shared/components/Tag';
@@ -14,6 +14,38 @@ export const DriverDetailsPage = () => {
   const [isEditMode, setIsEditMode] = useState(false);
 
   const { data: driver, isLoading, error, refetch } = useQuery(getDriver, { id: id! });
+  const { data: allVehicles } = useQuery(getAllVehicles);
+  const [defaultTractorId, setDefaultTractorId] = useState<string | null>(null);
+  const [defaultTrailerId, setDefaultTrailerId] = useState<string | null>(null);
+  const [isSavingDefaults, setIsSavingDefaults] = useState(false);
+  const [defaultVehicleInitialized, setDefaultVehicleInitialized] = useState(false);
+
+  // Initialize default vehicle selections from driver data
+  if (driver && !defaultVehicleInitialized) {
+    setDefaultTractorId(driver.defaultTractorId || null);
+    setDefaultTrailerId(driver.defaultTrailerId || null);
+    setDefaultVehicleInitialized(true);
+  }
+
+  const tractors = (allVehicles || []).filter((v: any) => v.vehicleType === 'TRACTOR' && v.status === 'IN_USE');
+  const trailers = (allVehicles || []).filter((v: any) => v.vehicleType === 'TRAILER' && v.status === 'IN_USE');
+
+  const handleSaveDefaultVehicles = async () => {
+    if (!driver) return;
+    setIsSavingDefaults(true);
+    try {
+      await updateDriver({
+        id: driver.id,
+        defaultTractorId: defaultTractorId || null,
+        defaultTrailerId: defaultTrailerId || null,
+      });
+      refetch();
+    } catch (err: any) {
+      alert('Lỗi: ' + err.message);
+    } finally {
+      setIsSavingDefaults(false);
+    }
+  };
 
   const handleEdit = async (data: DriverFormData) => {
     try {
@@ -196,6 +228,56 @@ export const DriverDetailsPage = () => {
                   label="Cập nhật"
                   value={formatDate(driver.updatedAt)}
                 />
+              </div>
+            </div>
+          </div>
+
+          {/* Default Vehicles Section */}
+          <div className="bg-white rounded-lg shadow">
+            <div className="px-6 py-4 border-b border-gray-100">
+              <h2 className="text-lg font-semibold text-gray-900">Xe mặc định</h2>
+            </div>
+            <div className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Đầu kéo mặc định
+                  </label>
+                  <select
+                    value={defaultTractorId || ''}
+                    onChange={(e) => setDefaultTractorId(e.target.value || null)}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 cursor-pointer transition-colors duration-200"
+                  >
+                    <option value="">-- Chưa chọn --</option>
+                    {tractors.map((v: any) => (
+                      <option key={v.id} value={v.id}>{v.licensePlate}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Rơ moóc mặc định
+                  </label>
+                  <select
+                    value={defaultTrailerId || ''}
+                    onChange={(e) => setDefaultTrailerId(e.target.value || null)}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 cursor-pointer transition-colors duration-200"
+                  >
+                    <option value="">-- Chưa chọn --</option>
+                    {trailers.map((v: any) => (
+                      <option key={v.id} value={v.id}>{v.licensePlate}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div className="mt-4 flex justify-end">
+                <Button
+                  onClick={handleSaveDefaultVehicles}
+                  disabled={isSavingDefaults}
+                  className="cursor-pointer transition-colors duration-200"
+                >
+                  {isSavingDefaults ? 'Đang lưu...' : 'Lưu xe mặc định'}
+                </Button>
               </div>
             </div>
           </div>
