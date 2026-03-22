@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from 'wasp/client/operations';
 import { useAuth } from 'wasp/client/auth';
+import { useParams } from 'react-router-dom';
 import {
   getShipment,
   updateDocumentStatus,
@@ -64,9 +65,10 @@ const photoCategoryLabels: Record<string, string> = {
   OTHER: 'Khác',
 };
 
-export const ShipmentDetailsPage = ({ shipmentId }: { shipmentId: string }) => {
+export const ShipmentDetailsPage = () => {
+  const { id: shipmentId } = useParams<{ id: string }>();
   const { data: user } = useAuth();
-  const { data: shipment, isLoading, error, refetch } = useQuery(getShipment, { id: shipmentId });
+  const { data: shipment, isLoading, error, refetch } = useQuery(getShipment, { id: shipmentId! });
   const [isUpdatingDoc, setIsUpdatingDoc] = useState(false);
 
   const handleUpdateDocStatus = async (newStatus: 'DOC_RECEIVED' | 'DOC_RETURNED') => {
@@ -432,7 +434,7 @@ export const ShipmentDetailsPage = ({ shipmentId }: { shipmentId: string }) => {
           )}
 
           {/* Documents */}
-          <DocumentSection shipmentId={shipmentId} />
+          <DocumentSection shipmentId={shipmentId!} />
         </div>
       </div>
     </RoleGuard>
