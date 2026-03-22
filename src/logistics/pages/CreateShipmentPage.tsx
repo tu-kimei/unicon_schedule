@@ -136,7 +136,7 @@ export const CreateShipmentPage = () => {
     const stopErrors: Record<number, { locationName?: string; address?: string }> = {};
     stops.forEach((stop, i) => {
       const se: { locationName?: string; address?: string } = {};
-      // locationName và address không bắt buộc - có thể bổ sung sau
+      if (!stop.locationName.trim()) se.locationName = 'Vui lòng nhập tên địa điểm';
       if (se.locationName || se.address) stopErrors[i] = se;
     });
     if (Object.keys(stopErrors).length > 0) errs.stops = stopErrors;
@@ -410,7 +410,7 @@ export const CreateShipmentPage = () => {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Tên địa điểm
+                        Tên địa điểm <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="text"
