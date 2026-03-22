@@ -99,79 +99,76 @@ export const createDriverTask = async (args: CreateDriverTaskInput, context: any
     throw new Error('Tài xế không ở trạng thái hoạt động');
   }
 
-  // Create DriverTask and update shipment in transaction
-  const result = await context.entities.$transaction(async (tx: any) => {
-    // Create the driver task
-    const driverTask = await tx.DriverTask.create({
-      data: {
-        shipmentId: args.shipmentId,
-        driverId: args.driverId,
-        tractorId: args.tractorId,
-        trailerId: args.trailerId || null,
-        sequence: args.sequence,
-        instructions: args.instructions
-      },
-      include: {
-        driver: { include: { user: true } },
-        shipment: true,
-        tractor: true,
-        trailer: true
-      }
-    });
+  // Create DriverTask
+  const driverTask = await context.entities.DriverTask.create({
+    data: {
+      shipmentId: args.shipmentId,
+      driverId: args.driverId,
+      tractorId: args.tractorId,
+      trailerId: args.trailerId || null,
+      sequence: args.sequence,
+      instructions: args.instructions
+    },
+    include: {
+      driver: { include: { user: true } },
+      shipment: true,
+      tractor: true,
+      trailer: true
+    }
+  });
 
-    // Update shipment status to ASSIGNED and operationStatus to DISPATCHED
-    await tx.Shipment.update({
-      where: { id: args.shipmentId },
-      data: {
-        currentStatus: 'ASSIGNED',
-        operationStatus: 'DISPATCHED'
-      }
-    });
+  // Update shipment status to ASSIGNED and operationStatus to DISPATCHED
+  await context.entities.Shipment.update({
+    where: { id: args.shipmentId },
+    data: {
+      currentStatus: 'ASSIGNED',
+      operationStatus: 'DISPATCHED'
+    }
+  });
 
-    // Create status event
-    await tx.ShipmentStatusEvent.create({
-      data: {
-        shipmentId: args.shipmentId,
-        status: 'ASSIGNED',
-        eventType: 'STATUS_CHANGE',
-        description: `Driver task created: ${driver.fullName} assigned with tractor ${tractor.licensePlate}`,
-        createdById: user.id
-      }
-    });
+  // Create status event
+  await context.entities.ShipmentStatusEvent.create({
+    data: {
+      shipmentId: args.shipmentId,
+      status: 'ASSIGNED',
+      eventType: 'STATUS_CHANGE',
+      description: `Đã phân công tài xế ${driver.fullName} với đầu kéo ${tractor.licensePlate}`,
+      createdById: user.id
+    }
+  });
 
-    // Send notification to driver
-    await tx.Notification.create({
+  // Send notification to driver
+  if (driver.userId) {
+    await context.entities.Notification.create({
       data: {
         userId: driver.userId,
         type: 'DISPATCHED',
-        title: 'New Task Assigned',
-        message: `You have been assigned a new task for shipment ${shipment.shipmentNumber}`,
+        title: 'Chuyến mới được gán',
+        message: `Bạn được gán chuyến ${shipment.shipmentNumber}`,
         referenceId: args.shipmentId,
         referenceType: 'REF_SHIPMENT',
         channels: ['IN_APP']
       }
     });
+  }
 
-    // Send notifications to all customer users
-    const customerUsers = shipment.customer?.users || [];
-    for (const customerUser of customerUsers) {
-      await tx.Notification.create({
-        data: {
-          userId: customerUser.id,
-          type: 'DISPATCHED',
-          title: 'Shipment Dispatched',
-          message: `Shipment ${shipment.shipmentNumber} has been dispatched with driver ${driver.fullName}`,
-          referenceId: args.shipmentId,
-          referenceType: 'REF_SHIPMENT',
-          channels: ['IN_APP']
-        }
-      });
-    }
+  // Send notifications to all customer users
+  const customerUsers = shipment.customer?.users || [];
+  for (const customerUser of customerUsers) {
+    await context.entities.Notification.create({
+      data: {
+        userId: customerUser.id,
+        type: 'DISPATCHED',
+        title: 'Chuyến hàng đã được điều phối',
+        message: `Chuyến ${shipment.shipmentNumber} đã được gán tài xế ${driver.fullName}`,
+        referenceId: args.shipmentId,
+        referenceType: 'REF_SHIPMENT',
+        channels: ['IN_APP']
+      }
+    });
+  }
 
-    return driverTask;
-  });
-
-  return result;
+  return driverTask;
 };
 
 export const updateDriverTaskSequence = async (args: UpdateDriverTaskSequenceInput, context: any) => {
@@ -236,127 +233,121 @@ export const updateDriverTaskStatus = async (args: UpdateDriverTaskStatusInput, 
     }
   }
 
-  const result = await context.entities.$transaction(async (tx: any) => {
-    const updateData: any = { status: args.status };
+  const updateData: any = { status: args.status };
 
-    if (args.status === 'IN_PROGRESS') {
-      updateData.startedAt = new Date();
+  if (args.status === 'IN_PROGRESS') {
+    updateData.startedAt = new Date();
 
-      // If shipment was ASSIGNED (DISPATCHED), move to IN_TRANSIT
-      if (['ASSIGNED', 'READY'].includes(driverTask.shipment.currentStatus)) {
-        await tx.Shipment.update({
-          where: { id: driverTask.shipmentId },
-          data: {
-            currentStatus: 'IN_TRANSIT',
-            operationStatus: 'IN_TRANSIT',
-            actualStartDate: new Date()
-          }
-        });
-
-        await tx.ShipmentStatusEvent.create({
-          data: {
-            shipmentId: driverTask.shipmentId,
-            status: 'IN_TRANSIT',
-            eventType: 'STATUS_CHANGE',
-            description: `Shipment is now in transit. Driver ${driverTask.driver.fullName} started task.`,
-            createdById: user.id
-          }
-        });
-
-        // Notify customer users
-        const customerUsers = driverTask.shipment.customer?.users || [];
-        for (const customerUser of customerUsers) {
-          await tx.Notification.create({
-            data: {
-              userId: customerUser.id,
-              type: 'DISPATCHED',
-              title: 'Shipment In Transit',
-              message: `Shipment ${driverTask.shipment.shipmentNumber} is now in transit`,
-              referenceId: driverTask.shipmentId,
-              referenceType: 'REF_SHIPMENT',
-              channels: ['IN_APP']
-            }
-          });
+    // If shipment was ASSIGNED (DISPATCHED), move to IN_TRANSIT
+    if (['ASSIGNED', 'READY'].includes(driverTask.shipment.currentStatus)) {
+      await context.entities.Shipment.update({
+        where: { id: driverTask.shipmentId },
+        data: {
+          currentStatus: 'IN_TRANSIT',
+          operationStatus: 'IN_TRANSIT',
+          actualStartDate: new Date()
         }
-      }
-    }
+      });
 
-    if (args.status === 'COMPLETED') {
-      updateData.completedAt = new Date();
-
-      // Check if ALL tasks for this shipment are completed
-      const allTasks = driverTask.shipment.driverTasks;
-      const otherPendingTasks = allTasks.filter(
-        (t: any) => t.id !== args.taskId && t.status !== 'COMPLETED' && t.status !== 'SKIPPED'
-      );
-
-      if (otherPendingTasks.length === 0) {
-        // All tasks done - mark shipment as COMPLETED/DELIVERED
-        await tx.Shipment.update({
-          where: { id: driverTask.shipmentId },
-          data: {
-            currentStatus: 'COMPLETED',
-            operationStatus: 'DELIVERED',
-            actualEndDate: new Date()
-          }
-        });
-
-        await tx.ShipmentStatusEvent.create({
-          data: {
-            shipmentId: driverTask.shipmentId,
-            status: 'COMPLETED',
-            eventType: 'STATUS_CHANGE',
-            description: 'All driver tasks completed. Shipment delivered.',
-            createdById: user.id
-          }
-        });
-
-        // Notify customer users
-        const customerUsers = driverTask.shipment.customer?.users || [];
-        for (const customerUser of customerUsers) {
-          await tx.Notification.create({
-            data: {
-              userId: customerUser.id,
-              type: 'DELIVERED',
-              title: 'Shipment Delivered',
-              message: `Shipment ${driverTask.shipment.shipmentNumber} has been delivered`,
-              referenceId: driverTask.shipmentId,
-              referenceType: 'REF_SHIPMENT',
-              channels: ['IN_APP']
-            }
-          });
+      await context.entities.ShipmentStatusEvent.create({
+        data: {
+          shipmentId: driverTask.shipmentId,
+          status: 'IN_TRANSIT',
+          eventType: 'STATUS_CHANGE',
+          description: `Tài xế ${driverTask.driver.fullName} bắt đầu vận chuyển`,
+          createdById: user.id
         }
-      }
-    }
+      });
 
-    // Update stop times if provided
-    if (args.stopUpdates && args.stopUpdates.length > 0) {
-      for (const stopUpdate of args.stopUpdates) {
-        const stopData: any = {};
-        if (stopUpdate.actualArrival) stopData.actualArrival = stopUpdate.actualArrival;
-        if (stopUpdate.actualDeparture) stopData.actualDeparture = stopUpdate.actualDeparture;
-
-        await tx.ShipmentStop.update({
-          where: { id: stopUpdate.stopId },
-          data: stopData
+      // Notify customer users
+      const customerUsers = driverTask.shipment.customer?.users || [];
+      for (const customerUser of customerUsers) {
+        await context.entities.Notification.create({
+          data: {
+            userId: customerUser.id,
+            type: 'STOP_CHECKIN',
+            title: 'Đang vận chuyển',
+            message: `Chuyến ${driverTask.shipment.shipmentNumber} đang được vận chuyển`,
+            referenceId: driverTask.shipmentId,
+            referenceType: 'REF_SHIPMENT',
+            channels: ['IN_APP']
+          }
         });
       }
     }
+  }
 
-    // Update the driver task
-    const updatedTask = await tx.DriverTask.update({
-      where: { id: args.taskId },
-      data: updateData,
-      include: {
-        driver: { include: { user: true } },
-        shipment: { include: { customer: true, stops: true } },
-        tractor: true,
-        trailer: true
+  if (args.status === 'COMPLETED') {
+    updateData.completedAt = new Date();
+
+    // Check if ALL tasks for this shipment are completed
+    const allTasks = driverTask.shipment.driverTasks;
+    const otherPendingTasks = allTasks.filter(
+      (t: any) => t.id !== args.taskId && t.status !== 'COMPLETED' && t.status !== 'SKIPPED'
+    );
+
+    if (otherPendingTasks.length === 0) {
+      await context.entities.Shipment.update({
+        where: { id: driverTask.shipmentId },
+        data: {
+          currentStatus: 'COMPLETED',
+          operationStatus: 'DELIVERED',
+          actualEndDate: new Date()
+        }
+      });
+
+      await context.entities.ShipmentStatusEvent.create({
+        data: {
+          shipmentId: driverTask.shipmentId,
+          status: 'COMPLETED',
+          eventType: 'STATUS_CHANGE',
+          description: 'Tất cả chuyến đã hoàn thành. Hàng đã giao.',
+          createdById: user.id
+        }
+      });
+
+      const customerUsers = driverTask.shipment.customer?.users || [];
+      for (const customerUser of customerUsers) {
+        await context.entities.Notification.create({
+          data: {
+            userId: customerUser.id,
+            type: 'DELIVERED',
+            title: 'Chuyến hàng hoàn tất',
+            message: `Chuyến ${driverTask.shipment.shipmentNumber} đã giao thành công`,
+            referenceId: driverTask.shipmentId,
+            referenceType: 'REF_SHIPMENT',
+            channels: ['IN_APP']
+          }
+        });
       }
-    });
+    }
+  }
 
-    return updatedTask;
+  // Update stop times if provided
+  if (args.stopUpdates && args.stopUpdates.length > 0) {
+    for (const stopUpdate of args.stopUpdates) {
+      const stopData: any = {};
+      if (stopUpdate.actualArrival) stopData.actualArrival = stopUpdate.actualArrival;
+      if (stopUpdate.actualDeparture) stopData.actualDeparture = stopUpdate.actualDeparture;
+
+      await context.entities.ShipmentStop.update({
+        where: { id: stopUpdate.stopId },
+        data: stopData
+      });
+    }
+  }
+
+  // Update the driver task
+  const updatedTask = await context.entities.DriverTask.update({
+    where: { id: args.taskId },
+    data: updateData,
+    include: {
+      driver: { include: { user: true } },
+      shipment: { include: { customer: true, stops: true } },
+      tractor: true,
+      trailer: true
+    }
   });
 
-  return result;
+  return updatedTask;
 };

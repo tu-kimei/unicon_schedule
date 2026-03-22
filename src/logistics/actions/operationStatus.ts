@@ -71,55 +71,50 @@ export const updateOperationStatus = async (args: UpdateOperationStatusInput, co
   const legacyStatus = mapToLegacyStatus(args.operationStatus);
   const description = args.description || `Operation status changed to ${args.operationStatus}`;
 
-  // Update in transaction
-  const result = await context.entities.$transaction(async (tx: any) => {
-    // Update shipment with both new and legacy status
-    const updatedShipment = await tx.Shipment.update({
-      where: { id: args.shipmentId },
-      data: {
-        operationStatus: args.operationStatus,
-        currentStatus: legacyStatus as any,
-        actualStartDate: args.operationStatus === 'IN_TRANSIT' ? new Date() : shipment.actualStartDate,
-        actualEndDate: args.operationStatus === 'DELIVERED' ? new Date() : shipment.actualEndDate
-      },
-      include: {
-        customer: true,
-        stops: { orderBy: { sequence: 'asc' } }
-      }
-    });
-
-    // Create status event
-    await tx.ShipmentStatusEvent.create({
-      data: {
-        shipmentId: args.shipmentId,
-        status: legacyStatus as any,
-        eventType: 'STATUS_CHANGE',
-        description,
-        createdById: user.id
-      }
-    });
-
-    // Notify customer users for important transitions
-    if (['DISPATCHED', 'IN_TRANSIT', 'DELIVERED'].includes(args.operationStatus)) {
-      const customerUsers = shipment.customer?.users || [];
-      const notificationType = args.operationStatus === 'DELIVERED' ? 'DELIVERED' : 'DISPATCHED';
-      for (const customerUser of customerUsers) {
-        await tx.Notification.create({
-          data: {
-            userId: customerUser.id,
-            type: notificationType,
-            title: `Shipment ${args.operationStatus.replace('_', ' ')}`,
-            message: `Shipment ${shipment.shipmentNumber} status updated to ${args.operationStatus}`,
-            referenceId: args.shipmentId,
-            referenceType: 'REF_SHIPMENT',
-            channels: ['IN_APP']
-          }
-        });
-      }
+  // Update shipment with both new and legacy status
+  const updatedShipment = await context.entities.Shipment.update({
+    where: { id: args.shipmentId },
+    data: {
+      operationStatus: args.operationStatus,
+      currentStatus: legacyStatus as any,
+      actualStartDate: args.operationStatus === 'IN_TRANSIT' ? new Date() : shipment.actualStartDate,
+      actualEndDate: args.operationStatus === 'DELIVERED' ? new Date() : shipment.actualEndDate
+    },
+    include: {
+      customer: true,
+      stops: { orderBy: { sequence: 'asc' } }
     }
-
-    return updatedShipment;
   });
 
-  return result;
+  // Create status event
+  await context.entities.ShipmentStatusEvent.create({
+    data: {
+      shipmentId: args.shipmentId,
+      status: legacyStatus as any,
+      eventType: 'STATUS_CHANGE',
+      description,
+      createdById: user.id
+    }
+  });
+
+  // Notify customer users for important transitions
+  if (['DISPATCHED', 'IN_TRANSIT', 'DELIVERED'].includes(args.operationStatus)) {
+    const customerUsers = shipment.customer?.users || [];
+    const notificationType = args.operationStatus === 'DELIVERED' ? 'DELIVERED' : 'DISPATCHED';
+    for (const customerUser of customerUsers) {
+      await context.entities.Notification.create({
+        data: {
+          userId: customerUser.id,
+          type: notificationType,
+          title: `Chuyến hàng ${args.operationStatus === 'DELIVERED' ? 'đã giao' : 'đang vận chuyển'}`,
+          message: `Chuyến ${shipment.shipmentNumber} đã cập nhật trạng thái`,
+          referenceId: args.shipmentId,
+          referenceType: 'REF_SHIPMENT',
+          channels: ['IN_APP']
+        }
+      });
+    }
+  }
+
+  return updatedShipment;
 };
