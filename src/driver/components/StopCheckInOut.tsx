@@ -139,7 +139,7 @@ export const StopCheckInOut = ({ stop, taskId, shipmentId, pods, onUpdate }: Sto
       {(stop.contactPerson || stop.contactPhone) && (
         <div className="mb-3 text-sm text-gray-600">
           Liên hệ: {stop.contactPerson} {stop.contactPhone && (
-            <a href={`tel:${stop.contactPhone}`} className="text-blue-600 underline">{stop.contactPhone}</a>
+            <a href={`tel:${stop.contactPhone}`} className="text-primary-600 underline">{stop.contactPhone}</a>
           )}
         </div>
       )}
@@ -189,7 +189,7 @@ export const StopCheckInOut = ({ stop, taskId, shipmentId, pods, onUpdate }: Sto
           <button
             onClick={handleCheckIn}
             disabled={isCheckingIn}
-            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium text-sm disabled:bg-gray-300 flex items-center justify-center gap-2"
+            className="flex-1 bg-primary-600 hover:bg-primary-700 transition-colors duration-200 text-white px-4 py-2 rounded-lg font-medium text-sm disabled:bg-gray-300 flex items-center justify-center gap-2"
           >
             {isCheckingIn ? (
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>

@@ -186,7 +186,7 @@ export const DebtDetailsPage = () => {
             </div>
             <div className="flex justify-between mt-1">
               <span className="text-xs text-gray-500">0%</span>
-              <span className={`text-xs font-medium ${isFullyPaid ? 'text-green-600' : 'text-blue-600'}`}>
+              <span className={`text-xs font-medium ${isFullyPaid ? 'text-green-600' : 'text-primary-600'}`}>
                 {paidPercent.toFixed(1)}%
               </span>
               <span className="text-xs text-gray-500">100%</span>
@@ -220,7 +220,7 @@ export const DebtDetailsPage = () => {
                 label="Số tiền"
                 required
                 value={
-                  <span className="font-bold text-blue-600">
+                  <span className="font-bold text-primary-600">
                     {formatCurrency(debtAmt)} VND
                   </span>
                 }
@@ -262,7 +262,7 @@ export const DebtDetailsPage = () => {
                       href={debt.documentLink}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-blue-600 hover:underline text-sm truncate max-w-[200px] inline-block"
+                      className="text-primary-600 hover:underline text-sm truncate max-w-[200px] inline-block"
                     >
                       Xem bảng kê
                     </a>
@@ -412,7 +412,7 @@ export const DebtDetailsPage = () => {
             <div className="flex-1 overflow-y-auto p-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {viewingImages.images.map((img, i) => (
-                  <a key={i} href={img} target="_blank" rel="noopener noreferrer" className="block rounded-lg border border-gray-200 overflow-hidden hover:border-blue-400 transition-colors">
+                  <a key={i} href={img} target="_blank" rel="noopener noreferrer" className="block rounded-lg border border-gray-200 overflow-hidden hover:border-primary-400 transition-colors">
                     <img src={img} alt={`UNC ${i + 1}`} className="w-full h-auto object-contain max-h-80" />
                   </a>
                 ))}

@@ -171,7 +171,7 @@ export const MarkAsPaidModal = ({ isOpen, onClose, onSubmit, debt }: MarkAsPaidM
               value={formData.paidDate.toISOString().split('T')[0]}
               onChange={(e) => handleChange('paidDate', new Date(e.target.value))}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
           </div>
 
@@ -193,7 +193,7 @@ export const MarkAsPaidModal = ({ isOpen, onClose, onSubmit, debt }: MarkAsPaidM
               value={formData.paymentNotes}
               onChange={(e) => handleChange('paymentNotes', e.target.value)}
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
               placeholder="Ví dụ: Đã nhận chuyển khoản ngày 25/3..."
             />
           </div>

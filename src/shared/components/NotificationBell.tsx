@@ -103,7 +103,7 @@ export function NotificationBell() {
             {unreadCount != null && unreadCount > 0 && (
               <button
                 onClick={handleMarkAllRead}
-                className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                className="text-xs text-primary-600 hover:text-primary-700 font-medium"
               >
                 Đánh dấu tất cả đã đọc
               </button>

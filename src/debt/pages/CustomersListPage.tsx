@@ -231,7 +231,7 @@ export const CustomersListPage = () => {
               placeholder="Tìm kiếm theo tên, email, số điện thoại..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
             {searchTerm && (
               <button
@@ -350,7 +350,7 @@ export const CustomersListPage = () => {
                               e.stopPropagation();
                               navigate(`/accounting/customers/${customer.id}`);
                             }}
-                            className="inline-flex items-center gap-1 px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                            className="inline-flex items-center gap-1 px-2 py-1 text-xs text-primary-600 hover:bg-primary-50 rounded transition-colors"
                             title="Xem"
                           >
                             <EyeIcon />

@@ -154,7 +154,7 @@ export const InvoiceDetailsPage = () => {
           </div>
           <button
             onClick={() => navigate('/accounting/invoices')}
-            className="mt-4 text-blue-600 hover:text-blue-800 text-sm"
+            className="mt-4 text-primary-600 hover:text-primary-700 text-sm"
           >
             Quay lai danh sach
           </button>
@@ -246,7 +246,7 @@ export const InvoiceDetailsPage = () => {
                       <span className="text-gray-500">Shipment:</span>{' '}
                       <Link
                         to={`/ops/shipments/${invoice.shipment.id}`}
-                        className="text-blue-600 hover:text-blue-800 font-medium"
+                        className="text-primary-600 hover:text-primary-700 font-medium"
                       >
                         {invoice.shipment.shipmentNumber}
                       </Link>
@@ -385,7 +385,7 @@ export const InvoiceDetailsPage = () => {
                 <button
                   onClick={() => handleStatusUpdate('SENT')}
                   disabled={isUpdating}
-                  className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 disabled:opacity-50"
+                  className="px-4 py-2 bg-primary-600 text-white text-sm rounded-md hover:bg-primary-700 disabled:opacity-50"
                 >
                   Gui hoa don
                 </button>

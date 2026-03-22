@@ -183,7 +183,7 @@ export const CustomerDetailsPage = () => {
               <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
                 <div className="bg-blue-50 rounded-lg p-4">
                   <p className="text-sm text-gray-600">Tổng công nợ</p>
-                  <p className="text-2xl font-bold text-blue-600">
+                  <p className="text-2xl font-bold text-primary-600">
                     {formatCurrency(debtsSummary.totalAmount)} VND
                   </p>
                   <p className="text-xs text-gray-500 mt-1">{debtsSummary.countTotal} công nợ</p>

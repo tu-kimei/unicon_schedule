@@ -116,12 +116,12 @@ export const CreateShipmentPage = () => {
             <div className={`
               w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium
               ${isCompleted ? 'bg-green-500 text-white' :
-                isActive ? 'bg-blue-500 text-white' :
+                isActive ? 'bg-primary-500 text-white' :
                 'bg-gray-200 text-gray-600'}
             `}>
               {isCompleted ? '✓' : stepNumber}
             </div>
-            <span className={`ml-2 text-sm ${isActive ? 'text-blue-600 font-medium' : 'text-gray-600'}`}>
+            <span className={`ml-2 text-sm ${isActive ? 'text-primary-600 font-medium' : 'text-gray-600'}`}>
               {label}
             </span>
             {index < 2 && <div className="w-12 h-0.5 bg-gray-200 mx-4" />}
@@ -140,7 +140,7 @@ export const CreateShipmentPage = () => {
         <select
           value={form.customerId}
           onChange={(e) => updateForm({ customerId: e.target.value })}
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500"
           required
         >
           <option value="">-- Chọn khách hàng --</option>
@@ -402,7 +402,7 @@ export const CreateShipmentPage = () => {
       <div className="max-w-4xl mx-auto px-6 py-8">
         <div className="bg-white rounded-lg shadow">
           <div className="px-6 py-4 border-b border-gray-200">
-            <h1 className="text-2xl font-bold text-gray-900">Tạo chuyến hàng mới</h1>
+            <h1 className="text-2xl font-heading font-bold text-gray-900">Tạo chuyến hàng mới</h1>
             <p className="text-gray-600">Điền thông tin chuyến hàng theo từng bước</p>
           </div>
 
@@ -429,7 +429,7 @@ export const CreateShipmentPage = () => {
                   <button
                     onClick={() => setStep((step + 1) as 1 | 2 | 3)}
                     disabled={!validateStep(step)}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-4 py-2 bg-primary-600 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Tiếp theo
                   </button>

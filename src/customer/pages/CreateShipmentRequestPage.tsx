@@ -174,12 +174,12 @@ export const CreateShipmentRequestPage = () => {
             <div className={`
               w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium transition-colors
               ${isCompleted ? 'bg-green-500 text-white' :
-                isActive ? 'bg-blue-600 text-white' :
+                isActive ? 'bg-primary-600 text-white' :
                 'bg-gray-200 text-gray-600'}
             `}>
               {isCompleted ? '✓' : stepNumber}
             </div>
-            <span className={`ml-2 text-sm font-medium ${isActive ? 'text-blue-600' : 'text-gray-600'}`}>
+            <span className={`ml-2 text-sm font-medium ${isActive ? 'text-primary-600' : 'text-gray-600'}`}>
               {label}
             </span>
             {index < 2 && <div className="w-16 h-0.5 bg-gray-300 mx-4" />}
@@ -202,7 +202,7 @@ export const CreateShipmentRequestPage = () => {
             onClick={() => handleShipmentTypeChange('EXPORT')}
             className={`p-4 rounded-lg border-2 text-center transition-all ${
               form.shipmentType === 'EXPORT'
-                ? 'border-blue-600 bg-blue-50 text-blue-700'
+                ? 'border-primary-600 bg-primary-50 text-primary-700'
                 : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
             }`}
           >
@@ -218,7 +218,7 @@ export const CreateShipmentRequestPage = () => {
             onClick={() => handleShipmentTypeChange('IMPORT')}
             className={`p-4 rounded-lg border-2 text-center transition-all ${
               form.shipmentType === 'IMPORT'
-                ? 'border-blue-600 bg-blue-50 text-blue-700'
+                ? 'border-primary-600 bg-primary-50 text-primary-700'
                 : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
             }`}
           >
@@ -239,7 +239,7 @@ export const CreateShipmentRequestPage = () => {
           <select
             value={form.priority}
             onChange={(e) => updateForm({ priority: e.target.value as any })}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500"
           >
             <option value="LOW">Thấp</option>
             <option value="NORMAL">Bình thường</option>
@@ -255,7 +255,7 @@ export const CreateShipmentRequestPage = () => {
           <select
             value={form.containerType}
             onChange={(e) => updateForm({ containerType: e.target.value })}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500"
           >
             <option value="">-- Chọn loại --</option>
             <option value="CONTAINER_20FT">Container 20ft</option>
@@ -279,7 +279,7 @@ export const CreateShipmentRequestPage = () => {
           value={form.containerNumber}
           onChange={(e) => updateForm({ containerNumber: e.target.value })}
           placeholder="VD: CONT123456"
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500"
         />
       </div>
 
@@ -292,7 +292,7 @@ export const CreateShipmentRequestPage = () => {
             type="datetime-local"
             value={form.plannedStartDate.toISOString().slice(0, 16)}
             onChange={(e) => updateForm({ plannedStartDate: new Date(e.target.value) })}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500"
             required
           />
         </div>
@@ -305,7 +305,7 @@ export const CreateShipmentRequestPage = () => {
             type="datetime-local"
             value={form.plannedEndDate.toISOString().slice(0, 16)}
             onChange={(e) => updateForm({ plannedEndDate: new Date(e.target.value) })}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500"
             required
           />
         </div>
@@ -320,7 +320,7 @@ export const CreateShipmentRequestPage = () => {
           onChange={(e) => updateForm({ specialInstructions: e.target.value })}
           placeholder="Các yêu cầu xử lý đặc biệt..."
           rows={3}
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500"
         />
       </div>
     </div>
@@ -329,8 +329,8 @@ export const CreateShipmentRequestPage = () => {
   const renderStopsStep = () => (
     <div className="space-y-4">
       {form.shipmentType && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
-          <p className="text-sm text-blue-800">
+        <div className="bg-primary-50 border border-primary-200 rounded-lg p-3 mb-4">
+          <p className="text-sm text-primary-800">
             Chuyến {form.shipmentType}: Đã tạo sẵn {form.stops.length} điểm dừng theo quy trình.
             Vui lòng điền thông tin địa điểm cho từng điểm dừng.
           </p>
@@ -350,7 +350,7 @@ export const CreateShipmentRequestPage = () => {
                 <h3 className="font-medium text-gray-900">
                   Điểm dừng {stop.sequence}
                   {template && (
-                    <span className="ml-2 text-sm text-blue-600 font-normal">
+                    <span className="ml-2 text-sm text-primary-600 font-normal">
                       - {template.label}
                     </span>
                   )}
@@ -518,19 +518,19 @@ export const CreateShipmentRequestPage = () => {
 
   const renderReviewStep = () => (
     <div className="space-y-6">
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <h3 className="text-lg font-semibold text-blue-900 mb-4">Tóm tắt yêu cầu vận chuyển</h3>
+      <div className="bg-primary-50 border border-primary-200 rounded-lg p-4">
+        <h3 className="text-lg font-semibold text-primary-900 mb-4">Tóm tắt yêu cầu vận chuyển</h3>
 
         <div className="grid grid-cols-2 gap-4 text-sm">
           {form.shipmentType && (
             <div>
-              <span className="font-medium text-blue-900">Loại:</span>
-              <p className="text-blue-800">{form.shipmentType}</p>
+              <span className="font-medium text-primary-900">Loại:</span>
+              <p className="text-primary-800">{form.shipmentType}</p>
             </div>
           )}
           <div>
-            <span className="font-medium text-blue-900">Độ ưu tiên:</span>
-            <p className="text-blue-800">
+            <span className="font-medium text-primary-900">Độ ưu tiên:</span>
+            <p className="text-primary-800">
               {form.priority === 'URGENT' ? 'Khẩn cấp' :
                form.priority === 'HIGH' ? 'Cao' :
                form.priority === 'NORMAL' ? 'Bình thường' : 'Thấp'}
@@ -538,32 +538,32 @@ export const CreateShipmentRequestPage = () => {
           </div>
           {form.containerNumber && (
             <div>
-              <span className="font-medium text-blue-900">Số container:</span>
-              <p className="text-blue-800">{form.containerNumber}</p>
+              <span className="font-medium text-primary-900">Số container:</span>
+              <p className="text-primary-800">{form.containerNumber}</p>
             </div>
           )}
           {form.containerType && (
             <div>
-              <span className="font-medium text-blue-900">Loại container:</span>
-              <p className="text-blue-800">{form.containerType.replace('CONTAINER_', '').replace('_', ' ')}</p>
+              <span className="font-medium text-primary-900">Loại container:</span>
+              <p className="text-primary-800">{form.containerType.replace('CONTAINER_', '').replace('_', ' ')}</p>
             </div>
           )}
           <div>
-            <span className="font-medium text-blue-900">Ngày bắt đầu:</span>
-            <p className="text-blue-800">{form.plannedStartDate.toLocaleString('vi-VN')}</p>
+            <span className="font-medium text-primary-900">Ngày bắt đầu:</span>
+            <p className="text-primary-800">{form.plannedStartDate.toLocaleString('vi-VN')}</p>
           </div>
           <div>
-            <span className="font-medium text-blue-900">Ngày kết thúc:</span>
-            <p className="text-blue-800">{form.plannedEndDate.toLocaleString('vi-VN')}</p>
+            <span className="font-medium text-primary-900">Ngày kết thúc:</span>
+            <p className="text-primary-800">{form.plannedEndDate.toLocaleString('vi-VN')}</p>
           </div>
           <div className="col-span-2">
-            <span className="font-medium text-blue-900">Tổng số điểm dừng:</span>
-            <p className="text-blue-800">{form.stops.length} điểm</p>
+            <span className="font-medium text-primary-900">Tổng số điểm dừng:</span>
+            <p className="text-primary-800">{form.stops.length} điểm</p>
           </div>
           {form.specialInstructions && (
             <div className="col-span-2">
-              <span className="font-medium text-blue-900">Hướng dẫn đặc biệt:</span>
-              <p className="text-blue-800">{form.specialInstructions}</p>
+              <span className="font-medium text-primary-900">Hướng dẫn đặc biệt:</span>
+              <p className="text-primary-800">{form.specialInstructions}</p>
             </div>
           )}
         </div>
@@ -622,7 +622,7 @@ export const CreateShipmentRequestPage = () => {
       {/* Header */}
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <h1 className="text-2xl font-bold text-gray-900">Tạo yêu cầu vận chuyển</h1>
+          <h1 className="text-2xl font-heading font-bold text-gray-900">Tạo yêu cầu vận chuyển</h1>
           <p className="text-gray-600 mt-1">Gửi yêu cầu vận chuyển mới để được xác nhận</p>
         </div>
       </div>
@@ -661,7 +661,7 @@ export const CreateShipmentRequestPage = () => {
               <button
                 onClick={() => setStep((step + 1) as any)}
                 disabled={!validateStep(step)}
-                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium disabled:bg-gray-300 disabled:cursor-not-allowed"
+                className="px-6 py-2 bg-primary-600 hover:bg-primary-700 transition-colors duration-200 text-white rounded-lg font-medium disabled:bg-gray-300 disabled:cursor-not-allowed"
               >
                 Tiếp theo
               </button>

@@ -89,12 +89,12 @@ export const OpsShipmentsPage = () => {
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Quản lý chuyến hàng</h1>
+              <h1 className="text-2xl font-heading font-bold text-gray-900">Quản lý chuyến hàng</h1>
               <p className="text-gray-600">Tất cả chuyến hàng</p>
             </div>
             <Link
               to="/ops/shipments/create"
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium"
+              className="bg-primary-600 hover:bg-primary-700 transition-colors duration-200 text-white px-4 py-2 rounded-lg font-medium"
             >
               Tạo chuyến hàng
             </Link>
@@ -208,7 +208,7 @@ export const OpsShipmentsPage = () => {
               <Link
                 key={shipment.id}
                 to={`/ops/shipments/${shipment.id}`}
-                className="block"
+                className="block cursor-pointer"
               >
                 <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
                   <div className="flex justify-between items-start mb-3">

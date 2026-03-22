@@ -204,7 +204,7 @@ export const DispatcherDashboardPage = () => {
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Bảng điều phối</h1>
+              <h1 className="text-2xl font-heading font-bold text-gray-900">Bảng điều phối</h1>
               <p className="text-gray-600">Phân công tài xế và quản lý chuyến</p>
             </div>
             <Button onClick={() => setShowQuickDispatchModal(true)}>
@@ -513,7 +513,7 @@ const DriverTaskGroup = ({ driver, tasks, onReorder }: DriverTaskGroupProps) => 
                 {task.trailer && ` + ${task.trailer.licensePlate}`}
               </p>
               {task.instructions && (
-                <p className="text-xs text-blue-600 truncate mt-0.5">{task.instructions}</p>
+                <p className="text-xs text-primary-600 truncate mt-0.5">{task.instructions}</p>
               )}
             </div>
 
@@ -940,7 +940,7 @@ const QuickDispatchModal = ({
               <label className="block text-sm font-medium text-gray-700">
                 Điểm dừng <span className="text-red-500">*</span>
               </label>
-              <button type="button" onClick={addStop} className="text-sm text-blue-600 hover:text-blue-800 font-medium">
+              <button type="button" onClick={addStop} className="text-sm text-primary-600 hover:text-primary-700 font-medium">
                 + Thêm điểm dừng
               </button>
             </div>

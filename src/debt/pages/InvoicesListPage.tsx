@@ -136,7 +136,7 @@ export const InvoicesListPage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
             <div>
-              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Quan ly Hoa don</h1>
+              <h1 className="text-xl sm:text-2xl font-heading font-bold text-gray-900">Quan ly Hoa don</h1>
               <p className="text-sm text-gray-600">Theo doi hoa don khach hang</p>
             </div>
           </div>
@@ -168,7 +168,7 @@ export const InvoicesListPage = () => {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Tim theo so hoa don, ten khach hang..."
-              className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
             {searchQuery && (
               <button
@@ -188,7 +188,7 @@ export const InvoicesListPage = () => {
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value as InvoiceStatus | '')}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
                 <option value="">Tat ca</option>
                 <option value="DRAFT">Nhap</option>
@@ -205,7 +205,7 @@ export const InvoicesListPage = () => {
         {/* Loading State */}
         {isLoading && (
           <div className="bg-white rounded-lg shadow p-8 text-center">
-            <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-blue-500 border-t-transparent mb-2" />
+            <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-primary-500 border-t-transparent mb-2" />
             <p className="text-gray-600">Dang tai...</p>
           </div>
         )}
@@ -255,7 +255,7 @@ export const InvoicesListPage = () => {
                       className="cursor-pointer hover:bg-gray-50 transition-colors"
                     >
                       <td className="px-4 py-3">
-                        <span className="font-semibold text-blue-600 hover:text-blue-800">
+                        <span className="font-semibold text-primary-600 hover:text-primary-700">
                           {invoice.invoiceNumber}
                         </span>
                       </td>
@@ -302,7 +302,7 @@ export const InvoicesListPage = () => {
                               e.stopPropagation();
                               navigate(`/accounting/invoices/${invoice.id}`);
                             }}
-                            className="px-2 py-1 text-xs font-medium text-blue-700 hover:bg-blue-50 rounded"
+                            className="px-2 py-1 text-xs font-medium text-blue-700 hover:bg-primary-50 rounded"
                           >
                             Xem
                           </button>
@@ -335,7 +335,7 @@ export const InvoicesListPage = () => {
                 >
                   <div className="flex items-start justify-between mb-2">
                     <div className="min-w-0 flex-1">
-                      <div className="font-semibold text-blue-600">
+                      <div className="font-semibold text-primary-600">
                         {invoice.invoiceNumber}
                       </div>
                       <div className="text-sm text-gray-900 truncate">
@@ -370,7 +370,7 @@ export const InvoicesListPage = () => {
                         e.stopPropagation();
                         navigate(`/accounting/invoices/${invoice.id}`);
                       }}
-                      className="flex-1 py-1.5 text-xs font-medium text-center text-blue-700 bg-blue-50 hover:bg-blue-100 rounded"
+                      className="flex-1 py-1.5 text-xs font-medium text-center text-primary-700 bg-primary-50 hover:bg-primary-100 rounded"
                     >
                       Xem
                     </button>

@@ -115,7 +115,7 @@ export function UserDetailsPage() {
         </div>
         <button
           onClick={() => navigate('/admin/users')}
-          className="mt-4 text-blue-600 hover:text-blue-800"
+          className="mt-4 text-primary-600 hover:text-primary-700"
         >
           ← Quay lại danh sách Users
         </button>
@@ -129,11 +129,11 @@ export function UserDetailsPage() {
       <div className="mb-6">
         <button
           onClick={() => navigate('/admin/users')}
-          className="text-blue-600 hover:text-blue-800 mb-4"
+          className="text-primary-600 hover:text-primary-700 mb-4"
         >
           ← Quay lại danh sách Users
         </button>
-        <h1 className="text-3xl font-bold text-gray-900">Chi tiết User</h1>
+        <h1 className="text-3xl font-heading font-bold text-gray-900">Chi tiết User</h1>
       </div>
 
       {/* User Info Card */}
@@ -213,7 +213,7 @@ export function UserDetailsPage() {
             <select
               value={selectedRole}
               onChange={(e) => setSelectedRole(e.target.value as UserRole)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
               disabled={isSubmitting}
             >
               <option value="ADMIN">Admin</option>
@@ -230,7 +230,7 @@ export function UserDetailsPage() {
             <button
               type="submit"
               disabled={isSubmitting || selectedRole === user.role}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+              className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
             >
               {isSubmitting ? 'Đang cập nhật...' : 'Cập nhật vai trò'}
             </button>
@@ -293,7 +293,7 @@ export function UserDetailsPage() {
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 placeholder="Tối thiểu 8 ký tự"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                 disabled={isSubmitting}
                 required
                 minLength={8}
@@ -309,7 +309,7 @@ export function UserDetailsPage() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Nhập lại mật khẩu mới"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                 disabled={isSubmitting}
                 required
                 minLength={8}
@@ -348,14 +348,14 @@ export function UserDetailsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-600">Dispatches đã tạo</label>
-            <div className="mt-1 text-2xl font-bold text-gray-900">
+            <div className="mt-1 text-2xl font-heading font-bold text-gray-900">
               {user.createdDispatches?.length || 0}
             </div>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-600">Công nợ đã tạo</label>
-            <div className="mt-1 text-2xl font-bold text-gray-900">
+            <div className="mt-1 text-2xl font-heading font-bold text-gray-900">
               {user.createdDebts?.length || 0}
             </div>
           </div>

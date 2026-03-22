@@ -126,7 +126,7 @@ export const FileUpload = ({
       {/* Upload Area */}
       <div
         onClick={handleClick}
-        className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors"
+        className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-primary-400 hover:bg-primary-50 transition-colors"
       >
         <input
           ref={fileInputRef}
@@ -151,7 +151,7 @@ export const FileUpload = ({
           />
         </svg>
         <p className="mt-2 text-sm text-gray-600">
-          <span className="font-semibold text-blue-600">Click để chọn file</span> hoặc kéo thả
+          <span className="font-semibold text-primary-600">Click để chọn file</span> hoặc kéo thả
         </p>
         <p className="text-xs text-gray-500 mt-1">JPG, PNG, PDF (tối đa 5MB)</p>
       </div>

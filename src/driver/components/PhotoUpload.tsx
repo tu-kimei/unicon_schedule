@@ -112,7 +112,7 @@ export const PhotoUpload = ({
         <button
           onClick={() => cameraInputRef.current?.click()}
           disabled={isUploading}
-          className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-blue-50 text-blue-700 rounded text-sm font-medium hover:bg-blue-100 disabled:opacity-50"
+          className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-primary-50 text-primary-700 rounded text-sm font-medium hover:bg-primary-100 cursor-pointer transition-colors duration-200 disabled:opacity-50"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
@@ -150,8 +150,8 @@ export const PhotoUpload = ({
       </div>
 
       {isUploading && (
-        <div className="mt-2 flex items-center gap-2 text-sm text-blue-600">
-          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+        <div className="mt-2 flex items-center gap-2 text-sm text-primary-600">
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-600"></div>
           Đang tải lên...
         </div>
       )}

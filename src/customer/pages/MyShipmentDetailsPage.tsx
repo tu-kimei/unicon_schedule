@@ -84,7 +84,7 @@ export const MyShipmentDetailsPage = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
           <p className="text-gray-600 mt-4">Đang tải thông tin...</p>
         </div>
       </div>
@@ -96,7 +96,7 @@ export const MyShipmentDetailsPage = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <p className="text-gray-600">Không tìm thấy chuyến hàng</p>
-          <Link to="/customer/shipments" className="text-blue-600 hover:text-blue-700 mt-2 inline-block">
+          <Link to="/customer/shipments" className="text-primary-600 hover:text-primary-700 mt-2 inline-block">
             Quay lại danh sách
           </Link>
         </div>
@@ -123,7 +123,7 @@ export const MyShipmentDetailsPage = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                   </svg>
                 </Link>
-                <h1 className="text-2xl font-bold text-gray-900">
+                <h1 className="text-2xl font-heading font-bold text-gray-900">
                   {shipment.shipmentNumber}
                 </h1>
                 {shipment.shipmentType && (
@@ -161,7 +161,7 @@ export const MyShipmentDetailsPage = () => {
               <button
                 onClick={handleConfirmDocuments}
                 disabled={isConfirming}
-                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium disabled:bg-gray-300"
+                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium disabled:bg-gray-300 disabled:cursor-not-allowed"
               >
                 {isConfirming ? 'Đang xác nhận...' : 'Xác nhận đã nhận chứng từ'}
               </button>
@@ -255,7 +255,7 @@ export const MyShipmentDetailsPage = () => {
                       <div className={`absolute left-0 top-2 w-4 h-4 rounded-full border-4 border-white shadow ${
                         stop.actualDeparture ? 'bg-green-500' :
                         stop.actualArrival ? 'bg-yellow-500' :
-                        'bg-blue-600'
+                        'bg-primary-600'
                       }`}></div>
                       {index < shipment.stops.length - 1 && (
                         <div className="absolute left-1.5 top-6 w-0.5 h-full bg-gray-300"></div>
@@ -341,7 +341,7 @@ export const MyShipmentDetailsPage = () => {
                                         href={pod.filePath}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="w-16 h-16 rounded bg-gray-100 border border-gray-200 flex items-center justify-center hover:border-blue-400 overflow-hidden"
+                                        className="w-16 h-16 rounded bg-gray-100 border border-gray-200 flex items-center justify-center hover:border-primary-400 overflow-hidden"
                                       >
                                         {pod.filePath.match(/\.(jpg|jpeg|png)$/i) ? (
                                           <img src={pod.filePath} alt={pod.fileName} className="w-full h-full object-cover" />
@@ -375,7 +375,7 @@ export const MyShipmentDetailsPage = () => {
                   <div className="space-y-3">
                     {shipment.statusEvents.map((event: any) => (
                       <div key={event.id} className="flex gap-3 text-sm">
-                        <div className="flex-shrink-0 w-2 h-2 mt-1.5 rounded-full bg-blue-600"></div>
+                        <div className="flex-shrink-0 w-2 h-2 mt-1.5 rounded-full bg-primary-600"></div>
                         <div className="flex-1">
                           <p className="font-medium text-gray-900">{event.description}</p>
                           <p className="text-gray-600 text-xs mt-1">
@@ -501,7 +501,7 @@ export const MyShipmentDetailsPage = () => {
                           href={pod.filePath}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                          className="text-primary-600 hover:text-primary-700 text-sm font-medium"
                         >
                           Xem
                         </a>

@@ -128,7 +128,7 @@ export const VehiclesListPage = () => {
       <div className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <h1 className="text-2xl font-bold text-gray-900">Quản lý Phương tiện</h1>
+            <h1 className="text-2xl font-heading font-bold text-gray-900">Quản lý Phương tiện</h1>
             <Button variant="primary" onClick={() => setIsCreateModalOpen(true)}>
               + Thêm phương tiện mới
             </Button>
@@ -179,7 +179,7 @@ export const VehiclesListPage = () => {
                 placeholder="Tìm kiếm theo biển số xe..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-9 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-10 pr-9 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
               {searchTerm && (
                 <button
@@ -197,7 +197,7 @@ export const VehiclesListPage = () => {
             <select
               value={companyFilter}
               onChange={(e) => setCompanyFilter(e.target.value as CompanyFilter)}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-sm"
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white text-sm"
             >
               <option value="ALL">Tất cả công ty</option>
               <option value="KHANH_HUY">Khánh Huy</option>
@@ -337,7 +337,7 @@ export const VehiclesListPage = () => {
                                   e.stopPropagation();
                                   navigate(`/resources/vehicles/${vehicle.id}`);
                                 }}
-                                className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                                className="text-primary-600 hover:text-primary-700 text-sm font-medium"
                               >
                                 Xem
                               </button>

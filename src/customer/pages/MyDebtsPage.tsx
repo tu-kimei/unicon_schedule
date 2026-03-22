@@ -104,7 +104,7 @@ export const MyDebtsPage = () => {
           </svg>
           <p className="text-gray-600 mb-2">Kh\u00F4ng c\u00F3 quy\u1EC1n truy c\u1EADp</p>
           <p className="text-sm text-gray-500">Ch\u1EC9 Ch\u1EE7 h\u00E0ng m\u1EDBi c\u00F3 th\u1EC3 xem c\u00F4ng n\u1EE3</p>
-          <Link to="/customer" className="text-blue-600 hover:text-blue-700 mt-4 inline-block">
+          <Link to="/customer" className="text-primary-600 hover:text-primary-700 mt-4 inline-block">
             \u2190 Quay l\u1EA1i trang ch\u1EE7
           </Link>
         </div>
@@ -124,7 +124,7 @@ export const MyDebtsPage = () => {
       {/* Header */}
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <h1 className="text-2xl font-bold text-gray-900">C\u00F4ng n\u1EE3 c\u1EE7a t\u00F4i</h1>
+          <h1 className="text-2xl font-heading font-bold text-gray-900">C\u00F4ng n\u1EE3 c\u1EE7a t\u00F4i</h1>
           <p className="text-gray-600 mt-1">Xem v\u00E0 theo d\u00F5i c\u00E1c kho\u1EA3n thanh to\u00E1n</p>
         </div>
       </div>
@@ -165,7 +165,7 @@ export const MyDebtsPage = () => {
               onClick={() => setStatusFilter(tab.key)}
               className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
                 statusFilter === tab.key
-                  ? 'bg-blue-600 text-white shadow-sm'
+                  ? 'bg-primary-600 text-white shadow-sm'
                   : 'text-gray-600 hover:bg-gray-100'
               }`}
             >
@@ -177,7 +177,7 @@ export const MyDebtsPage = () => {
         {/* Debts List */}
         {isLoading ? (
           <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
             <p className="text-gray-600 mt-4">\u0110ang t\u1EA3i...</p>
           </div>
         ) : filteredDebts.length > 0 ? (
@@ -275,7 +275,7 @@ export const MyDebtsPage = () => {
             {statusFilter !== 'ALL' && (
               <button
                 onClick={() => setStatusFilter('ALL')}
-                className="text-blue-600 hover:text-blue-700 mt-3 text-sm inline-block"
+                className="text-primary-600 hover:text-primary-700 mt-3 text-sm inline-block"
               >
                 Xem t\u1EA5t c\u1EA3 c\u00F4ng n\u1EE3
               </button>

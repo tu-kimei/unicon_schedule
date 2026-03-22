@@ -218,7 +218,7 @@ export const DriverDetailsPage = () => {
                   <p className="text-sm">Chưa có hình CCCD</p>
                   <button
                     onClick={() => setIsEditMode(true)}
-                    className="text-sm text-blue-600 hover:underline mt-1"
+                    className="text-sm text-primary-600 hover:underline mt-1"
                   >
                     Tải lên ngay
                   </button>
@@ -245,7 +245,7 @@ export const DriverDetailsPage = () => {
                   <p className="text-sm">Chưa có hình bằng lái</p>
                   <button
                     onClick={() => setIsEditMode(true)}
-                    className="text-sm text-blue-600 hover:underline mt-1"
+                    className="text-sm text-primary-600 hover:underline mt-1"
                   >
                     Tải lên ngay
                   </button>

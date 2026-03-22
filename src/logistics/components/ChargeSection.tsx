@@ -163,7 +163,7 @@ function ChargeFormModal({
             <select
               value={chargeType}
               onChange={(e) => setChargeType(e.target.value as ChargeType)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
             >
               {CHARGE_TYPES.map((type) => (
                 <option key={type} value={type}>
@@ -182,7 +182,7 @@ function ChargeFormModal({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Ghi ch them..."
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
           </div>
 
@@ -197,7 +197,7 @@ function ChargeFormModal({
                 onChange={(e) => setQuantity(e.target.value)}
                 min="1"
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
             </div>
             <div>
@@ -210,7 +210,7 @@ function ChargeFormModal({
                 onChange={(e) => setUnitPrice(e.target.value)}
                 min="0"
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
             </div>
           </div>
@@ -235,7 +235,7 @@ function ChargeFormModal({
             <button
               type="submit"
               disabled={isSubmitting || !unitPrice}
-              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700 disabled:opacity-50"
+              className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-md text-sm hover:bg-primary-700 disabled:opacity-50"
             >
               {isSubmitting ? 'Dang xu ly...' : initialData ? 'Cap nhat' : 'Them'}
             </button>
@@ -311,7 +311,7 @@ export const ChargeSection = ({ shipmentId, charges, onRefresh, canEdit = true }
                 setEditingCharge(null);
                 setIsFormOpen(true);
               }}
-              className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700"
+              className="px-3 py-1.5 bg-primary-600 text-white text-sm rounded-md hover:bg-primary-700"
             >
               + Them chi ph
             </button>
@@ -380,7 +380,7 @@ export const ChargeSection = ({ shipmentId, charges, onRefresh, canEdit = true }
                               setEditingCharge(charge);
                               setIsFormOpen(true);
                             }}
-                            className="px-2 py-1 text-xs font-medium text-blue-700 hover:bg-blue-50 rounded"
+                            className="px-2 py-1 text-xs font-medium text-primary-700 hover:bg-primary-50 rounded"
                           >
                             Sua
                           </button>
@@ -441,7 +441,7 @@ export const ChargeSection = ({ shipmentId, charges, onRefresh, canEdit = true }
                         setEditingCharge(charge);
                         setIsFormOpen(true);
                       }}
-                      className="flex-1 py-1.5 text-xs font-medium text-center text-blue-700 bg-blue-50 hover:bg-blue-100 rounded"
+                      className="flex-1 py-1.5 text-xs font-medium text-center text-primary-700 bg-primary-50 hover:bg-primary-100 rounded"
                     >
                       Sua
                     </button>

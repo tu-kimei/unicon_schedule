@@ -51,12 +51,12 @@ export const CustomerDashboardPage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Trang chủ</h1>
+              <h1 className="text-2xl font-heading font-bold text-gray-900">Trang chủ</h1>
               <p className="text-gray-600 mt-1">Xin chào, {user?.fullName}</p>
             </div>
             <Link
               to="/customer/shipments/create"
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium inline-flex items-center gap-2"
+              className="bg-primary-600 hover:bg-primary-700 transition-colors duration-200 text-white px-4 py-2 rounded-lg font-medium inline-flex items-center gap-2"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -74,9 +74,9 @@ export const CustomerDashboardPage = () => {
           <StatCard
             title="Tổng số chuyến"
             value={stats?.total}
-            color="text-blue-600"
+            color="text-primary-600"
             icon={
-              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
               </svg>
             }
@@ -123,7 +123,7 @@ export const CustomerDashboardPage = () => {
             <h2 className="text-lg font-semibold text-gray-900">Chuyến hàng gần đây</h2>
             <Link
               to="/customer/shipments"
-              className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+              className="text-primary-600 hover:text-primary-700 text-sm font-medium"
             >
               Xem tất cả →
             </Link>
@@ -132,7 +132,7 @@ export const CustomerDashboardPage = () => {
           <div className="p-6">
             {shipmentsLoading ? (
               <div className="text-center py-8">
-                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
                 <p className="text-gray-600 mt-2">Đang tải...</p>
               </div>
             ) : recentShipments.length > 0 ? (
@@ -141,7 +141,7 @@ export const CustomerDashboardPage = () => {
                   <Link
                     key={shipment.id}
                     to={`/customer/shipments/${shipment.id}`}
-                    className="block border border-gray-200 rounded-lg p-4 hover:border-blue-300 hover:shadow-md transition-all"
+                    className="block border border-gray-200 rounded-lg p-4 hover:border-primary-300 hover:shadow-md transition-all cursor-pointer"
                   >
                     <div className="flex items-center justify-between mb-2">
                       <div>
@@ -209,7 +209,7 @@ export const CustomerDashboardPage = () => {
                 <p className="text-gray-600 mb-4">Chưa có chuyến hàng nào</p>
                 <Link
                   to="/customer/shipments/create"
-                  className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium"
+                  className="inline-flex items-center gap-2 bg-primary-600 hover:bg-primary-700 transition-colors duration-200 text-white px-4 py-2 rounded-lg font-medium"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -247,7 +247,7 @@ export const CustomerDashboardPage = () => {
             >
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
-                  <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                   </svg>
                 </div>

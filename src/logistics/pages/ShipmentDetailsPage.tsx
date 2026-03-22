@@ -123,7 +123,7 @@ export const ShipmentDetailsPage = ({ shipmentId }: { shipmentId: string }) => {
             <div className="flex justify-between items-start">
               <div>
                 <div className="flex items-center gap-2 mb-1">
-                  <h1 className="text-2xl font-bold text-gray-900">
+                  <h1 className="text-2xl font-heading font-bold text-gray-900">
                     Chuyến hàng {shipment.shipmentNumber}
                   </h1>
                   {shipment.shipmentType && (
@@ -176,7 +176,7 @@ export const ShipmentDetailsPage = ({ shipmentId }: { shipmentId: string }) => {
                   <button
                     onClick={() => handleUpdateDocStatus('DOC_RECEIVED')}
                     disabled={isUpdatingDoc}
-                    className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded font-medium disabled:bg-gray-300"
+                    className="px-3 py-1.5 bg-primary-600 hover:bg-primary-700 transition-colors duration-200 text-white text-sm rounded font-medium disabled:bg-gray-300 disabled:cursor-not-allowed"
                   >
                     {isUpdatingDoc ? 'Đang cập nhật...' : 'Đánh dấu đã nhận'}
                   </button>
@@ -185,7 +185,7 @@ export const ShipmentDetailsPage = ({ shipmentId }: { shipmentId: string }) => {
                   <button
                     onClick={() => handleUpdateDocStatus('DOC_RETURNED')}
                     disabled={isUpdatingDoc}
-                    className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-sm rounded font-medium disabled:bg-gray-300"
+                    className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-sm rounded font-medium disabled:bg-gray-300 disabled:cursor-not-allowed"
                   >
                     {isUpdatingDoc ? 'Đang cập nhật...' : 'Đánh dấu đã trả'}
                   </button>
@@ -249,7 +249,7 @@ export const ShipmentDetailsPage = ({ shipmentId }: { shipmentId: string }) => {
                           <p>Đầu kéo: {task.tractor?.licensePlate}</p>
                           {task.trailer && <p>Rơ moóc: {task.trailer.licensePlate}</p>}
                           {task.instructions && (
-                            <p className="text-blue-600">{task.instructions}</p>
+                            <p className="text-primary-600">{task.instructions}</p>
                           )}
                         </div>
                       </div>
@@ -377,7 +377,7 @@ export const ShipmentDetailsPage = ({ shipmentId }: { shipmentId: string }) => {
                                   href={pod.filePath}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="w-16 h-16 rounded bg-gray-100 border border-gray-200 flex items-center justify-center hover:border-blue-400 overflow-hidden"
+                                  className="w-16 h-16 rounded bg-gray-100 border border-gray-200 flex items-center justify-center hover:border-primary-400 overflow-hidden"
                                 >
                                   {pod.filePath.match(/\.(jpg|jpeg|png)$/i) ? (
                                     <img src={pod.filePath} alt={pod.fileName} className="w-full h-full object-cover" />

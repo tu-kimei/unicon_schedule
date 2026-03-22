@@ -336,7 +336,7 @@ function DocSection({
               />
             </svg>
             <p className="text-sm">Chưa có hình</p>
-            <button onClick={onUpload} className="text-sm text-blue-600 hover:underline mt-1">
+            <button onClick={onUpload} className="text-sm text-primary-600 hover:underline mt-1">
               Tải lên
             </button>
           </div>

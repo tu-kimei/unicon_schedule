@@ -188,7 +188,7 @@ export const DebtsListPage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
             <div>
-              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Quản lý Công nợ</h1>
+              <h1 className="text-xl sm:text-2xl font-heading font-bold text-gray-900">Quản lý Công nợ</h1>
               <p className="text-sm text-gray-600">Theo dõi công nợ khách hàng</p>
             </div>
             <Button onClick={() => setIsCreateModalOpen(true)}>+ Tạo công nợ mới</Button>
@@ -221,7 +221,7 @@ export const DebtsListPage = () => {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Tìm theo tên khách hàng, tháng..."
-              className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
             {searchQuery && (
               <button
@@ -244,7 +244,7 @@ export const DebtsListPage = () => {
                 onChange={(e) =>
                   setFilters((prev) => ({ ...prev, debtMonth: e.target.value || undefined }))
                 }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
                 <option value="">Tất cả</option>
                 {monthOptions.map((opt) => (
@@ -262,7 +262,7 @@ export const DebtsListPage = () => {
                 onChange={(e) =>
                   setFilters((prev) => ({ ...prev, customerId: e.target.value || undefined }))
                 }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
                 <option value="">Tất cả khách hàng</option>
                 {customers.map((c: any) => (
@@ -283,7 +283,7 @@ export const DebtsListPage = () => {
                     status: (e.target.value as DebtStatus) || undefined,
                   }))
                 }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
                 <option value="">Tất cả</option>
                 <option value="UNPAID">Chưa thanh toán</option>
@@ -309,7 +309,7 @@ export const DebtsListPage = () => {
         {/* Loading State */}
         {isLoading && (
           <div className="bg-white rounded-lg shadow p-8 text-center">
-            <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-blue-500 border-t-transparent mb-2" />
+            <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-primary-500 border-t-transparent mb-2" />
             <p className="text-gray-600">Đang tải...</p>
           </div>
         )}
@@ -464,7 +464,7 @@ export const DebtsListPage = () => {
                               <div className="flex-1" />
                               <button
                                 onClick={(e) => { e.stopPropagation(); navigate(`/accounting/debts/${debt.id}`); }}
-                                className="py-1.5 px-3 text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 rounded"
+                                className="py-1.5 px-3 text-xs font-medium text-primary-700 bg-primary-50 hover:bg-primary-100 rounded"
                               >
                                 Xem
                               </button>
@@ -529,7 +529,7 @@ export const DebtsListPage = () => {
                     <p className="text-gray-600 mb-2">Không tìm thấy công nợ nào phù hợp với "{searchQuery}"</p>
                     <button
                       onClick={() => setSearchQuery('')}
-                      className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                      className="text-primary-600 hover:text-primary-700 text-sm font-medium"
                     >
                       Xóa bộ lọc tìm kiếm
                     </button>
@@ -608,7 +608,7 @@ export const DebtsListPage = () => {
                     href={img}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="block rounded-lg border border-gray-200 overflow-hidden hover:border-blue-400 transition-colors"
+                    className="block rounded-lg border border-gray-200 overflow-hidden hover:border-primary-400 transition-colors"
                   >
                     <img
                       src={img}
@@ -706,7 +706,7 @@ function DebtTableRows({
         <td className="px-4 py-3"><DebtStatusBadge status={debt.status} /></td>
         <td className="px-4 py-3 text-right">
           <div className="flex items-center justify-end gap-1">
-            <button onClick={(e) => { e.stopPropagation(); onNavigate(); }} className="px-2 py-1 text-xs font-medium text-blue-700 hover:bg-blue-50 rounded">Xem</button>
+            <button onClick={(e) => { e.stopPropagation(); onNavigate(); }} className="px-2 py-1 text-xs font-medium text-primary-700 hover:bg-primary-50 rounded">Xem</button>
             {canPay && <button onClick={(e) => { e.stopPropagation(); onPay(); }} className="px-2 py-1 text-xs font-medium text-green-700 hover:bg-green-50 rounded">TT</button>}
             {(debt.status === 'UNPAID' || debt.status === 'CANCELLED') && (
               <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50 rounded">Xóa</button>
