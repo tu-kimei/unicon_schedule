@@ -7,14 +7,14 @@ import { HttpError } from 'wasp/server';
 
 export const getCustomer: GetCustomer<{ id: string }, any> = async (args, context) => {
   if (!context.user) {
-    throw new HttpError(401, 'Not authenticated');
+    throw new HttpError(401, 'Chưa đăng nhập');
   }
 
   const { user } = context;
 
   // Check permissions
   if (!['ADMIN', 'ACCOUNTING', 'OPS'].includes(user.role)) {
-    throw new HttpError(403, 'You do not have permission to view customers');
+    throw new HttpError(403, 'Bạn không có quyền xem khách hàng');
   }
 
   const customer = await context.entities.Customer.findUnique({
@@ -22,7 +22,7 @@ export const getCustomer: GetCustomer<{ id: string }, any> = async (args, contex
   });
 
   if (!customer) {
-    throw new HttpError(404, 'Customer not found');
+    throw new HttpError(404, 'Không tìm thấy khách hàng');
   }
 
   return customer;
@@ -34,14 +34,14 @@ export const getCustomer: GetCustomer<{ id: string }, any> = async (args, contex
 
 export const getAllCustomers: GetAllCustomers<void, any> = async (args, context) => {
   if (!context.user) {
-    throw new HttpError(401, 'Not authenticated');
+    throw new HttpError(401, 'Chưa đăng nhập');
   }
 
   const { user } = context;
 
   // Check permissions
   if (!['ADMIN', 'ACCOUNTING', 'OPS'].includes(user.role)) {
-    throw new HttpError(403, 'You do not have permission to view customers');
+    throw new HttpError(403, 'Bạn không có quyền xem khách hàng');
   }
 
   const customers = await context.entities.Customer.findMany({

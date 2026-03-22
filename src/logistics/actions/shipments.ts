@@ -48,7 +48,7 @@ export const createShipment = async (args: CreateShipmentInput, context: any) =>
   });
 
   if (!customer) {
-    throw new Error('Customer not found');
+    throw new Error('Không tìm thấy khách hàng');
   }
 
   if (customer.status !== 'ACTIVE') {
@@ -57,14 +57,14 @@ export const createShipment = async (args: CreateShipmentInput, context: any) =>
 
   // Validate stops
   if (!args.stops || args.stops.length === 0) {
-    throw new Error('At least one stop is required');
+    throw new Error('Cần ít nhất một điểm dừng');
   }
 
   // Check stop sequences are unique and start from 1
   const sequences = args.stops.map(s => s.sequence).sort();
   const hasDuplicates = sequences.some((seq, i) => seq === sequences[i - 1]);
   if (hasDuplicates || sequences[0] !== 1) {
-    throw new Error('Stop sequences must be unique and start from 1');
+    throw new Error('Thứ tự điểm dừng phải là duy nhất và bắt đầu từ 1');
   }
 
   // Generate shipment number
@@ -155,7 +155,7 @@ export const updateShipment = async (args: UpdateShipmentInput & { shipmentId: s
   });
 
   if (!existingShipment) {
-    throw new Error('Shipment not found');
+    throw new Error('Không tìm thấy chuyến hàng');
   }
 
   if (['COMPLETED', 'CANCELLED'].includes(existingShipment.currentStatus)) {
@@ -174,7 +174,7 @@ export const updateShipment = async (args: UpdateShipmentInput & { shipmentId: s
     const sequences = args.stops.map(s => s.sequence).sort();
     const hasDuplicates = sequences.some((seq, i) => seq === sequences[i - 1]);
     if (hasDuplicates || sequences[0] !== 1) {
-      throw new Error('Stop sequences must be unique and start from 1');
+      throw new Error('Thứ tự điểm dừng phải là duy nhất và bắt đầu từ 1');
     }
 
     // Replace all stops

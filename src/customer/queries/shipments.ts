@@ -6,11 +6,11 @@ export const getMyShipments = async (args: any, context: any) => {
 
   // Validate user is customer
   if (user.userType !== 'CUSTOMER') {
-    throw new HttpError(403, 'Only customer users can access this endpoint');
+    throw new HttpError(403, 'Chỉ tài khoản khách hàng mới có thể truy cập');
   }
 
   if (!user.customerId) {
-    throw new HttpError(400, 'User is not linked to a customer');
+    throw new HttpError(400, 'Tài khoản chưa được liên kết với khách hàng');
   }
 
   // Get shipments for this customer
@@ -82,11 +82,11 @@ export const getMyShipmentDetails = async ({ id }: { id: string }, context: any)
 
   // Validate user is customer
   if (user.userType !== 'CUSTOMER') {
-    throw new HttpError(403, 'Only customer users can access this endpoint');
+    throw new HttpError(403, 'Chỉ tài khoản khách hàng mới có thể truy cập');
   }
 
   if (!user.customerId) {
-    throw new HttpError(400, 'User is not linked to a customer');
+    throw new HttpError(400, 'Tài khoản chưa được liên kết với khách hàng');
   }
 
   const shipment = await context.entities.Shipment.findUnique({
@@ -144,12 +144,12 @@ export const getMyShipmentDetails = async ({ id }: { id: string }, context: any)
   });
 
   if (!shipment) {
-    throw new HttpError(404, 'Shipment not found');
+    throw new HttpError(404, 'Không tìm thấy chuyến hàng');
   }
 
   // Verify customer owns this shipment
   if (shipment.customerId !== user.customerId) {
-    throw new HttpError(403, 'You do not have permission to view this shipment');
+    throw new HttpError(403, 'Bạn không có quyền xem chuyến hàng này');
   }
 
   return shipment;
@@ -161,11 +161,11 @@ export const getMyShipmentStats = async (args: any, context: any) => {
 
   // Validate user is customer
   if (user.userType !== 'CUSTOMER') {
-    throw new HttpError(403, 'Only customer users can access this endpoint');
+    throw new HttpError(403, 'Chỉ tài khoản khách hàng mới có thể truy cập');
   }
 
   if (!user.customerId) {
-    throw new HttpError(400, 'User is not linked to a customer');
+    throw new HttpError(400, 'Tài khoản chưa được liên kết với khách hàng');
   }
 
   // Get counts by status

@@ -34,7 +34,7 @@ export const createAndDispatchShipment = async (
 
   // Permission check: ADMIN or DISPATCHER only
   if (!user || !['ADMIN', 'DISPATCHER'].includes(user.role)) {
-    throw new HttpError(403, 'Unauthorized: Only ADMIN and DISPATCHER can use quick dispatch');
+    throw new HttpError(403, 'Không có quyền: Chỉ ADMIN và DISPATCHER mới có thể sử dụng điều phối nhanh');
   }
 
   // Validate customer
@@ -42,15 +42,15 @@ export const createAndDispatchShipment = async (
     where: { id: args.customerId },
   });
   if (!customer) {
-    throw new HttpError(404, 'Customer not found');
+    throw new HttpError(404, 'Không tìm thấy khách hàng');
   }
   if (customer.status !== 'ACTIVE') {
-    throw new HttpError(400, 'Customer must be active');
+    throw new HttpError(400, 'Khách hàng phải ở trạng thái hoạt động');
   }
 
   // Validate stops
   if (!args.stops || args.stops.length === 0) {
-    throw new HttpError(400, 'At least one stop is required');
+    throw new HttpError(400, 'Cần ít nhất một điểm dừng');
   }
 
   // Validate vehicle
@@ -58,13 +58,13 @@ export const createAndDispatchShipment = async (
     where: { id: args.vehicleId },
   });
   if (!vehicle) {
-    throw new HttpError(404, 'Vehicle not found');
+    throw new HttpError(404, 'Không tìm thấy phương tiện');
   }
   if (vehicle.status === 'OUT_OF_SERVICE') {
-    throw new HttpError(400, 'Vehicle is out of service');
+    throw new HttpError(400, 'Phương tiện đang ngưng hoạt động');
   }
   if (vehicle.status === 'MAINTENANCE') {
-    throw new HttpError(400, 'Vehicle is under maintenance');
+    throw new HttpError(400, 'Phương tiện đang bảo trì');
   }
 
   // Validate driver
@@ -73,10 +73,10 @@ export const createAndDispatchShipment = async (
     include: { user: true },
   });
   if (!driver) {
-    throw new HttpError(404, 'Driver not found');
+    throw new HttpError(404, 'Không tìm thấy tài xế');
   }
   if (driver.status !== 'ACTIVE') {
-    throw new HttpError(400, 'Driver is not active');
+    throw new HttpError(400, 'Tài xế không ở trạng thái hoạt động');
   }
 
   // Generate shipment number: SHP-YYYY-XXXX

@@ -30,7 +30,7 @@ export const updateDocumentStatus = async (args: UpdateDocumentStatusInput, cont
   });
 
   if (!shipment) {
-    throw new Error('Shipment not found');
+    throw new Error('Không tìm thấy chuyến hàng');
   }
 
   // Validate transition

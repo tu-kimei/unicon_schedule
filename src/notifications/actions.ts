@@ -8,7 +8,7 @@ export const markNotificationRead = async (args: MarkNotificationReadInput, cont
   const { user } = context;
 
   if (!user) {
-    throw new Error('Unauthorized');
+    throw new Error('Chưa đăng nhập');
   }
 
   // Validate ownership
@@ -17,7 +17,7 @@ export const markNotificationRead = async (args: MarkNotificationReadInput, cont
   });
 
   if (!notification) {
-    throw new Error('Notification not found');
+    throw new Error('Không tìm thấy thông báo');
   }
 
   if (notification.userId !== user.id) {
@@ -39,7 +39,7 @@ export const markAllNotificationsRead = async (_args: any, context: any) => {
   const { user } = context;
 
   if (!user) {
-    throw new Error('Unauthorized');
+    throw new Error('Chưa đăng nhập');
   }
 
   const result = await context.entities.Notification.updateMany({

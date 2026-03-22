@@ -53,14 +53,14 @@ type DeleteDebtInput = {
 
 export const createDebt: CreateDebt<CreateDebtInput, Debt> = async (args, context) => {
   if (!context.user) {
-    throw new HttpError(401, 'Not authenticated');
+    throw new HttpError(401, 'Chưa đăng nhập');
   }
 
   const { user } = context;
 
   // Check permissions
   if (!['ADMIN', 'ACCOUNTING'].includes(user.role)) {
-    throw new HttpError(403, 'Only ADMIN and ACCOUNTING can create debts');
+    throw new HttpError(403, 'Chỉ ADMIN và ACCOUNTING mới có thể tạo công nợ');
   }
 
   // Validate customer exists
@@ -69,18 +69,18 @@ export const createDebt: CreateDebt<CreateDebtInput, Debt> = async (args, contex
   });
 
   if (!customer) {
-    throw new HttpError(404, 'Customer not found');
+    throw new HttpError(404, 'Không tìm thấy khách hàng');
   }
 
   // Validate amount
   if (args.amount <= 0) {
-    throw new HttpError(400, 'Amount must be greater than 0');
+    throw new HttpError(400, 'Số tiền phải lớn hơn 0');
   }
 
   // Validate debtMonth format (YYYY-MM)
   const monthRegex = /^\d{4}-\d{2}$/;
   if (!monthRegex.test(args.debtMonth)) {
-    throw new HttpError(400, 'Invalid debtMonth format. Use YYYY-MM (e.g., 2026-02)');
+    throw new HttpError(400, 'Định dạng tháng công nợ không hợp lệ. Sử dụng YYYY-MM (ví dụ: 2026-02)');
   }
 
   // Calculate due date
@@ -127,14 +127,14 @@ export const createDebt: CreateDebt<CreateDebtInput, Debt> = async (args, contex
 
 export const updateDebt: UpdateDebt<UpdateDebtInput, Debt> = async (args, context) => {
   if (!context.user) {
-    throw new HttpError(401, 'Not authenticated');
+    throw new HttpError(401, 'Chưa đăng nhập');
   }
 
   const { user } = context;
 
   // Check permissions
   if (!['ADMIN', 'ACCOUNTING'].includes(user.role)) {
-    throw new HttpError(403, 'Only ADMIN and ACCOUNTING can update debts');
+    throw new HttpError(403, 'Chỉ ADMIN và ACCOUNTING mới có thể cập nhật công nợ');
   }
 
   // Get existing debt
@@ -144,25 +144,25 @@ export const updateDebt: UpdateDebt<UpdateDebtInput, Debt> = async (args, contex
   });
 
   if (!existingDebt) {
-    throw new HttpError(404, 'Debt not found');
+    throw new HttpError(404, 'Không tìm thấy công nợ');
   }
 
   if (existingDebt.deletedAt) {
-    throw new HttpError(400, 'Cannot update deleted debt');
+    throw new HttpError(400, 'Không thể cập nhật công nợ đã xóa');
   }
 
   // Allow updating paid debts (removed restriction)
 
   // Validate amount if provided
   if (args.amount !== undefined && args.amount <= 0) {
-    throw new HttpError(400, 'Amount must be greater than 0');
+    throw new HttpError(400, 'Số tiền phải lớn hơn 0');
   }
 
   // Validate debtMonth format if provided
   if (args.debtMonth) {
     const monthRegex = /^\d{4}-\d{2}$/;
     if (!monthRegex.test(args.debtMonth)) {
-      throw new HttpError(400, 'Invalid debtMonth format. Use YYYY-MM');
+      throw new HttpError(400, 'Định dạng tháng công nợ không hợp lệ. Sử dụng YYYY-MM');
     }
   }
 
@@ -212,14 +212,14 @@ export const updateDebt: UpdateDebt<UpdateDebtInput, Debt> = async (args, contex
 
 export const cancelDebt: CancelDebt<CancelDebtInput, Debt> = async (args, context) => {
   if (!context.user) {
-    throw new HttpError(401, 'Not authenticated');
+    throw new HttpError(401, 'Chưa đăng nhập');
   }
 
   const { user } = context;
 
   // Check permissions
   if (!['ADMIN', 'ACCOUNTING'].includes(user.role)) {
-    throw new HttpError(403, 'Only ADMIN and ACCOUNTING can cancel debts');
+    throw new HttpError(403, 'Chỉ ADMIN và ACCOUNTING mới có thể hủy công nợ');
   }
 
   // Get existing debt
@@ -228,16 +228,16 @@ export const cancelDebt: CancelDebt<CancelDebtInput, Debt> = async (args, contex
   });
 
   if (!existingDebt) {
-    throw new HttpError(404, 'Debt not found');
+    throw new HttpError(404, 'Không tìm thấy công nợ');
   }
 
   if (existingDebt.deletedAt) {
-    throw new HttpError(400, 'Cannot cancel deleted debt');
+    throw new HttpError(400, 'Không thể hủy công nợ đã xóa');
   }
 
   // Cannot cancel if already paid
   if (existingDebt.status === 'PAID') {
-    throw new HttpError(400, 'Cannot cancel paid debt');
+    throw new HttpError(400, 'Không thể hủy công nợ đã thanh toán');
   }
 
   // Update notes with cancellation reason
@@ -276,14 +276,14 @@ export const deleteDebt: DeleteDebt<DeleteDebtInput, { message: string; id: stri
   context
 ) => {
   if (!context.user) {
-    throw new HttpError(401, 'Not authenticated');
+    throw new HttpError(401, 'Chưa đăng nhập');
   }
 
   const { user } = context;
 
   // Check permissions - Only ADMIN can delete
   if (user.role !== 'ADMIN') {
-    throw new HttpError(403, 'Only ADMIN can delete debts');
+    throw new HttpError(403, 'Chỉ quản trị viên mới có thể xóa công nợ');
   }
 
   // Get existing debt
@@ -292,16 +292,16 @@ export const deleteDebt: DeleteDebt<DeleteDebtInput, { message: string; id: stri
   });
 
   if (!existingDebt) {
-    throw new HttpError(404, 'Debt not found');
+    throw new HttpError(404, 'Không tìm thấy công nợ');
   }
 
   if (existingDebt.deletedAt) {
-    throw new HttpError(400, 'Debt already deleted');
+    throw new HttpError(400, 'Công nợ đã bị xóa');
   }
 
   // Cannot delete if paid
   if (existingDebt.status === 'PAID') {
-    throw new HttpError(400, 'Cannot delete paid debt');
+    throw new HttpError(400, 'Không thể xóa công nợ đã thanh toán');
   }
 
   // Soft delete

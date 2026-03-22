@@ -42,7 +42,7 @@ export const createDriverTask = async (args: CreateDriverTaskInput, context: any
   });
 
   if (!shipment) {
-    throw new Error('Shipment not found');
+    throw new Error('Không tìm thấy chuyến hàng');
   }
 
   if (!['DRAFT', 'READY', 'ASSIGNED'].includes(shipment.currentStatus)) {
@@ -92,11 +92,11 @@ export const createDriverTask = async (args: CreateDriverTaskInput, context: any
   });
 
   if (!driver) {
-    throw new Error('Driver not found');
+    throw new Error('Không tìm thấy tài xế');
   }
 
   if (driver.status !== 'ACTIVE') {
-    throw new Error('Driver is not active');
+    throw new Error('Tài xế không ở trạng thái hoạt động');
   }
 
   // Create DriverTask and update shipment in transaction

@@ -57,7 +57,7 @@ export const updateOperationStatus = async (args: UpdateOperationStatusInput, co
   });
 
   if (!shipment) {
-    throw new Error('Shipment not found');
+    throw new Error('Không tìm thấy chuyến hàng');
   }
 
   // Validate transition

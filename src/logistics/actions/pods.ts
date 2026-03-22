@@ -21,7 +21,7 @@ export const uploadPOD = async (args: UploadPODInput, context: any) => {
   });
 
   if (!shipment) {
-    throw new Error('Shipment not found');
+    throw new Error('Không tìm thấy chuyến hàng');
   }
 
   // Validate stop belongs to shipment if provided

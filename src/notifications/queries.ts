@@ -9,7 +9,7 @@ export const getNotifications = async (args: GetNotificationsInput, context: any
   const { user } = context;
 
   if (!user) {
-    throw new Error('Unauthorized');
+    throw new Error('Chưa đăng nhập');
   }
 
   const limit = args?.limit || 20;
@@ -29,7 +29,7 @@ export const getUnreadNotificationCount = async (_args: any, context: any) => {
   const { user } = context;
 
   if (!user) {
-    throw new Error('Unauthorized');
+    throw new Error('Chưa đăng nhập');
   }
 
   const count = await context.entities.Notification.count({
