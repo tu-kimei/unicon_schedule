@@ -1,3 +1,5 @@
+import { HttpError } from 'wasp/server';
+
 interface CreateShipmentInput {
   customerId: string;
   shipmentType?: 'EXPORT' | 'IMPORT';
@@ -110,8 +112,10 @@ export const createShipment = async (args: CreateShipmentInput, context: any) =>
     }));
   }
 
-  // Create shipment and stops in transaction
-  const shipment = await context.entities.Shipment.create({
+  // Create shipment and stops
+  let shipment;
+  try {
+  shipment = await context.entities.Shipment.create({
     data: {
       customerId: args.customerId,
       shipmentNumber,
@@ -122,7 +126,7 @@ export const createShipment = async (args: CreateShipmentInput, context: any) =>
       plannedStartDate: new Date(args.plannedStartDate),
       plannedEndDate: new Date(args.plannedEndDate),
       containerNumber: args.containerNumber || null,
-      containerType: args.containerType || null,
+      containerType: args.containerType && args.containerType.length > 0 ? args.containerType : null,
       specialInstructions: args.specialInstructions || null,
       createdById: user.id,
       createdByType: 'INTERNAL',
@@ -137,6 +141,11 @@ export const createShipment = async (args: CreateShipmentInput, context: any) =>
       }
     }
   });
+
+  } catch (err: any) {
+    console.error('createShipment error:', err);
+    throw new HttpError(500, `Không thể tạo chuyến hàng: ${err.message}`);
+  }
 
   return shipment;
 };
