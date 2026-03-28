@@ -565,3 +565,59 @@ action forceResetPassword {
 }
 
 // #endregion Admin - User Management
+
+// #region Fuel Logs
+route FuelLogsRoute { path: "/fuel", to: FuelLogsPage }
+page FuelLogsPage {
+  authRequired: true,
+  component: import { FuelLogsPage } from "@src/fuel/pages/FuelLogsPage"
+}
+
+route RepairLogsRoute { path: "/repair", to: RepairLogsPage }
+page RepairLogsPage {
+  authRequired: true,
+  component: import { RepairLogsPage } from "@src/repair/pages/RepairLogsPage"
+}
+
+query getFuelLogs {
+  fn: import { getFuelLogs } from "@src/server/fuel/operations",
+  entities: [User]
+}
+
+action updateFuelLogStatus {
+  fn: import { updateFuelLogStatus } from "@src/server/fuel/operations",
+  entities: [User]
+}
+
+action updateFuelLog {
+  fn: import { updateFuelLog } from "@src/server/fuel/operations",
+  entities: [User]
+}
+
+action deleteFuelLog {
+  fn: import { deleteFuelLog } from "@src/server/fuel/operations",
+  entities: [User]
+}
+// #endregion Fuel Logs
+
+// #region Repair Logs
+query getRepairLogs {
+  fn: import { getRepairLogs } from "@src/server/repair/operations",
+  entities: [User]
+}
+
+action updateRepairLogStatus {
+  fn: import { updateRepairLogStatus } from "@src/server/repair/operations",
+  entities: [User]
+}
+
+action updateRepairLog {
+  fn: import { updateRepairLog } from "@src/server/repair/operations",
+  entities: [User]
+}
+
+action deleteRepairLog {
+  fn: import { deleteRepairLog } from "@src/server/repair/operations",
+  entities: [User]
+}
+// #endregion Repair Logs

@@ -209,6 +209,25 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                   </>
                 )}
 
+                {/* Fuel Logs Section */}
+                {(user.role === 'ADMIN' || user.role === 'ACCOUNTING' || user.role === 'OPS') && (
+                  <>
+                    {sectionHeader('Quản lý Xe')}
+
+                    {/* Fuel Logs */}
+                    <Link to="/fuel" className={navLinkClass('/fuel')} onClick={onClose}>
+                      <span className="text-lg leading-none">⛽</span>
+                      <span>Phiếu Đổ Dầu</span>
+                    </Link>
+
+                    {/* Repair Logs */}
+                    <Link to="/repair" className={navLinkClass('/repair')} onClick={onClose}>
+                      <span className="text-lg leading-none">🔧</span>
+                      <span>Phiếu Sửa Chữa</span>
+                    </Link>
+                  </>
+                )}
+
                 {/* Admin Section */}
                 {user.role === 'ADMIN' && (
                   <>
