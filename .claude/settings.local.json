@@ -21,6 +21,17 @@
       "Bash(npm install:*)",
       "Bash(npm ls:*)",
       "Bash(/Users/nguyentu/.claude/plugins/cache/claude-plugins-official/superpowers/5.0.5/skills/brainstorming/scripts/start-server.sh --project-dir /Users/nguyentu/workspace/unicon_schedule 2>&1)"
+      "Bash(git diff-tree:*)",
+      "Bash(npx tsx:*)",
+      "Bash(psql:*)",
+      "Bash(ls *.config.*)",
+      "Bash(npx vitest:*)",
+      "Bash(pg_dump --version)",
+      "Read(//private/tmp/**)",
+      "Bash(grep -r \"hashPassword\\\\|hash.*password\\\\|scrypt\\\\|bcrypt\\\\|argon\" /Users/nguyentu/workspace/unicon_schedule-shipment-redesign/.wasp/out/sdk/wasp/dist/ --include=*.js -l)",
+      "Bash(python3 scripts/search.py \"kanban board drag drop cards columns\" --domain ux -n 5)",
+      "Bash(python3 scripts/search.py \"kanban board dashboard\" --stack react -n 5)",
+      "Bash(npx tsc:*)"
     ]
   },
   "disabledMcpjsonServers": [
