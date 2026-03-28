@@ -135,7 +135,7 @@ export const ShipmentDetailsPage = () => {
     setIsUpdatingDoc(true);
     try {
       await updateDocumentStatus({
-        shipmentId,
+        shipmentId: shipmentId!,
         documentStatus: newStatus,
       });
       refetch();
@@ -219,7 +219,7 @@ export const ShipmentDetailsPage = () => {
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-4">
                 <Link
-                  to="/logistics/shipments"
+                  to="/ops/shipments"
                   className="text-gray-500 hover:text-gray-700 cursor-pointer transition-colors duration-200"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
