@@ -616,7 +616,6 @@ action forceResetPassword {
 
 // #endregion Admin - User Management
 
-<<<<<<< HEAD
 // #region Notifications
 
 // Notification Queries
