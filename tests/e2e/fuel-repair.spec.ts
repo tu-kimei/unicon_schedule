@@ -101,8 +101,8 @@ test('Fuel/Repair Dashboard page loads for admin', async ({ page }) => {
   await expect(page.getByRole('heading', { name: /Dashboard Chi phí/i })).toBeVisible({ timeout: 15_000 });
 
   // Filter panel visible
-  await expect(page.locator('text=Theo tháng')).toBeVisible();
-  await expect(page.locator('text=Khoảng ngày')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Theo tháng' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Khoảng ngày' })).toBeVisible();
 
   // KPI section loads (spinner goes away)
   const spinner = page.locator('.animate-spin');
