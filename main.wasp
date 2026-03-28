@@ -642,6 +642,29 @@ action markAllNotificationsRead {
 
 // #endregion Notifications
 
+// #region Fuel & Repair Dashboard
+route FuelRepairDashboardRoute { path: "/dashboard/fuel-repair", to: FuelRepairDashboardPage }
+page FuelRepairDashboardPage {
+  authRequired: true,
+  component: import { FuelRepairDashboardPage } from "@src/dashboard/pages/FuelRepairDashboardPage"
+}
+
+query getDashboardStats {
+  fn: import { getDashboardStats } from "@src/server/dashboard/operations",
+  entities: [User]
+}
+
+query getFuelLogs {
+  fn: import { getFuelLogs } from "@src/server/fuel/operations",
+  entities: [User]
+}
+
+query getRepairLogs {
+  fn: import { getRepairLogs } from "@src/server/repair/operations",
+  entities: [User]
+}
+// #endregion Fuel & Repair Dashboard
+
 // #region Driver Portal
 
 route DriverDashboardRoute { path: "/driver", to: DriverDashboardPage }
