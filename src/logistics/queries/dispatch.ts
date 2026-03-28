@@ -42,7 +42,9 @@ export const getAvailableDrivers = async (args: any, context: any) => {
       status: 'ACTIVE'
     },
     include: {
-      user: true
+      user: true,
+      defaultTractor: true,
+      defaultTrailer: true,
     },
     orderBy: {
       user: {

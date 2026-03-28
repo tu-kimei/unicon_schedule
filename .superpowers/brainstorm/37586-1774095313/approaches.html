@@ -1,0 +1,76 @@
+<h2>3 Approaches - Thiết kế lại luồng Shipment</h2>
+<p class="subtitle">So sánh 3 cách tiếp cận triển khai</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>⭐ Refactor dần trên nền hiện tại (Recommended)</h3>
+      <p>Giữ schema hiện có, mở rộng thêm fields/entities cần thiết. Tái sử dụng code đang chạy tốt.</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>Pros</h4>
+          <ul>
+            <li>Không mất dữ liệu hiện tại</li>
+            <li>Triển khai nhanh hơn - tái dùng ~60% code</li>
+            <li>Ít rủi ro - từng bước migrate</li>
+            <li>Các module Debt/Invoice/Resource giữ nguyên</li>
+          </ul>
+        </div>
+        <div class="cons"><h4>Cons</h4>
+          <ul>
+            <li>Có thể mang theo technical debt cũ</li>
+            <li>Schema có chỗ không tối ưu cho nghiệp vụ mới</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Thiết kế lại schema + luồng hoàn toàn</h3>
+      <p>Viết lại toàn bộ schema Shipment, Dispatch, Stop theo đúng nghiệp vụ mới. Giữ nguyên auth, user, debt modules.</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>Pros</h4>
+          <ul>
+            <li>Schema tối ưu cho nghiệp vụ container logistics</li>
+            <li>Không bị ràng buộc bởi thiết kế cũ</li>
+            <li>Tách rõ đầu kéo/rơ mooc/tài xế ngay từ đầu</li>
+          </ul>
+        </div>
+        <div class="cons"><h4>Cons</h4>
+          <ul>
+            <li>Tốn thời gian hơn nhiều</li>
+            <li>Cần migrate dữ liệu</li>
+            <li>Rủi ro regression cho phần đang chạy tốt</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Module mới song song + deprecate cũ</h3>
+      <p>Tạo module shipment-v2 mới song song với module cũ. Khi v2 ổn định thì tắt v1.</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>Pros</h4>
+          <ul>
+            <li>Module cũ vẫn chạy song song, không ảnh hưởng</li>
+            <li>Có thể A/B test giữa cũ và mới</li>
+            <li>Rollback dễ nếu có vấn đề</li>
+          </ul>
+        </div>
+        <div class="cons"><h4>Cons</h4>
+          <ul>
+            <li>Maintain 2 module cùng lúc - phức tạp</li>
+            <li>Schema phình to, dữ liệu phân tán</li>
+            <li>Codebase khó hiểu khi có v1 lẫn v2</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

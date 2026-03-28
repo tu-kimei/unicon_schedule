@@ -1,0 +1,74 @@
+<h2>Luồng vận chuyển Container</h2>
+<p class="subtitle">Xác nhận 2 luồng hàng Xuất và Nhập</p>
+
+<div class="section">
+  <h3>Hàng Xuất (Export)</h3>
+  <div class="mockup">
+    <div class="mockup-header">Export Flow</div>
+    <div class="mockup-body" style="padding: 24px;">
+      <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+        <div style="background:#3b82f6; color:white; padding:8px 16px; border-radius:8px; font-size:14px;">1. Lấy cont rỗng<br><small>📸 Chụp trong/ngoài</small></div>
+        <div style="color:#666;">→</div>
+        <div style="background:#8b5cf6; color:white; padding:8px 16px; border-radius:8px; font-size:14px;">2. Tới kho đóng hàng<br><small>📸 Phiếu vào/ra kho, cân xe</small></div>
+        <div style="color:#666;">→</div>
+        <div style="background:#f59e0b; color:white; padding:8px 16px; border-radius:8px; font-size:14px;">3. Chở ra cảng<br><small>📸 Phiếu vào/ra cảng</small></div>
+        <div style="color:#666;">→</div>
+        <div style="background:#10b981; color:white; padding:8px 16px; border-radius:8px; font-size:14px;">4. Xong ✓</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Hàng Nhập (Import)</h3>
+  <div class="mockup">
+    <div class="mockup-header">Import Flow</div>
+    <div class="mockup-body" style="padding: 24px;">
+      <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+        <div style="background:#3b82f6; color:white; padding:8px 16px; border-radius:8px; font-size:14px;">1. Lấy cont có hàng từ cảng<br><small>📸 Phiếu ra cảng</small></div>
+        <div style="color:#666;">→</div>
+        <div style="background:#8b5cf6; color:white; padding:8px 16px; border-radius:8px; font-size:14px;">2. Chở tới kho xuống hàng<br><small>📸 Phiếu vào/ra kho, cân xe</small></div>
+        <div style="color:#666;">→</div>
+        <div style="background:#f59e0b; color:white; padding:8px 16px; border-radius:8px; font-size:14px;">3. Trả cont rỗng<br><small>📸 Phiếu vào cảng/bãi</small></div>
+        <div style="color:#666;">→</div>
+        <div style="background:#10b981; color:white; padding:8px 16px; border-radius:8px; font-size:14px;">4. Xong ✓</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Mức hoàn tất (áp dụng cả 2 luồng)</h3>
+  <div style="display:flex; gap:16px; flex-wrap:wrap;">
+    <div style="background:#e0f2fe; border:2px solid #3b82f6; padding:12px 16px; border-radius:8px; flex:1; min-width:200px;">
+      <strong>🚛 Vận hành</strong><br>
+      <small>Tài xế giao hàng xong + upload ảnh</small>
+    </div>
+    <div style="background:#f3e8ff; border:2px solid #8b5cf6; padding:12px 16px; border-radius:8px; flex:1; min-width:200px;">
+      <strong>📄 Hành chính</strong><br>
+      <small>Chứng từ gốc về VP + trả cho KH</small>
+    </div>
+    <div style="background:#ecfdf5; border:2px solid #10b981; padding:12px 16px; border-radius:8px; flex:1; min-width:200px;">
+      <strong>💰 Tài chính</strong><br>
+      <small>Thanh toán hoàn tất</small>
+    </div>
+  </div>
+</div>
+
+<h3>Flow này đã đúng chưa?</h3>
+<div class="options">
+  <div class="option" data-choice="correct" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Đúng rồi</h3>
+      <p>2 luồng và 3 mức hoàn tất đã phản ánh đúng nghiệp vụ</p>
+    </div>
+  </div>
+  <div class="option" data-choice="adjust" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Cần điều chỉnh</h3>
+      <p>Có bước thiếu hoặc sai, cần bổ sung</p>
+    </div>
+  </div>
+</div>

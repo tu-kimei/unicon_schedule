@@ -234,7 +234,7 @@ export const VehicleFormModal = ({
             type="text"
             value={formData.licensePlate}
             onChange={(e) => handleChange('licensePlate', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
             required
             placeholder="VD: 51A-12345"
           />
@@ -260,7 +260,7 @@ export const VehicleFormModal = ({
             max={new Date().getFullYear()}
             value={formData.manufacturingYear || ''}
             onChange={(e) => handleChange('manufacturingYear', e.target.value ? parseInt(e.target.value) : undefined)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
             placeholder="VD: 2020"
           />
         </div>
@@ -347,7 +347,7 @@ export const VehicleFormModal = ({
             type="text"
             value={formData.currentLocation}
             onChange={(e) => handleChange('currentLocation', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
             placeholder="VD: Bãi xe Bình Chánh"
           />
         </div>

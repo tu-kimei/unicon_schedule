@@ -1,0 +1,114 @@
+<h2>Section 2: State Machine - 3 tầng trạng thái</h2>
+<p class="subtitle">Mỗi tầng hoạt động độc lập, có lifecycle riêng</p>
+
+<div class="section">
+  <h3>🚛 Tầng 1: Operation Status (Vận hành)</h3>
+  <div class="mockup">
+    <div class="mockup-header">Ai thay đổi: KH, Dispatcher, Tài xế</div>
+    <div class="mockup-body" style="padding:20px;">
+      <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap; font-size:13px;">
+        <div style="background:#94a3b8; color:white; padding:6px 12px; border-radius:6px;">DRAFT</div>
+        <div style="color:#666;">→</div>
+        <div style="background:#3b82f6; color:white; padding:6px 12px; border-radius:6px;">PENDING</div>
+        <div style="color:#666;">→</div>
+        <div style="background:#8b5cf6; color:white; padding:6px 12px; border-radius:6px;">DISPATCHED</div>
+        <div style="color:#666;">→</div>
+        <div style="background:#f59e0b; color:white; padding:6px 12px; border-radius:6px;">IN_TRANSIT</div>
+        <div style="color:#666;">→</div>
+        <div style="background:#10b981; color:white; padding:6px 12px; border-radius:6px;">DELIVERED</div>
+      </div>
+      <div style="margin-top:12px; font-size:12px; color:#666;">
+        <div>• DRAFT: KH tạo lệnh, chưa gửi</div>
+        <div>• PENDING: KH đã gửi, chờ Dispatcher nhận</div>
+        <div>• DISPATCHED: Đã gán xe + tài xế</div>
+        <div>• IN_TRANSIT: Tài xế đang chạy (tự động khi check-in stop đầu)</div>
+        <div>• DELIVERED: Tài xế hoàn tất stop cuối</div>
+        <div style="color:#ef4444;">• CANCELLED: Hủy (từ bất kỳ trạng thái nào trước DELIVERED)</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>📄 Tầng 2: Document Status (Hành chính)</h3>
+  <div class="mockup">
+    <div class="mockup-header">Ai thay đổi: Nhân viên VP</div>
+    <div class="mockup-body" style="padding:20px;">
+      <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap; font-size:13px;">
+        <div style="background:#94a3b8; color:white; padding:6px 12px; border-radius:6px;">PENDING</div>
+        <div style="color:#666;">→</div>
+        <div style="background:#f59e0b; color:white; padding:6px 12px; border-radius:6px;">RECEIVED</div>
+        <div style="color:#666;">→</div>
+        <div style="background:#10b981; color:white; padding:6px 12px; border-radius:6px;">RETURNED</div>
+      </div>
+      <div style="margin-top:12px; font-size:12px; color:#666;">
+        <div>• PENDING: Chờ tài xế mang chứng từ gốc về VP</div>
+        <div>• RECEIVED: VP đã nhận chứng từ gốc, scan lưu trữ</div>
+        <div>• RETURNED: Đã trả chứng từ gốc cho KH</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>💰 Tầng 3: Financial Status (Tài chính)</h3>
+  <div class="mockup">
+    <div class="mockup-header">Ai thay đổi: Kế toán</div>
+    <div class="mockup-body" style="padding:20px;">
+      <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap; font-size:13px;">
+        <div style="background:#94a3b8; color:white; padding:6px 12px; border-radius:6px;">NOT_BILLED</div>
+        <div style="color:#666;">→</div>
+        <div style="background:#3b82f6; color:white; padding:6px 12px; border-radius:6px;">INVOICED</div>
+        <div style="color:#666;">→</div>
+        <div style="background:#10b981; color:white; padding:6px 12px; border-radius:6px;">PAID</div>
+      </div>
+      <div style="margin-top:12px; font-size:12px; color:#666;">
+        <div>• NOT_BILLED: Chưa xuất hóa đơn</div>
+        <div>• INVOICED: Đã xuất hóa đơn, chờ thanh toán</div>
+        <div>• PAID: Đã thanh toán</div>
+        <div style="color:#ef4444;">• OVERDUE: Quá hạn thanh toán</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Tổng quan kết hợp</h3>
+  <div style="background:#f8fafc; border:2px solid #e2e8f0; border-radius:8px; padding:16px; font-size:13px;">
+    <div style="margin-bottom:8px;"><strong>Một chuyến hàng luôn có 3 trạng thái song song:</strong></div>
+    <div style="display:flex; gap:12px; flex-wrap:wrap;">
+      <div style="background:white; border:1px solid #e2e8f0; padding:8px 12px; border-radius:6px;">
+        🚛 <strong>IN_TRANSIT</strong> + 📄 <strong>PENDING</strong> + 💰 <strong>NOT_BILLED</strong>
+        <div style="color:#666; font-size:11px;">Đang giao hàng</div>
+      </div>
+      <div style="color:#666; align-self:center;">→</div>
+      <div style="background:white; border:1px solid #e2e8f0; padding:8px 12px; border-radius:6px;">
+        🚛 <strong>DELIVERED</strong> + 📄 <strong>RECEIVED</strong> + 💰 <strong>INVOICED</strong>
+        <div style="color:#666; font-size:11px;">Đã giao, chờ trả CT</div>
+      </div>
+      <div style="color:#666; align-self:center;">→</div>
+      <div style="background:#ecfdf5; border:1px solid #10b981; padding:8px 12px; border-radius:6px;">
+        🚛 <strong>DELIVERED</strong> + 📄 <strong>RETURNED</strong> + 💰 <strong>PAID</strong>
+        <div style="color:#666; font-size:11px;">Hoàn tất 100%</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h3>State machine này OK không?</h3>
+<div class="options">
+  <div class="option" data-choice="ok" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>OK</h3>
+      <p>3 tầng trạng thái đã phản ánh đúng</p>
+    </div>
+  </div>
+  <div class="option" data-choice="adjust" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Cần điều chỉnh</h3>
+      <p>Có trạng thái thiếu hoặc sai</p>
+    </div>
+  </div>
+</div>

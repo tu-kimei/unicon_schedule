@@ -23,20 +23,20 @@ export const getDebtsSummaryByCustomer: GetDebtsSummaryByCustomer<
   any
 > = async (args, context) => {
   if (!context.user) {
-    throw new HttpError(401, 'Not authenticated');
+    throw new HttpError(401, 'Chưa đăng nhập');
   }
 
   const { user } = context;
 
   // Check permissions
   if (!['ADMIN', 'ACCOUNTING', 'OPS'].includes(user.role)) {
-    throw new HttpError(403, 'You do not have permission to view debt summaries');
+    throw new HttpError(403, 'Bạn không có quyền xem tổng hợp công nợ');
   }
 
   const { customerId } = args;
 
   if (!customerId) {
-    throw new HttpError(400, 'Customer ID is required');
+    throw new HttpError(400, 'Mã khách hàng là bắt buộc');
   }
 
   // Get all debts for this customer
@@ -164,14 +164,14 @@ export const getDebtsSummaryByMonth: GetDebtsSummaryByMonth<
   any
 > = async (args, context) => {
   if (!context.user) {
-    throw new HttpError(401, 'Not authenticated');
+    throw new HttpError(401, 'Chưa đăng nhập');
   }
 
   const { user } = context;
 
   // Check permissions
   if (!['ADMIN', 'ACCOUNTING', 'OPS'].includes(user.role)) {
-    throw new HttpError(403, 'You do not have permission to view debt summaries');
+    throw new HttpError(403, 'Bạn không có quyền xem tổng hợp công nợ');
   }
 
   const { year = new Date().getFullYear() } = args;

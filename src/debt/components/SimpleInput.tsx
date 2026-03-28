@@ -15,7 +15,7 @@ export const SimpleInput = React.forwardRef<HTMLInputElement, SimpleInputProps>(
         </label>
         <input
           id={id}
-          className={`w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-800 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 ${className || ''}`}
+          className={`w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-800 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 ${className || ''}`}
           {...props}
           ref={ref}
         />
