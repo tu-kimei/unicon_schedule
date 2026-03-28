@@ -28,14 +28,14 @@ type GetInvoiceInput = {
 
 export const getAllInvoices: GetAllInvoices<GetAllInvoicesInput, any> = async (args, context) => {
   if (!context.user) {
-    throw new HttpError(401, 'Not authenticated');
+    throw new HttpError(401, 'Chưa đăng nhập');
   }
 
   const { user } = context;
 
   // Check permissions
   if (!['ADMIN', 'ACCOUNTING', 'OPS'].includes(user.role)) {
-    throw new HttpError(403, 'You do not have permission to view invoices');
+    throw new HttpError(403, 'Bạn không có quyền xem hóa đơn');
   }
 
   const {
@@ -134,14 +134,14 @@ export const getAllInvoices: GetAllInvoices<GetAllInvoicesInput, any> = async (a
 
 export const getInvoice: GetInvoice<GetInvoiceInput, any> = async (args, context) => {
   if (!context.user) {
-    throw new HttpError(401, 'Not authenticated');
+    throw new HttpError(401, 'Chưa đăng nhập');
   }
 
   const { user } = context;
 
   // Check permissions
   if (!['ADMIN', 'ACCOUNTING', 'OPS'].includes(user.role)) {
-    throw new HttpError(403, 'You do not have permission to view invoices');
+    throw new HttpError(403, 'Bạn không có quyền xem hóa đơn');
   }
 
   const invoice = await context.entities.Invoice.findUnique({
@@ -172,7 +172,7 @@ export const getInvoice: GetInvoice<GetInvoiceInput, any> = async (args, context
   });
 
   if (!invoice) {
-    throw new HttpError(404, 'Invoice not found');
+    throw new HttpError(404, 'Không tìm thấy hóa đơn');
   }
 
   return invoice;

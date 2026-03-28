@@ -191,6 +191,7 @@ model User {
   createdCharges        Charge[]             @relation("ChargeCreatedBy")
   createdInvoices       Invoice[]            @relation("InvoiceCreatedBy")
   createdPayments       DebtPayment[]        @relation("PaymentCreatedBy")
+  notifications         Notification[]
 
   @@map("users")
 }
@@ -235,6 +236,10 @@ model Shipment {
   customerId        String         // Link trực tiếp đến Customer
   shipmentNumber    String         @unique
   currentStatus     ShipmentStatus @default(DRAFT)
+  shipmentType      ShipmentType?
+  operationStatus   OperationStatus  @default(DRAFT)
+  documentStatus    DocumentStatus   @default(DOC_PENDING)
+  financialStatus   FinancialStatus  @default(NOT_BILLED)
   priority          Priority       @default(NORMAL)
   plannedStartDate  DateTime
   plannedEndDate    DateTime
@@ -262,6 +267,7 @@ model Shipment {
   documents         ShipmentDocument[]
   charges           Charge[]
   invoices          Invoice[]
+  driverTasks       DriverTask[]
 
   @@map("shipments")
   @@index([customerId, currentStatus])
@@ -274,6 +280,8 @@ model ShipmentStop {
   shipmentId          String
   sequence            Int
   stopType            StopType
+  stopCategory        StopCategory?
+  requiredPhotos      String[]         @default([])
   locationName        String
   address             String
   contactPerson       String?
@@ -348,6 +356,10 @@ model Vehicle {
 
   // Relations
   dispatches Dispatch[]
+  tractorTasks  DriverTask[] @relation("TractorTasks")
+  trailerTasks  DriverTask[] @relation("TrailerTasks")
+  defaultTractorDrivers  Driver[]  @relation("DefaultTractor")
+  defaultTrailerDrivers  Driver[]  @relation("DefaultTrailer")
 
   @@map("vehicles")
 }
@@ -368,12 +380,20 @@ model Driver {
   licenseExpiry     DateTime     // Ngày hết hạn giấy phép
   
   status            DriverStatus @default(ACTIVE)
+
+  // Xe mặc định
+  defaultTractorId  String?
+  defaultTractor    Vehicle?  @relation("DefaultTractor", fields: [defaultTractorId], references: [id])
+  defaultTrailerId  String?
+  defaultTrailer    Vehicle?  @relation("DefaultTrailer", fields: [defaultTrailerId], references: [id])
+
   createdAt         DateTime     @default(now())
   updatedAt         DateTime     @updatedAt
 
   // Relations
   user       User       @relation(fields: [userId], references: [id])
   dispatches Dispatch[]
+  driverTasks DriverTask[]
 
   @@map("drivers")
 }
@@ -422,6 +442,7 @@ model POD {
   fileName     String
   filePath     String // URL to external storage
   fileType     PODFileType
+  photoCategory     PhotoCategory?
   fileSize     Int // bytes, max 5MB
   uploadedById String
   uploadedAt   DateTime    @default(now())
@@ -584,4 +605,118 @@ model InvoiceItem {
   
   @@map("invoice_items")
   @@index([invoiceId])
+}
+
+model DriverTask {
+  id            String           @id @default(uuid())
+  driverId      String
+  driver        Driver           @relation(fields: [driverId], references: [id])
+  shipmentId    String
+  shipment      Shipment         @relation(fields: [shipmentId], references: [id])
+  tractorId     String
+  tractor       Vehicle          @relation("TractorTasks", fields: [tractorId], references: [id])
+  trailerId     String?
+  trailer       Vehicle?         @relation("TrailerTasks", fields: [trailerId], references: [id])
+  sequence      Int
+  instructions  String?
+  status        DriverTaskStatus @default(PENDING)
+  startedAt     DateTime?
+  completedAt   DateTime?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  @@map("driver_tasks")
+}
+
+model Notification {
+  id            String           @id @default(uuid())
+  userId        String
+  user          User             @relation(fields: [userId], references: [id])
+  type          NotificationType
+  title         String
+  message       String
+  referenceId   String?
+  referenceType ReferenceType?
+  channels      String[]         @default(["IN_APP"])
+  isRead        Boolean          @default(false)
+  sentAt        DateTime         @default(now())
+  readAt        DateTime?
+
+  @@index([userId, isRead])
+  @@index([sentAt])
+  @@map("notifications")
+}
+
+// ============================================================================
+// NEW ENUMS - Shipment Flow Redesign
+// ============================================================================
+
+enum ShipmentType {
+  EXPORT
+  IMPORT
+}
+
+enum OperationStatus {
+  DRAFT
+  PENDING
+  DISPATCHED
+  IN_TRANSIT
+  DELIVERED
+  CANCELLED
+}
+
+enum DocumentStatus {
+  DOC_PENDING
+  DOC_RECEIVED
+  DOC_RETURNED
+}
+
+enum FinancialStatus {
+  NOT_BILLED
+  INVOICED
+  PARTIAL_PAID
+  PAID
+  OVERDUE
+}
+
+enum StopCategory {
+  PICKUP_EMPTY
+  WAREHOUSE_LOAD
+  PORT_DELIVERY
+  PORT_PICKUP
+  WAREHOUSE_UNLOAD
+  RETURN_EMPTY
+}
+
+enum PhotoCategory {
+  CONTAINER_EXTERIOR
+  CONTAINER_INTERIOR
+  PORT_GATE_PASS
+  WAREHOUSE_GATE_PASS
+  WEIGHT_TICKET
+  OTHER
+}
+
+enum DriverTaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  SKIPPED
+}
+
+enum NotificationType {
+  ORDER_CREATED
+  DISPATCHED
+  STOP_CHECKIN
+  PHOTO_UPLOADED
+  DELIVERED
+  DOC_RETURNED
+  INVOICED
+  NOTI_OVERDUE
+}
+
+enum ReferenceType {
+  REF_SHIPMENT
+  REF_INVOICE
+  REF_DOCUMENT
 }

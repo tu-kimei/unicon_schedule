@@ -26,7 +26,7 @@ export const updateShipmentStatus = async (args: UpdateStatusInput, context: any
   });
 
   if (!shipment) {
-    throw new Error('Shipment not found');
+    throw new Error('Không tìm thấy chuyến hàng');
   }
 
   if (!isValidTransition(shipment.currentStatus, args.status)) {

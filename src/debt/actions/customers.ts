@@ -55,14 +55,14 @@ type DeleteCustomerInput = {
 
 export const createCustomer: CreateCustomer<CreateCustomerInput, Customer> = async (args, context) => {
   if (!context.user) {
-    throw new HttpError(401, 'Not authenticated');
+    throw new HttpError(401, 'Chưa đăng nhập');
   }
 
   const { user } = context;
 
   // Check permissions
   if (!['ADMIN', 'ACCOUNTING', 'OPS'].includes(user.role)) {
-    throw new HttpError(403, 'Only ADMIN, ACCOUNTING, and OPS can create customers');
+    throw new HttpError(403, 'Chỉ ADMIN, ACCOUNTING và OPS mới có thể tạo khách hàng');
   }
 
   // Validate email uniqueness
@@ -71,12 +71,12 @@ export const createCustomer: CreateCustomer<CreateCustomerInput, Customer> = asy
   });
 
   if (existingCustomer) {
-    throw new HttpError(400, 'Email already exists');
+    throw new HttpError(400, 'Email đã tồn tại');
   }
 
   // Validate payment terms
   if (args.paymentTermDays <= 0) {
-    throw new HttpError(400, 'Payment term days must be greater than 0');
+    throw new HttpError(400, 'Số ngày thanh toán phải lớn hơn 0');
   }
 
   // Create customer
@@ -106,14 +106,14 @@ export const createCustomer: CreateCustomer<CreateCustomerInput, Customer> = asy
 
 export const updateCustomer: UpdateCustomer<UpdateCustomerInput, Customer> = async (args, context) => {
   if (!context.user) {
-    throw new HttpError(401, 'Not authenticated');
+    throw new HttpError(401, 'Chưa đăng nhập');
   }
 
   const { user } = context;
 
   // Check permissions
   if (!['ADMIN', 'ACCOUNTING', 'OPS'].includes(user.role)) {
-    throw new HttpError(403, 'Only ADMIN, ACCOUNTING, and OPS can update customers');
+    throw new HttpError(403, 'Chỉ ADMIN, ACCOUNTING và OPS mới có thể cập nhật khách hàng');
   }
 
   // Get existing customer
@@ -122,7 +122,7 @@ export const updateCustomer: UpdateCustomer<UpdateCustomerInput, Customer> = asy
   });
 
   if (!existingCustomer) {
-    throw new HttpError(404, 'Customer not found');
+    throw new HttpError(404, 'Không tìm thấy khách hàng');
   }
 
   // Validate email uniqueness if changing email
@@ -132,13 +132,13 @@ export const updateCustomer: UpdateCustomer<UpdateCustomerInput, Customer> = asy
     });
 
     if (emailExists) {
-      throw new HttpError(400, 'Email already exists');
+      throw new HttpError(400, 'Email đã tồn tại');
     }
   }
 
   // Validate payment terms if provided
   if (args.paymentTermDays !== undefined && args.paymentTermDays <= 0) {
-    throw new HttpError(400, 'Payment term days must be greater than 0');
+    throw new HttpError(400, 'Số ngày thanh toán phải lớn hơn 0');
   }
 
   // Build update data
@@ -171,14 +171,14 @@ export const updateCustomer: UpdateCustomer<UpdateCustomerInput, Customer> = asy
 
 export const deleteCustomer: DeleteCustomer<DeleteCustomerInput, Customer> = async (args, context) => {
   if (!context.user) {
-    throw new HttpError(401, 'Not authenticated');
+    throw new HttpError(401, 'Chưa đăng nhập');
   }
 
   const { user } = context;
 
   // Check permissions
   if (!['ADMIN', 'ACCOUNTING'].includes(user.role)) {
-    throw new HttpError(403, 'Only ADMIN and ACCOUNTING can delete customers');
+    throw new HttpError(403, 'Chỉ ADMIN và ACCOUNTING mới có thể xóa khách hàng');
   }
 
   // Get existing customer
@@ -191,17 +191,17 @@ export const deleteCustomer: DeleteCustomer<DeleteCustomerInput, Customer> = asy
   });
 
   if (!existingCustomer) {
-    throw new HttpError(404, 'Customer not found');
+    throw new HttpError(404, 'Không tìm thấy khách hàng');
   }
 
   // Check if customer has debts
   if (existingCustomer.debts.length > 0) {
-    throw new HttpError(400, 'Cannot delete customer with existing debts');
+    throw new HttpError(400, 'Không thể xóa khách hàng đã có công nợ');
   }
 
   // Check if customer has shipments
   if (existingCustomer.shipments.length > 0) {
-    throw new HttpError(400, 'Cannot delete customer with existing shipments');
+    throw new HttpError(400, 'Không thể xóa khách hàng đã có chuyến hàng');
   }
 
   // Delete customer

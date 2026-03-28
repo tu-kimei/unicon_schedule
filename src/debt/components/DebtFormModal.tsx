@@ -198,7 +198,7 @@ export const DebtFormModal = ({
               value={formData.customerId}
               onChange={(e) => handleChange('customerId', e.target.value)}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
             >
               <option value="">Chọn khách hàng</option>
               {customers.map((customer) => (
@@ -332,7 +332,7 @@ export const DebtFormModal = ({
               value={formData.notes}
               onChange={(e) => handleChange('notes', e.target.value)}
               rows={4}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
               placeholder="Nhập ghi chú..."
             />
           </div>

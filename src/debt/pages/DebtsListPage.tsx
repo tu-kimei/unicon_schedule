@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery } from 'wasp/client/operations';
 import { useNavigate } from 'react-router-dom';
+import { RoleGuard } from '../../shared/components/RoleGuard';
 import { getAllDebts, getAllCustomers, createDebt, updateDebt, markDebtAsPaid, deleteDebt } from 'wasp/client/operations';
 import { DebtTypeBadge } from '../components/DebtTypeBadge';
 import { DebtStatusBadge } from '../components/DebtStatusBadge';
@@ -188,7 +189,7 @@ export const DebtsListPage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
             <div>
-              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Quản lý Công nợ</h1>
+              <h1 className="text-xl sm:text-2xl font-heading font-bold text-gray-900">Quản lý Công nợ</h1>
               <p className="text-sm text-gray-600">Theo dõi công nợ khách hàng</p>
             </div>
             <Button onClick={() => setIsCreateModalOpen(true)}>+ Tạo công nợ mới</Button>
@@ -221,7 +222,7 @@ export const DebtsListPage = () => {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Tìm theo tên khách hàng, tháng..."
-              className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
             {searchQuery && (
               <button
@@ -244,7 +245,7 @@ export const DebtsListPage = () => {
                 onChange={(e) =>
                   setFilters((prev) => ({ ...prev, debtMonth: e.target.value || undefined }))
                 }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
                 <option value="">Tất cả</option>
                 {monthOptions.map((opt) => (
@@ -262,7 +263,7 @@ export const DebtsListPage = () => {
                 onChange={(e) =>
                   setFilters((prev) => ({ ...prev, customerId: e.target.value || undefined }))
                 }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
                 <option value="">Tất cả khách hàng</option>
                 {customers.map((c: any) => (
@@ -283,7 +284,7 @@ export const DebtsListPage = () => {
                     status: (e.target.value as DebtStatus) || undefined,
                   }))
                 }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
                 <option value="">Tất cả</option>
                 <option value="UNPAID">Chưa thanh toán</option>
@@ -309,7 +310,7 @@ export const DebtsListPage = () => {
         {/* Loading State */}
         {isLoading && (
           <div className="bg-white rounded-lg shadow p-8 text-center">
-            <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-blue-500 border-t-transparent mb-2" />
+            <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-primary-500 border-t-transparent mb-2" />
             <p className="text-gray-600">Đang tải...</p>
           </div>
         )}
@@ -464,7 +465,7 @@ export const DebtsListPage = () => {
                               <div className="flex-1" />
                               <button
                                 onClick={(e) => { e.stopPropagation(); navigate(`/accounting/debts/${debt.id}`); }}
-                                className="py-1.5 px-3 text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 rounded"
+                                className="py-1.5 px-3 text-xs font-medium text-primary-700 bg-primary-50 hover:bg-primary-100 rounded"
                               >
                                 Xem
                               </button>
@@ -529,7 +530,7 @@ export const DebtsListPage = () => {
                     <p className="text-gray-600 mb-2">Không tìm thấy công nợ nào phù hợp với "{searchQuery}"</p>
                     <button
                       onClick={() => setSearchQuery('')}
-                      className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                      className="text-primary-600 hover:text-primary-700 text-sm font-medium"
                     >
                       Xóa bộ lọc tìm kiếm
                     </button>
@@ -608,7 +609,7 @@ export const DebtsListPage = () => {
                     href={img}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="block rounded-lg border border-gray-200 overflow-hidden hover:border-blue-400 transition-colors"
+                    className="block rounded-lg border border-gray-200 overflow-hidden hover:border-primary-400 transition-colors"
                   >
                     <img
                       src={img}
@@ -662,103 +663,105 @@ function DebtTableRows({
   const canPay = debt.status !== 'PAID' && debt.status !== 'CANCELLED';
 
   return (
-    <tbody className="border-b border-gray-200">
-      <tr
-        onClick={onNavigate}
-        className={`cursor-pointer transition-colors ${debt.isOverdue ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-gray-50'}`}
-      >
-        <td className="px-2 py-3 text-center">
-          {hasPaid && (
-            <button onClick={onToggleExpand} className="text-gray-400 hover:text-gray-700 p-0.5" title="Xem lịch sử thanh toán">
-              <svg className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
-          )}
-        </td>
-        <td className="px-4 py-3">
-          <div className="font-semibold text-gray-900">{debt.customer.name}</div>
-        </td>
-        <td className="px-4 py-3"><DebtTypeBadge type={debt.debtType} /></td>
-        <td className="px-4 py-3 text-right font-semibold tabular-nums">{formatCurrency(debtAmt)}</td>
-        <td className="px-4 py-3 text-right">
-          {hasPaid ? (
-            <div>
-              <div className="flex items-center justify-end gap-2">
-                <span className="text-green-600 font-medium tabular-nums text-sm">{formatCurrency(paidAmt)}</span>
-                <span className="text-gray-400">/</span>
-                <span className={`font-medium tabular-nums text-sm ${remainAmt > 0 ? 'text-orange-600' : 'text-green-600'}`}>
-                  {remainAmt > 0 ? formatCurrency(remainAmt) : '0'}
-                </span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
-                <div className={`h-1.5 rounded-full ${paidPct >= 100 ? 'bg-green-500' : 'bg-blue-500'}`} style={{ width: `${paidPct}%` }} />
-              </div>
-            </div>
-          ) : (
-            <span className="text-gray-400 text-sm">-</span>
-          )}
-        </td>
-        <td className="px-4 py-3">
-          <div className="text-sm">{formatDate(debt.dueDate)}</div>
-          {debt.isOverdue && <div className="text-xs text-red-600 font-medium">Quá hạn {debt.daysOverdue} ngày</div>}
-        </td>
-        <td className="px-4 py-3"><DebtStatusBadge status={debt.status} /></td>
-        <td className="px-4 py-3 text-right">
-          <div className="flex items-center justify-end gap-1">
-            <button onClick={(e) => { e.stopPropagation(); onNavigate(); }} className="px-2 py-1 text-xs font-medium text-blue-700 hover:bg-blue-50 rounded">Xem</button>
-            {canPay && <button onClick={(e) => { e.stopPropagation(); onPay(); }} className="px-2 py-1 text-xs font-medium text-green-700 hover:bg-green-50 rounded">TT</button>}
-            {(debt.status === 'UNPAID' || debt.status === 'CANCELLED') && (
-              <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50 rounded">Xóa</button>
+    <RoleGuard allowedRoles={['ACCOUNTING', 'ADMIN']}>
+      <tbody className="border-b border-gray-200">
+        <tr
+          onClick={onNavigate}
+          className={`cursor-pointer transition-colors ${debt.isOverdue ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-gray-50'}`}
+        >
+          <td className="px-2 py-3 text-center">
+            {hasPaid && (
+              <button onClick={onToggleExpand} className="text-gray-400 hover:text-gray-700 p-0.5" title="Xem lịch sử thanh toán">
+                <svg className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
             )}
-          </div>
-        </td>
-      </tr>
-
-      {isExpanded && history.length > 0 && (
-        <tr>
-          <td colSpan={8} className="bg-gray-50 px-4 py-0">
-            <div className="py-3 pl-8 border-l-2 border-blue-300 ml-2 space-y-2">
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                Lịch sử thanh toán ({history.length} lần)
-              </p>
-              {history.map((entry, idx) => {
-                const entryDate = entry.date ? (entry.date.includes('T') ? formatDate(entry.date) : entry.date) : '-';
-                const entryPct = debtAmt > 0 ? (entry.runningTotal / debtAmt) * 100 : 0;
-                const allImages = entry.images || [];
-                return (
-                  <div key={idx} className="flex items-start gap-3 text-sm">
-                    <div className="flex-shrink-0 w-2 h-2 rounded-full bg-blue-500 mt-1.5" />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-medium text-gray-900">+{formatCurrency(entry.amount)} VND</span>
-                        <span className="text-gray-400">|</span>
-                        <span className="text-gray-500">{entryDate}</span>
-                        <Tag variant={entryPct >= 100 ? 'success' : 'info'} size="sm">{entryPct.toFixed(0)}%</Tag>
-                        {allImages.length > 0 && (
-                          <button
-                            onClick={(e) => { e.stopPropagation(); onViewImages(allImages, `UNC - ${debt.customer.name} - ${entryDate}`); }}
-                            className="inline-flex items-center rounded-full font-medium bg-blue-100 text-blue-800 px-2 py-0.5 text-xs hover:bg-blue-200 transition-colors cursor-pointer"
-                          >
-                            Xem UNC
-                          </button>
-                        )}
-                      </div>
-                      {entry.note && <p className="text-gray-500 text-xs mt-0.5">{entry.note}</p>}
-                    </div>
-                    <div className="flex-shrink-0 text-xs text-gray-500 tabular-nums">Tổng: {formatCurrency(entry.runningTotal)}</div>
-                  </div>
-                );
-              })}
-              {remainAmt > 0 && (
-                <div className="pt-2 border-t border-gray-200 text-sm font-medium text-orange-600">
-                  Còn lại: {formatCurrency(remainAmt)} VND
+          </td>
+          <td className="px-4 py-3">
+            <div className="font-semibold text-gray-900">{debt.customer.name}</div>
+          </td>
+          <td className="px-4 py-3"><DebtTypeBadge type={debt.debtType} /></td>
+          <td className="px-4 py-3 text-right font-semibold tabular-nums">{formatCurrency(debtAmt)}</td>
+          <td className="px-4 py-3 text-right">
+            {hasPaid ? (
+              <div>
+                <div className="flex items-center justify-end gap-2">
+                  <span className="text-green-600 font-medium tabular-nums text-sm">{formatCurrency(paidAmt)}</span>
+                  <span className="text-gray-400">/</span>
+                  <span className={`font-medium tabular-nums text-sm ${remainAmt > 0 ? 'text-orange-600' : 'text-green-600'}`}>
+                    {remainAmt > 0 ? formatCurrency(remainAmt) : '0'}
+                  </span>
                 </div>
+                <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
+                  <div className={`h-1.5 rounded-full ${paidPct >= 100 ? 'bg-green-500' : 'bg-blue-500'}`} style={{ width: `${paidPct}%` }} />
+                </div>
+              </div>
+            ) : (
+              <span className="text-gray-400 text-sm">-</span>
+            )}
+          </td>
+          <td className="px-4 py-3">
+            <div className="text-sm">{formatDate(debt.dueDate)}</div>
+            {debt.isOverdue && <div className="text-xs text-red-600 font-medium">Quá hạn {debt.daysOverdue} ngày</div>}
+          </td>
+          <td className="px-4 py-3"><DebtStatusBadge status={debt.status} /></td>
+          <td className="px-4 py-3 text-right">
+            <div className="flex items-center justify-end gap-1">
+              <button onClick={(e) => { e.stopPropagation(); onNavigate(); }} className="px-2 py-1 text-xs font-medium text-primary-700 hover:bg-primary-50 rounded">Xem</button>
+              {canPay && <button onClick={(e) => { e.stopPropagation(); onPay(); }} className="px-2 py-1 text-xs font-medium text-green-700 hover:bg-green-50 rounded">TT</button>}
+              {(debt.status === 'UNPAID' || debt.status === 'CANCELLED') && (
+                <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50 rounded">Xóa</button>
               )}
             </div>
           </td>
         </tr>
-      )}
-    </tbody>
+
+        {isExpanded && history.length > 0 && (
+          <tr>
+            <td colSpan={8} className="bg-gray-50 px-4 py-0">
+              <div className="py-3 pl-8 border-l-2 border-blue-300 ml-2 space-y-2">
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                  Lịch sử thanh toán ({history.length} lần)
+                </p>
+                {history.map((entry, idx) => {
+                  const entryDate = entry.date ? (entry.date.includes('T') ? formatDate(entry.date) : entry.date) : '-';
+                  const entryPct = debtAmt > 0 ? (entry.runningTotal / debtAmt) * 100 : 0;
+                  const allImages = entry.images || [];
+                  return (
+                    <div key={idx} className="flex items-start gap-3 text-sm">
+                      <div className="flex-shrink-0 w-2 h-2 rounded-full bg-blue-500 mt-1.5" />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-medium text-gray-900">+{formatCurrency(entry.amount)} VND</span>
+                          <span className="text-gray-400">|</span>
+                          <span className="text-gray-500">{entryDate}</span>
+                          <Tag variant={entryPct >= 100 ? 'success' : 'info'} size="sm">{entryPct.toFixed(0)}%</Tag>
+                          {allImages.length > 0 && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); onViewImages(allImages, `UNC - ${debt.customer.name} - ${entryDate}`); }}
+                              className="inline-flex items-center rounded-full font-medium bg-blue-100 text-blue-800 px-2 py-0.5 text-xs hover:bg-blue-200 transition-colors cursor-pointer"
+                            >
+                              Xem UNC
+                            </button>
+                          )}
+                        </div>
+                        {entry.note && <p className="text-gray-500 text-xs mt-0.5">{entry.note}</p>}
+                      </div>
+                      <div className="flex-shrink-0 text-xs text-gray-500 tabular-nums">Tổng: {formatCurrency(entry.runningTotal)}</div>
+                    </div>
+                  );
+                })}
+                {remainAmt > 0 && (
+                  <div className="pt-2 border-t border-gray-200 text-sm font-medium text-orange-600">
+                    Còn lại: {formatCurrency(remainAmt)} VND
+                  </div>
+                )}
+              </div>
+            </td>
+          </tr>
+        )}
+      </tbody>
+    </RoleGuard>
   );
 }

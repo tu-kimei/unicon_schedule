@@ -46,13 +46,13 @@ export const uploadShipmentDocument = async (
   const { user } = context;
 
   if (!user) {
-    throw new HttpError(401, 'Unauthorized');
+    throw new HttpError(401, 'Chưa đăng nhập');
   }
 
   // Permission check
   const allowedRoles = ['ADMIN', 'OPS', 'DISPATCHER', 'CUSTOMER_OPS', 'CUSTOMER_OWNER'];
   if (!allowedRoles.includes(user.role)) {
-    throw new HttpError(403, 'Unauthorized: Bạn không có quyền tải tài liệu lên');
+    throw new HttpError(403, 'Bạn không có quyền tải tài liệu lên');
   }
 
   // Validate shipment exists
@@ -62,7 +62,7 @@ export const uploadShipmentDocument = async (
   });
 
   if (!shipment) {
-    throw new HttpError(404, 'Shipment không tồn tại');
+    throw new HttpError(404, 'Không tìm thấy chuyến hàng');
   }
 
   // Customer users can only upload to their own shipments
@@ -71,13 +71,13 @@ export const uploadShipmentDocument = async (
       (u: any) => u.id === user.id
     );
     if (!isCustomerUser) {
-      throw new HttpError(403, 'Bạn chỉ có thể tải tài liệu cho shipment của mình');
+      throw new HttpError(403, 'Bạn chỉ có thể tải chứng từ cho chuyến hàng của mình');
     }
   }
 
   // Validate files
   if (!args.files || args.files.length === 0) {
-    throw new HttpError(400, 'Cần ít nhất một file');
+    throw new HttpError(400, 'Cần ít nhất một tệp');
   }
 
   // Create document records
@@ -113,12 +113,12 @@ export const verifyDocument = async (
   const { user } = context;
 
   if (!user) {
-    throw new HttpError(401, 'Unauthorized');
+    throw new HttpError(401, 'Chưa đăng nhập');
   }
 
   // Only ADMIN and OPS can verify
   if (!['ADMIN', 'OPS'].includes(user.role)) {
-    throw new HttpError(403, 'Unauthorized: Chỉ ADMIN và OPS có thể xác minh tài liệu');
+    throw new HttpError(403, 'Chỉ ADMIN và OPS mới có thể xác minh tài liệu');
   }
 
   const document = await context.entities.ShipmentDocument.findUnique({
@@ -126,11 +126,11 @@ export const verifyDocument = async (
   });
 
   if (!document) {
-    throw new HttpError(404, 'Tài liệu không tồn tại');
+    throw new HttpError(404, 'Không tìm thấy chứng từ');
   }
 
   if (document.isVerified) {
-    throw new HttpError(400, 'Tài liệu đã được xác minh');
+    throw new HttpError(400, 'Chứng từ đã được xác minh');
   }
 
   const updated = await context.entities.ShipmentDocument.update({
@@ -160,7 +160,7 @@ export const deleteDocument = async (
   const { user } = context;
 
   if (!user) {
-    throw new HttpError(401, 'Unauthorized');
+    throw new HttpError(401, 'Chưa đăng nhập');
   }
 
   const document = await context.entities.ShipmentDocument.findUnique({
@@ -168,12 +168,12 @@ export const deleteDocument = async (
   });
 
   if (!document) {
-    throw new HttpError(404, 'Tài liệu không tồn tại');
+    throw new HttpError(404, 'Không tìm thấy chứng từ');
   }
 
   // Cannot delete verified documents
   if (document.isVerified) {
-    throw new HttpError(400, 'Không thể xóa tài liệu đã xác minh');
+    throw new HttpError(400, 'Không thể xóa chứng từ đã xác minh');
   }
 
   // Only ADMIN, OPS, or the uploader can delete
@@ -182,7 +182,7 @@ export const deleteDocument = async (
     document.uploadedById === user.id;
 
   if (!canDelete) {
-    throw new HttpError(403, 'Bạn không có quyền xóa tài liệu này');
+    throw new HttpError(403, 'Bạn không có quyền xóa chứng từ này');
   }
 
   await context.entities.ShipmentDocument.delete({

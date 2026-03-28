@@ -206,7 +206,7 @@ export const DriverFormModal = ({
               type="text"
               value={formData.userId}
               onChange={(e) => handleChange('userId', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
               required
               placeholder="ID của user trong hệ thống"
             />
@@ -225,7 +225,7 @@ export const DriverFormModal = ({
             type="text"
             value={formData.fullName}
             onChange={(e) => handleChange('fullName', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
             required
             placeholder="VD: Nguyễn Văn A"
           />
@@ -240,7 +240,7 @@ export const DriverFormModal = ({
             type="tel"
             value={formData.phone}
             onChange={(e) => handleChange('phone', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
             required
             placeholder="0901234567"
           />
@@ -257,7 +257,7 @@ export const DriverFormModal = ({
             max={new Date().getFullYear() - 18}
             value={formData.birthYear || ''}
             onChange={(e) => handleChange('birthYear', e.target.value ? parseInt(e.target.value) : undefined)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
             placeholder="VD: 1990"
           />
         </div>
@@ -271,7 +271,7 @@ export const DriverFormModal = ({
             type="text"
             value={formData.hometown}
             onChange={(e) => handleChange('hometown', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
             placeholder="VD: Bình Định"
           />
         </div>

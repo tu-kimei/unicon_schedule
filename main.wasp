@@ -4,11 +4,16 @@ app unicon_schedule {
   },
   title: "Unicon Logistic",
   head: [
+    "<link rel='preconnect' href='https://fonts.googleapis.com' />",
+    "<link rel='preconnect' href='https://fonts.gstatic.com' crossorigin />",
+    "<link href='https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap' rel='stylesheet' />",
     "<link rel='icon' type='image/x-icon' href='/favicon.ico' />",
     "<link rel='icon' type='image/png' sizes='16x16' href='/favicon-16x16.png' />",
     "<link rel='icon' type='image/png' sizes='32x32' href='/favicon-32x32.png' />",
     "<link rel='icon' type='image/png' sizes='192x192' href='/favicon-192x192.png' />",
     "<link rel='apple-touch-icon' href='/unicon-logo.png' />",
+    "<link rel='manifest' href='/manifest.json' />",
+    "<meta name='theme-color' content='#FFCC00' />",
   ],
   auth: {
     userEntity: User,
@@ -71,8 +76,15 @@ page EmailVerificationPage {
 
 // #region Logistics System
 
+// Auth Redirect
+route AuthRedirectRoute { path: "/", to: AuthRedirectPage }
+page AuthRedirectPage {
+  component: import { AuthRedirectPage } from "@src/shared/pages/AuthRedirectPage",
+  authRequired: true
+}
+
 // Ops Routes
-route OpsShipmentsRoute { path: "/", to: OpsShipmentsPage }
+route OpsShipmentsRoute { path: "/ops/shipments", to: OpsShipmentsPage }
 page OpsShipmentsPage {
   authRequired: true,
   component: import { OpsShipmentsPage } from "@src/logistics/pages/OpsShipmentsPage"
@@ -100,12 +112,12 @@ page DispatcherDashboardPage {
 // Shared Queries
 query getAllShipments {
   fn: import { getAllShipments } from "@src/logistics/queries/shipments",
-  entities: [Shipment, Customer, ShipmentStop, Dispatch, Vehicle, Driver, ShipmentStatusEvent, POD]
+  entities: [Shipment, Customer, ShipmentStop, Dispatch, Vehicle, Driver, ShipmentStatusEvent, POD, DriverTask]
 }
 
 query getShipment {
   fn: import { getShipment } from "@src/logistics/queries/shipments",
-  entities: [Shipment, Customer, ShipmentStop, Dispatch, Vehicle, Driver, ShipmentStatusEvent, POD]
+  entities: [Shipment, Customer, ShipmentStop, Dispatch, Vehicle, Driver, ShipmentStatusEvent, POD, DriverTask]
 }
 
 query getPendingShipments {
@@ -120,7 +132,7 @@ query getAvailableVehicles {
 
 query getAvailableDrivers {
   fn: import { getAvailableDrivers } from "@src/logistics/queries/dispatch",
-  entities: [Driver, User]
+  entities: [Driver, User, Vehicle]
 }
 
 // Removed: getAvailableOrders query - Order entity no longer exists
@@ -129,7 +141,7 @@ query getAvailableDrivers {
 // Actions
 action createShipment {
   fn: import { createShipment } from "@src/logistics/actions/shipments",
-  entities: [Shipment, Customer, ShipmentStop]
+  entities: [Shipment, Customer, ShipmentStop, User]
 }
 
 action updateShipment {
@@ -149,7 +161,7 @@ action updateShipmentStatus {
 
 action uploadPOD {
   fn: import { uploadPOD } from "@src/logistics/actions/pods",
-  entities: [POD, Shipment]
+  entities: [POD, Shipment, ShipmentStop, User, Notification]
 }
 
 // Document Management
@@ -175,7 +187,45 @@ action deleteDocument {
 
 action createAndDispatchShipment {
   fn: import { createAndDispatchShipment } from "@src/logistics/actions/quickDispatch",
-  entities: [Shipment, ShipmentStop, Dispatch, ShipmentStatusEvent, Vehicle, Driver, Customer, User]
+  entities: [Shipment, ShipmentStop, DriverTask, ShipmentStatusEvent, Notification, Vehicle, Driver, Customer, User]
+}
+
+// DriverTask Queries
+query getDriverTasks {
+  fn: import { getDriverTasks } from "@src/logistics/queries/driverTasks",
+  entities: [DriverTask, Shipment, Driver, Vehicle, ShipmentStop]
+}
+
+query getDriverTasksByDriver {
+  fn: import { getDriverTasksByDriver } from "@src/logistics/queries/driverTasks",
+  entities: [DriverTask, Shipment, Driver, Vehicle, ShipmentStop]
+}
+
+// DriverTask Actions
+action createDriverTask {
+  fn: import { createDriverTask } from "@src/logistics/actions/driverTasks",
+  entities: [DriverTask, Shipment, Vehicle, Driver, ShipmentStatusEvent, Notification, User]
+}
+
+action updateDriverTaskSequence {
+  fn: import { updateDriverTaskSequence } from "@src/logistics/actions/driverTasks",
+  entities: [DriverTask]
+}
+
+action updateDriverTaskStatus {
+  fn: import { updateDriverTaskStatus } from "@src/logistics/actions/driverTasks",
+  entities: [DriverTask, Shipment, ShipmentStop, ShipmentStatusEvent, Notification, User]
+}
+
+// Operation & Document Status Actions
+action updateOperationStatus {
+  fn: import { updateOperationStatus } from "@src/logistics/actions/operationStatus",
+  entities: [Shipment, ShipmentStop, ShipmentStatusEvent, DriverTask, Notification, User]
+}
+
+action updateDocumentStatus {
+  fn: import { updateDocumentStatus } from "@src/logistics/actions/documentStatus",
+  entities: [Shipment, Notification, User]
 }
 
 // #endregion Logistics System
@@ -216,12 +266,12 @@ page MyDebtsPage {
 // Customer Queries
 query getMyShipments {
   fn: import { getMyShipments } from "@src/customer/queries/shipments",
-  entities: [Shipment, Customer, User, ShipmentStop, Dispatch, Vehicle, Driver, ShipmentStatusEvent, POD]
+  entities: [Shipment, Customer, User, ShipmentStop, Dispatch, Vehicle, Driver, ShipmentStatusEvent, POD, DriverTask]
 }
 
 query getMyShipmentDetails {
   fn: import { getMyShipmentDetails } from "@src/customer/queries/shipments",
-  entities: [Shipment, Customer, User, ShipmentStop, Dispatch, Vehicle, Driver, ShipmentStatusEvent, POD]
+  entities: [Shipment, Customer, User, ShipmentStop, Dispatch, Vehicle, Driver, ShipmentStatusEvent, POD, DriverTask]
 }
 
 query getMyShipmentStats {
@@ -486,12 +536,12 @@ action deleteVehicle {
 // Driver Queries
 query getAllDrivers {
   fn: import { getAllDrivers } from "@src/resources/queries/drivers",
-  entities: [Driver, User, Dispatch]
+  entities: [Driver, User, Dispatch, Vehicle]
 }
 
 query getDriver {
   fn: import { getDriver } from "@src/resources/queries/drivers",
-  entities: [Driver, User]
+  entities: [Driver, User, Vehicle]
 }
 
 // Driver Actions
@@ -502,7 +552,7 @@ action createDriver {
 
 action updateDriver {
   fn: import { updateDriver } from "@src/resources/actions/drivers",
-  entities: [Driver, User]
+  entities: [Driver, User, Vehicle]
 }
 
 action deleteDriver {
@@ -565,3 +615,39 @@ action forceResetPassword {
 }
 
 // #endregion Admin - User Management
+
+// #region Notifications
+
+// Notification Queries
+query getNotifications {
+  fn: import { getNotifications } from "@src/notifications/queries",
+  entities: [Notification]
+}
+
+query getUnreadNotificationCount {
+  fn: import { getUnreadNotificationCount } from "@src/notifications/queries",
+  entities: [Notification]
+}
+
+// Notification Actions
+action markNotificationRead {
+  fn: import { markNotificationRead } from "@src/notifications/actions",
+  entities: [Notification]
+}
+
+action markAllNotificationsRead {
+  fn: import { markAllNotificationsRead } from "@src/notifications/actions",
+  entities: [Notification]
+}
+
+// #endregion Notifications
+
+// #region Driver Portal
+
+route DriverDashboardRoute { path: "/driver", to: DriverDashboardPage }
+page DriverDashboardPage {
+  component: import { DriverDashboardPage } from "@src/driver/pages/DriverDashboardPage",
+  authRequired: true
+}
+
+// #endregion Driver Portal

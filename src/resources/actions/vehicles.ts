@@ -50,14 +50,14 @@ type DeleteVehicleInput = {
 
 export const createVehicle = async (args: CreateVehicleInput, context: any) => {
   if (!context.user) {
-    throw new HttpError(401, 'Not authenticated');
+    throw new HttpError(401, 'Chưa đăng nhập');
   }
 
   const { user } = context;
 
   // Check permissions
   if (!['ADMIN', 'OPS', 'DISPATCHER'].includes(user.role)) {
-    throw new HttpError(403, 'Only ADMIN, OPS, and DISPATCHER can create vehicles');
+    throw new HttpError(403, 'Chỉ ADMIN, OPS và DISPATCHER mới có thể tạo phương tiện');
   }
 
   // Validate license plate uniqueness
@@ -66,7 +66,7 @@ export const createVehicle = async (args: CreateVehicleInput, context: any) => {
   });
 
   if (existingVehicle) {
-    throw new HttpError(400, 'License plate already exists');
+    throw new HttpError(400, 'Biển số xe đã tồn tại');
   }
 
   // Create vehicle
@@ -96,14 +96,14 @@ export const createVehicle = async (args: CreateVehicleInput, context: any) => {
 
 export const updateVehicle = async (args: UpdateVehicleInput, context: any) => {
   if (!context.user) {
-    throw new HttpError(401, 'Not authenticated');
+    throw new HttpError(401, 'Chưa đăng nhập');
   }
 
   const { user } = context;
 
   // Check permissions
   if (!['ADMIN', 'OPS', 'DISPATCHER'].includes(user.role)) {
-    throw new HttpError(403, 'Only ADMIN, OPS, and DISPATCHER can update vehicles');
+    throw new HttpError(403, 'Chỉ ADMIN, OPS và DISPATCHER mới có thể cập nhật phương tiện');
   }
 
   // Get existing vehicle
@@ -112,7 +112,7 @@ export const updateVehicle = async (args: UpdateVehicleInput, context: any) => {
   });
 
   if (!existingVehicle) {
-    throw new HttpError(404, 'Vehicle not found');
+    throw new HttpError(404, 'Không tìm thấy phương tiện');
   }
 
   // Validate license plate uniqueness if changing
@@ -122,7 +122,7 @@ export const updateVehicle = async (args: UpdateVehicleInput, context: any) => {
     });
 
     if (plateExists) {
-      throw new HttpError(400, 'License plate already exists');
+      throw new HttpError(400, 'Biển số xe đã tồn tại');
     }
   }
 
@@ -156,14 +156,14 @@ export const updateVehicle = async (args: UpdateVehicleInput, context: any) => {
 
 export const deleteVehicle = async (args: DeleteVehicleInput, context: any) => {
   if (!context.user) {
-    throw new HttpError(401, 'Not authenticated');
+    throw new HttpError(401, 'Chưa đăng nhập');
   }
 
   const { user } = context;
 
   // Check permissions
   if (!['ADMIN'].includes(user.role)) {
-    throw new HttpError(403, 'Only ADMIN can delete vehicles');
+    throw new HttpError(403, 'Chỉ quản trị viên mới có thể xóa phương tiện');
   }
 
   // Get existing vehicle
@@ -175,12 +175,12 @@ export const deleteVehicle = async (args: DeleteVehicleInput, context: any) => {
   });
 
   if (!existingVehicle) {
-    throw new HttpError(404, 'Vehicle not found');
+    throw new HttpError(404, 'Không tìm thấy phương tiện');
   }
 
   // Check if vehicle has dispatches
   if (existingVehicle.dispatches.length > 0) {
-    throw new HttpError(400, 'Cannot delete vehicle with existing dispatches');
+    throw new HttpError(400, 'Không thể xóa phương tiện đã có chuyến điều phối');
   }
 
   // Delete vehicle

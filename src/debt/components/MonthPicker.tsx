@@ -63,7 +63,7 @@ export const MonthPicker = ({ label, value, onChange, required }: MonthPickerPro
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-left focus:outline-none focus:ring-2 focus:ring-blue-500 flex justify-between items-center"
+        className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-left focus:outline-none focus:ring-2 focus:ring-primary-500 flex justify-between items-center"
       >
         <span className={value ? 'text-gray-900' : 'text-gray-400'}>
           {displayValue}
@@ -112,7 +112,7 @@ export const MonthPicker = ({ label, value, onChange, required }: MonthPickerPro
                   className={`
                     px-3 py-2 rounded text-sm font-medium transition-colors
                     ${isSelected
-                      ? 'bg-blue-600 text-white'
+                      ? 'bg-primary-600 text-white'
                       : isCurrent
                       ? 'bg-blue-100 text-blue-700 hover:bg-blue-200'
                       : 'hover:bg-gray-100 text-gray-700'

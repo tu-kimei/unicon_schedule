@@ -44,14 +44,14 @@ type DeleteChargeInput = {
 
 export const createCharge = async (args: CreateChargeInput, context: any): Promise<Charge> => {
   if (!context.user) {
-    throw new HttpError(401, 'Not authenticated');
+    throw new HttpError(401, 'Chưa đăng nhập');
   }
 
   const { user } = context;
 
   // Check permissions
   if (!['ADMIN', 'ACCOUNTING', 'OPS'].includes(user.role)) {
-    throw new HttpError(403, 'Only ADMIN, ACCOUNTING, and OPS can create charges');
+    throw new HttpError(403, 'Chỉ ADMIN, ACCOUNTING và OPS mới có thể tạo phí');
   }
 
   // Validate shipment exists
@@ -60,16 +60,16 @@ export const createCharge = async (args: CreateChargeInput, context: any): Promi
   });
 
   if (!shipment) {
-    throw new HttpError(404, 'Shipment not found');
+    throw new HttpError(404, 'Không tìm thấy chuyến hàng');
   }
 
   // Validate inputs
   if (args.quantity <= 0) {
-    throw new HttpError(400, 'Quantity must be greater than 0');
+    throw new HttpError(400, 'Số lượng phải lớn hơn 0');
   }
 
   if (args.unitPrice < 0) {
-    throw new HttpError(400, 'Unit price must be non-negative');
+    throw new HttpError(400, 'Đơn giá không được âm');
   }
 
   // Auto-calculate amount
@@ -106,14 +106,14 @@ export const createCharge = async (args: CreateChargeInput, context: any): Promi
 
 export const updateCharge = async (args: UpdateChargeInput, context: any): Promise<Charge> => {
   if (!context.user) {
-    throw new HttpError(401, 'Not authenticated');
+    throw new HttpError(401, 'Chưa đăng nhập');
   }
 
   const { user } = context;
 
   // Check permissions
   if (!['ADMIN', 'ACCOUNTING'].includes(user.role)) {
-    throw new HttpError(403, 'Only ADMIN and ACCOUNTING can update charges');
+    throw new HttpError(403, 'Chỉ ADMIN và ACCOUNTING mới có thể cập nhật phí');
   }
 
   // Get existing charge
@@ -122,16 +122,16 @@ export const updateCharge = async (args: UpdateChargeInput, context: any): Promi
   });
 
   if (!existingCharge) {
-    throw new HttpError(404, 'Charge not found');
+    throw new HttpError(404, 'Không tìm thấy phí');
   }
 
   // Validate inputs
   if (args.quantity !== undefined && args.quantity <= 0) {
-    throw new HttpError(400, 'Quantity must be greater than 0');
+    throw new HttpError(400, 'Số lượng phải lớn hơn 0');
   }
 
   if (args.unitPrice !== undefined && args.unitPrice < 0) {
-    throw new HttpError(400, 'Unit price must be non-negative');
+    throw new HttpError(400, 'Đơn giá không được âm');
   }
 
   // Prepare update data
@@ -174,14 +174,14 @@ export const deleteCharge = async (
   context: any
 ): Promise<{ message: string; id: string }> => {
   if (!context.user) {
-    throw new HttpError(401, 'Not authenticated');
+    throw new HttpError(401, 'Chưa đăng nhập');
   }
 
   const { user } = context;
 
   // Check permissions
   if (!['ADMIN', 'ACCOUNTING'].includes(user.role)) {
-    throw new HttpError(403, 'Only ADMIN and ACCOUNTING can delete charges');
+    throw new HttpError(403, 'Chỉ ADMIN và ACCOUNTING mới có thể xóa phí');
   }
 
   // Get existing charge
@@ -193,12 +193,12 @@ export const deleteCharge = async (
   });
 
   if (!existingCharge) {
-    throw new HttpError(404, 'Charge not found');
+    throw new HttpError(404, 'Không tìm thấy phí');
   }
 
   // Cannot delete if linked to an invoice
   if (existingCharge.invoiceItem) {
-    throw new HttpError(400, 'Cannot delete charge that is linked to an invoice. Delete the invoice first.');
+    throw new HttpError(400, 'Không thể xóa phí đã liên kết với hóa đơn. Vui lòng xóa hóa đơn trước.');
   }
 
   await context.entities.Charge.delete({

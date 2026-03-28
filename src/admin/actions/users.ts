@@ -47,20 +47,20 @@ type ForceResetPasswordInput = {
 
 export const createUser = async (args: CreateUserInput, context: any): Promise<User> => {
   if (!context.user) {
-    throw new HttpError(401, 'Not authenticated');
+    throw new HttpError(401, 'Chưa đăng nhập');
   }
 
   const { user } = context;
 
   // Check permissions - Only ADMIN can create users
   if (user.role !== 'ADMIN') {
-    throw new HttpError(403, 'Only ADMIN can create users');
+    throw new HttpError(403, 'Chỉ quản trị viên mới có thể tạo người dùng');
   }
 
   // Validate email format
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(args.email)) {
-    throw new HttpError(400, 'Invalid email format');
+    throw new HttpError(400, 'Định dạng email không hợp lệ');
   }
 
   // Check if email already exists
@@ -69,33 +69,33 @@ export const createUser = async (args: CreateUserInput, context: any): Promise<U
   });
 
   if (existingUser) {
-    throw new HttpError(400, 'Email already exists');
+    throw new HttpError(400, 'Email đã tồn tại');
   }
 
   // Validate password
   if (!args.password || args.password.length < 8) {
-    throw new HttpError(400, 'Password must be at least 8 characters long');
+    throw new HttpError(400, 'Mật khẩu phải có ít nhất 8 ký tự');
   }
 
   // Validate fullName
   if (!args.fullName || args.fullName.trim().length < 2) {
-    throw new HttpError(400, 'Full name must be at least 2 characters long');
+    throw new HttpError(400, 'Họ tên phải có ít nhất 2 ký tự');
   }
 
   // Validate role
   const validRoles = ['ADMIN', 'ACCOUNTING', 'OPS', 'DISPATCHER', 'DRIVER', 'CUSTOMER_OWNER', 'CUSTOMER_OPS'];
   if (!validRoles.includes(args.role)) {
-    throw new HttpError(400, 'Invalid role');
+    throw new HttpError(400, 'Vai trò không hợp lệ');
   }
 
   // Validate userType
   if (!['INTERNAL', 'CUSTOMER'].includes(args.userType)) {
-    throw new HttpError(400, 'Invalid user type');
+    throw new HttpError(400, 'Loại tài khoản không hợp lệ');
   }
 
   // If CUSTOMER user, customerId is required
   if (args.userType === 'CUSTOMER' && !args.customerId) {
-    throw new HttpError(400, 'Customer ID is required for customer users');
+    throw new HttpError(400, 'Mã khách hàng là bắt buộc cho tài khoản khách hàng');
   }
 
   // If customerId provided, validate customer exists
@@ -104,7 +104,7 @@ export const createUser = async (args: CreateUserInput, context: any): Promise<U
       where: { id: args.customerId },
     });
     if (!customer) {
-      throw new HttpError(404, 'Customer not found');
+      throw new HttpError(404, 'Không tìm thấy khách hàng');
     }
   }
 
@@ -146,19 +146,19 @@ export const createUser = async (args: CreateUserInput, context: any): Promise<U
 
 export const updateUserRole: UpdateUserRole<UpdateUserRoleInput, User> = async (args, context) => {
   if (!context.user) {
-    throw new HttpError(401, 'Not authenticated');
+    throw new HttpError(401, 'Chưa đăng nhập');
   }
 
   const { user } = context;
 
   // Check permissions - Only ADMIN can update roles
   if (user.role !== 'ADMIN') {
-    throw new HttpError(403, 'Only ADMIN can update user roles');
+    throw new HttpError(403, 'Chỉ quản trị viên mới có thể cập nhật vai trò người dùng');
   }
 
   // Cannot change own role
   if (user.id === args.userId) {
-    throw new HttpError(400, 'You cannot change your own role');
+    throw new HttpError(400, 'Bạn không thể thay đổi vai trò của chính mình');
   }
 
   // Get target user
@@ -167,13 +167,13 @@ export const updateUserRole: UpdateUserRole<UpdateUserRoleInput, User> = async (
   });
 
   if (!targetUser) {
-    throw new HttpError(404, 'User not found');
+    throw new HttpError(404, 'Không tìm thấy người dùng');
   }
 
   // Validate role
   const validRoles = ['ADMIN', 'ACCOUNTING', 'OPS', 'DISPATCHER', 'DRIVER', 'CUSTOMER_OWNER', 'CUSTOMER_OPS'];
   if (!validRoles.includes(args.role)) {
-    throw new HttpError(400, 'Invalid role');
+    throw new HttpError(400, 'Vai trò không hợp lệ');
   }
 
   // Business rules validation
@@ -184,13 +184,13 @@ export const updateUserRole: UpdateUserRole<UpdateUserRoleInput, User> = async (
       include: { driver: true },
     });
     if (!userWithDriver?.driver) {
-      throw new HttpError(400, 'User must have a driver profile to be assigned DRIVER role');
+      throw new HttpError(400, 'Người dùng phải có hồ sơ tài xế để được gán vai trò TÀI XẾ');
     }
   }
 
   // If changing to CUSTOMER roles, user must have customerId
   if (['CUSTOMER_OWNER', 'CUSTOMER_OPS'].includes(args.role) && !targetUser.customerId) {
-    throw new HttpError(400, 'User must be linked to a customer to be assigned customer roles');
+    throw new HttpError(400, 'Người dùng phải được liên kết với khách hàng để được gán vai trò khách hàng');
   }
 
   // Update user role
@@ -216,19 +216,19 @@ export const updateUserRole: UpdateUserRole<UpdateUserRoleInput, User> = async (
 
 export const updateUserStatus: UpdateUserStatus<UpdateUserStatusInput, User> = async (args, context) => {
   if (!context.user) {
-    throw new HttpError(401, 'Not authenticated');
+    throw new HttpError(401, 'Chưa đăng nhập');
   }
 
   const { user } = context;
 
   // Check permissions - Only ADMIN can update status
   if (user.role !== 'ADMIN') {
-    throw new HttpError(403, 'Only ADMIN can update user status');
+    throw new HttpError(403, 'Chỉ quản trị viên mới có thể cập nhật trạng thái người dùng');
   }
 
   // Cannot deactivate yourself
   if (user.id === args.userId && !args.isActive) {
-    throw new HttpError(400, 'You cannot deactivate yourself');
+    throw new HttpError(400, 'Bạn không thể vô hiệu hóa chính mình');
   }
 
   // Get target user
@@ -237,7 +237,7 @@ export const updateUserStatus: UpdateUserStatus<UpdateUserStatusInput, User> = a
   });
 
   if (!targetUser) {
-    throw new HttpError(404, 'User not found');
+    throw new HttpError(404, 'Không tìm thấy người dùng');
   }
 
   // Update user status
@@ -264,19 +264,19 @@ export const deleteUser: DeleteUser<DeleteUserInput, { message: string; id: stri
   context
 ) => {
   if (!context.user) {
-    throw new HttpError(401, 'Not authenticated');
+    throw new HttpError(401, 'Chưa đăng nhập');
   }
 
   const { user } = context;
 
   // Check permissions - Only ADMIN can delete users
   if (user.role !== 'ADMIN') {
-    throw new HttpError(403, 'Only ADMIN can delete users');
+    throw new HttpError(403, 'Chỉ quản trị viên mới có thể xóa người dùng');
   }
 
   // Cannot delete yourself
   if (user.id === args.userId) {
-    throw new HttpError(400, 'You cannot delete yourself');
+    throw new HttpError(400, 'Bạn không thể xóa chính mình');
   }
 
   // Get target user with relations
@@ -296,7 +296,7 @@ export const deleteUser: DeleteUser<DeleteUserInput, { message: string; id: stri
   });
 
   if (!targetUser) {
-    throw new HttpError(404, 'User not found');
+    throw new HttpError(404, 'Không tìm thấy người dùng');
   }
 
   // Check if user has related data
@@ -309,7 +309,7 @@ export const deleteUser: DeleteUser<DeleteUserInput, { message: string; id: stri
   if (hasDispatches || hasStatusEvents || hasPODs || hasDebts || hasDriverDispatches) {
     throw new HttpError(
       400,
-      'Cannot delete user with existing data. Please deactivate the user instead.'
+      'Không thể xóa người dùng đã có dữ liệu. Vui lòng vô hiệu hóa tài khoản thay vì xóa.'
     );
   }
 
@@ -333,14 +333,14 @@ export const forceResetPassword = async (
   context: any
 ): Promise<{ message: string }> => {
   if (!context.user) {
-    throw new HttpError(401, 'Not authenticated');
+    throw new HttpError(401, 'Chưa đăng nhập');
   }
 
   const { user } = context;
 
   // Check permissions - Only ADMIN can force reset passwords
   if (user.role !== 'ADMIN') {
-    throw new HttpError(403, 'Only ADMIN can force reset passwords');
+    throw new HttpError(403, 'Chỉ quản trị viên mới có thể đặt lại mật khẩu');
   }
 
   // Get target user
@@ -349,12 +349,12 @@ export const forceResetPassword = async (
   });
 
   if (!targetUser) {
-    throw new HttpError(404, 'User not found');
+    throw new HttpError(404, 'Không tìm thấy người dùng');
   }
 
   // Validate new password
   if (!args.newPassword || args.newPassword.length < 8) {
-    throw new HttpError(400, 'Password must be at least 8 characters long');
+    throw new HttpError(400, 'Mật khẩu phải có ít nhất 8 ký tự');
   }
 
   // Import auth utils dynamically to avoid circular dependencies
