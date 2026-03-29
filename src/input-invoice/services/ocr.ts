@@ -1,5 +1,7 @@
 import fs from 'fs';
 import path from 'path';
+import { execSync } from 'child_process';
+import os from 'os';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -60,14 +62,117 @@ function getMimeType(filePath: string): string {
   return mimeMap[ext] || 'application/octet-stream';
 }
 
+/**
+ * Convert a PDF file to PNG images (one per page, max 3 pages).
+ * Uses ImageMagick `convert` with Ghostscript backend.
+ * Returns array of PNG file paths.
+ */
+function pdfToImages(pdfPath: string, maxPages: number = 3): string[] {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ocr-pdf-'));
+  const outputPattern = path.join(tmpDir, 'page');
+
+  try {
+    // Convert PDF pages to PNG (300 DPI for good OCR quality)
+    execSync(
+      `convert -density 300 -quality 95 "${pdfPath}[0-${maxPages - 1}]" "${outputPattern}-%d.png"`,
+      {
+        timeout: 30000,
+        stdio: ['pipe', 'pipe', 'pipe'],
+        env: { ...process.env, MAGICK_THREAD_LIMIT: '1' },
+      }
+    );
+
+    // Collect generated PNG files
+    const pngFiles: string[] = [];
+    for (let i = 0; i < maxPages; i++) {
+      // ImageMagick outputs page-0.png, page-1.png, ...
+      // But for single-page PDFs, it may output page-0.png directly
+      const candidate = path.join(tmpDir, `page-${i}.png`);
+      if (fs.existsSync(candidate)) {
+        pngFiles.push(candidate);
+      }
+    }
+
+    // If single page, ImageMagick might not add suffix
+    if (pngFiles.length === 0) {
+      const singlePage = path.join(tmpDir, 'page.png');
+      if (fs.existsSync(singlePage)) {
+        pngFiles.push(singlePage);
+      }
+    }
+
+    console.log(`[OCR] Converted PDF to ${pngFiles.length} page image(s)`);
+    return pngFiles;
+  } catch (err) {
+    console.error('[OCR] PDF to image conversion failed:', err);
+    return [];
+  }
+}
+
+/**
+ * Clean up temporary files created during PDF conversion.
+ */
+function cleanupTmpFiles(files: string[]) {
+  for (const f of files) {
+    try {
+      fs.unlinkSync(f);
+      const dir = path.dirname(f);
+      if (fs.readdirSync(dir).length === 0) {
+        fs.rmdirSync(dir);
+      }
+    } catch { /* ignore */ }
+  }
+}
+
 function fileToBase64DataUrl(filePath: string): string | null {
   try {
     if (!fs.existsSync(filePath)) return null;
-    const buffer = fs.readFileSync(filePath);
     const mimeType = getMimeType(filePath);
+
+    // If PDF, convert to PNG first (take first page only for base64)
+    if (mimeType === 'application/pdf') {
+      const pngFiles = pdfToImages(filePath, 2);
+      if (pngFiles.length === 0) return null;
+
+      // Return first page as PNG data URL
+      const pngBuffer = fs.readFileSync(pngFiles[0]);
+      // Schedule cleanup
+      setTimeout(() => cleanupTmpFiles(pngFiles), 5000);
+      return `data:image/png;base64,${pngBuffer.toString('base64')}`;
+    }
+
+    // For images, return directly
+    const buffer = fs.readFileSync(filePath);
     return `data:${mimeType};base64,${buffer.toString('base64')}`;
-  } catch {
+  } catch (err) {
+    console.error('[OCR] fileToBase64DataUrl error:', err);
     return null;
+  }
+}
+
+/**
+ * For PDFs with multiple pages, return multiple data URLs (one per page).
+ */
+function fileToBase64DataUrls(filePath: string, maxPages: number = 3): string[] {
+  try {
+    if (!fs.existsSync(filePath)) return [];
+    const mimeType = getMimeType(filePath);
+
+    if (mimeType === 'application/pdf') {
+      const pngFiles = pdfToImages(filePath, maxPages);
+      const dataUrls = pngFiles.map(pngPath => {
+        const buffer = fs.readFileSync(pngPath);
+        return `data:image/png;base64,${buffer.toString('base64')}`;
+      });
+      setTimeout(() => cleanupTmpFiles(pngFiles), 5000);
+      return dataUrls;
+    }
+
+    // Single image
+    const buffer = fs.readFileSync(filePath);
+    return [`data:${mimeType};base64,${buffer.toString('base64')}`];
+  } catch {
+    return [];
   }
 }
 
@@ -139,13 +244,14 @@ export async function parseInputInvoiceWith9RouterVision(params: {
   // Build image content for vision API
   const imageContents: Array<{ type: 'image_url'; image_url: { url: string } }> = [];
 
-  // Prefer filePaths (local files) over URLs for base64 encoding
+  // Prefer filePaths (local files) — convert PDFs to images automatically
   const paths = params.filePaths ?? [];
   
-  for (let i = 0; i < Math.min(paths.length, 3); i++) {
+  for (let i = 0; i < Math.min(paths.length, 5); i++) {
     const filePath = paths[i];
-    const dataUrl = fileToBase64DataUrl(filePath);
-    if (dataUrl) {
+    // Use multi-page extractor for PDFs
+    const dataUrls = fileToBase64DataUrls(filePath, 3);
+    for (const dataUrl of dataUrls) {
       imageContents.push({
         type: 'image_url',
         image_url: { url: dataUrl },
@@ -153,14 +259,9 @@ export async function parseInputInvoiceWith9RouterVision(params: {
     }
   }
 
-  // Fallback to URLs if no local paths
-  if (imageContents.length === 0 && params.fileUrls.length > 0) {
-    for (let i = 0; i < Math.min(params.fileUrls.length, 3); i++) {
-      imageContents.push({
-        type: 'image_url',
-        image_url: { url: params.fileUrls[i] },
-      });
-    }
+  // Fallback: skip URL-based approach for now (Claude needs base64 images, not raw URLs)
+  if (imageContents.length === 0) {
+    console.warn('[OCR] No images could be extracted from files. Check file paths and PDF conversion.');
   }
 
   if (imageContents.length === 0) {
