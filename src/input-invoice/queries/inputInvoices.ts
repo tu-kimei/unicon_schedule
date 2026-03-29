@@ -86,29 +86,34 @@ export const getInputInvoices: GetInputInvoices<GetInputInvoicesInput, any> = as
     ];
   }
 
-  const total = await context.entities.InputInvoice.count({ where });
-
-  const invoices = await context.entities.InputInvoice.findMany({
-    where,
-    include: {
-      createdBy: { select: { id: true, fullName: true, email: true } },
-      confirmedBy: { select: { id: true, fullName: true, email: true } },
-      ocrTask: true,
-    },
-    orderBy: [
-      { invoiceDate: 'desc' },
-      { createdAt: 'desc' },
-    ],
-    skip: (page - 1) * limit,
-    take: limit,
-  });
+  const [total, invoices, processing, pending, confirmed, error] = await Promise.all([
+    context.entities.InputInvoice.count({ where }),
+    context.entities.InputInvoice.findMany({
+      where,
+      include: {
+        createdBy: { select: { id: true, fullName: true, email: true } },
+        confirmedBy: { select: { id: true, fullName: true, email: true } },
+        ocrTask: true,
+      },
+      orderBy: [
+        { invoiceDate: 'desc' },
+        { createdAt: 'desc' },
+      ],
+      skip: (page - 1) * limit,
+      take: limit,
+    }),
+    context.entities.InputInvoice.count({ where: { ...where, status: 'PROCESSING' } }),
+    context.entities.InputInvoice.count({ where: { ...where, status: 'PENDING' } }),
+    context.entities.InputInvoice.count({ where: { ...where, status: 'CONFIRMED' } }),
+    context.entities.InputInvoice.count({ where: { ...where, status: 'ERROR' } }),
+  ]);
 
   const summary = {
     total,
-    processing: invoices.filter((i: any) => i.status === 'PROCESSING').length,
-    pending: invoices.filter((i: any) => i.status === 'PENDING').length,
-    confirmed: invoices.filter((i: any) => i.status === 'CONFIRMED').length,
-    error: invoices.filter((i: any) => i.status === 'ERROR').length,
+    processing,
+    pending,
+    confirmed,
+    error,
   };
 
   return {

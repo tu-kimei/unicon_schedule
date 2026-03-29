@@ -16,13 +16,14 @@ interface UploadModalProps {
 }
 
 export const UploadModal = ({ isOpen, onClose, onUploadDone }: UploadModalProps) => {
-  const [company, setCompany] = useState<Company>('UNICON');
+  const [company, setCompany] = useState<Company | ''>('');
   const [files, setFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const reset = () => {
+    setCompany('');
     setFiles([]);
     setError(null);
     setUploading(false);
@@ -43,6 +44,11 @@ export const UploadModal = ({ isOpen, onClose, onUploadDone }: UploadModalProps)
   };
 
   const handleUpload = async () => {
+    if (!company) {
+      setError('Vui lòng chọn công ty trước khi upload');
+      return;
+    }
+
     if (files.length === 0) {
       setError('Vui lòng chọn ít nhất 1 file');
       return;
@@ -92,7 +98,6 @@ export const UploadModal = ({ isOpen, onClose, onUploadDone }: UploadModalProps)
   return (
     <Modal isOpen={isOpen} onClose={handleClose} title="📤 Upload chứng từ đầu vào">
       <div className="space-y-4">
-        {/* Company Selector */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Công ty *</label>
           <div className="flex gap-3">
@@ -114,9 +119,9 @@ export const UploadModal = ({ isOpen, onClose, onUploadDone }: UploadModalProps)
               </button>
             ))}
           </div>
+          {!company && <p className="text-xs text-amber-600 mt-2">Bắt buộc chọn công ty rõ ràng, không tự default.</p>}
         </div>
 
-        {/* File Drop Zone */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Chọn file (ảnh/PDF)</label>
           <div
@@ -139,7 +144,6 @@ export const UploadModal = ({ isOpen, onClose, onUploadDone }: UploadModalProps)
           />
         </div>
 
-        {/* File List */}
         {files.length > 0 && (
           <div className="space-y-2">
             <div className="text-sm font-medium text-gray-700">{files.length} file đã chọn</div>
@@ -163,14 +167,12 @@ export const UploadModal = ({ isOpen, onClose, onUploadDone }: UploadModalProps)
           </div>
         )}
 
-        {/* Error */}
         {error && (
           <div className="bg-red-50 border border-red-200 rounded-lg p-3">
             <p className="text-sm text-red-600">{error}</p>
           </div>
         )}
 
-        {/* Actions */}
         <div className="flex justify-end gap-3 pt-2">
           <button
             onClick={handleClose}
@@ -181,7 +183,7 @@ export const UploadModal = ({ isOpen, onClose, onUploadDone }: UploadModalProps)
           </button>
           <button
             onClick={handleUpload}
-            disabled={uploading || files.length === 0}
+            disabled={uploading || files.length === 0 || !company}
             className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50"
           >
             {uploading ? (

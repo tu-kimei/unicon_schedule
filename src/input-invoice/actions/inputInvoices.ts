@@ -8,6 +8,12 @@ import { HttpError } from 'wasp/server';
 import { parseInputInvoiceWith9RouterVision } from '../services/ocr';
 
 const ALLOWED_ROLES = ['ADMIN', 'ACCOUNTING'];
+const REQUIRED_CONFIRM_FIELDS = [
+  { key: 'invoiceNumber', label: 'Số hoá đơn' },
+  { key: 'invoiceDate', label: 'Ngày hoá đơn' },
+  { key: 'supplierName', label: 'Nhà cung cấp' },
+  { key: 'totalAmount', label: 'Tổng thanh toán' },
+] as const;
 
 function assertPermission(context: any) {
   if (!context.user) {
@@ -23,6 +29,16 @@ function toDateOrNull(value?: string | null) {
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return null;
   return d;
+}
+
+function isEmptyValue(value: unknown) {
+  if (value === null || value === undefined) return true;
+  if (typeof value === 'string') return value.trim() === '';
+  return false;
+}
+
+function getMissingConfirmFields(invoice: any) {
+  return REQUIRED_CONFIRM_FIELDS.filter((field) => isEmptyValue(invoice[field.key])).map((field) => field.label);
 }
 
 type CreatePayload = {
@@ -93,7 +109,6 @@ export const createInputInvoice: CreateInputInvoice<CreatePayload, any> = async 
     include: { ocrTask: true },
   });
 
-  // Phase 1 OCR async-like flow (currently inline scaffold)
   const started = Date.now();
   const ocr = await parseInputInvoiceWith9RouterVision({
     fileUrls: created.fileUrls,
@@ -208,6 +223,11 @@ export const confirmInputInvoice: ConfirmInputInvoice<{ id: string }, any> = asy
 
   if (!existing) {
     throw new HttpError(404, 'Không tìm thấy chứng từ đầu vào');
+  }
+
+  const missingFields = getMissingConfirmFields(existing);
+  if (missingFields.length > 0) {
+    throw new HttpError(400, `Chưa thể xác nhận. Vui lòng bổ sung: ${missingFields.join(', ')}`);
   }
 
   const user = context.user!;
