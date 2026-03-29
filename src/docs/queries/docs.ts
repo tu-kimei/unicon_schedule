@@ -21,7 +21,41 @@ const DOC_GROUPS: {
   basePath: string;
   pattern?: RegExp;
   rootFiles?: string[];
+  multiSource?: { basePath: string; files: string[]; prefix?: string }[];
 }[] = [
+  {
+    key: 'input-invoice',
+    label: 'Hoá đơn đầu vào',
+    icon: '🧾',
+    basePath: '', // unused when multiSource is set
+    multiSource: [
+      {
+        basePath: path.join(AGENTS_BASE, 'ba', 'specs'),
+        files: ['INV-001-input-invoice.md'],
+        prefix: 'BA',
+      },
+      {
+        basePath: path.join(AGENTS_BASE, 'architect', 'designs'),
+        files: ['INV-001-architecture.md', 'INV-001-ui-ux-spec.md'],
+        prefix: 'Architect',
+      },
+      {
+        basePath: path.join(AGENTS_BASE, 'dev'),
+        files: ['INV-001-dev-handoff.md', 'INV-001-fix-handoff.md'],
+        prefix: 'Dev',
+      },
+      {
+        basePath: path.join(AGENTS_BASE, 'qa', 'reports'),
+        files: ['INV-001-smoke-test-results.md', 'INV-001-retest-results.md', 'INV-001-test-cases.md'],
+        prefix: 'QA',
+      },
+      {
+        basePath: path.join(AGENTS_BASE, 'pm', 'sprints'),
+        files: ['INV-001-orchestration.md', 'INV-001-po-decisions.md'],
+        prefix: 'PM',
+      },
+    ],
+  },
   {
     key: 'core',
     label: 'Core',
@@ -139,6 +173,27 @@ function scanDir(dirPath: string, rootFiles?: string[]): { relativePath: string;
   return results;
 }
 
+function scanMultiSource(sources: { basePath: string; files: string[]; prefix?: string }[]): { relativePath: string; name: string }[] {
+  const results: { relativePath: string; name: string }[] = [];
+
+  for (const source of sources) {
+    for (const fileName of source.files) {
+      const fullPath = path.join(source.basePath, fileName);
+      if (fs.existsSync(fullPath) && fs.statSync(fullPath).isFile()) {
+        const displayName = source.prefix
+          ? `${source.prefix} / ${fileName.replace(/\.md$/, '')}`
+          : fileName.replace(/\.md$/, '');
+        results.push({
+          relativePath: `${source.basePath}::${fileName}`,
+          name: displayName,
+        });
+      }
+    }
+  }
+
+  return results;
+}
+
 function humanizeName(name: string): string {
   return name
     .replace(/^\d+_?/, '')
@@ -160,7 +215,14 @@ export const getDocsList: GetDocsList<Record<string, never>, any> = async (_args
   const groups: any[] = [];
 
   for (const groupDef of DOC_GROUPS) {
-    const files = scanDir(groupDef.basePath, groupDef.rootFiles);
+    let files: { relativePath: string; name: string }[];
+
+    if (groupDef.multiSource) {
+      files = scanMultiSource(groupDef.multiSource);
+    } else {
+      files = scanDir(groupDef.basePath, groupDef.rootFiles);
+    }
+
     if (files.length === 0) continue;
 
     groups.push({
@@ -169,7 +231,7 @@ export const getDocsList: GetDocsList<Record<string, never>, any> = async (_args
       icon: groupDef.icon,
       files: files.map(f => ({
         path: `${groupDef.key}::${f.relativePath}`,
-        name: humanizeName(f.name),
+        name: groupDef.multiSource ? f.name : humanizeName(f.name),
         group: groupDef.key,
         groupLabel: groupDef.label,
       })),
@@ -198,10 +260,26 @@ export const getDocContent: GetDocContent<{ path: string }, any> = async (args, 
     throw new HttpError(404, 'Nhóm tài liệu không tồn tại');
   }
 
-  // Security: prevent path traversal
-  const resolved = path.resolve(groupDef.basePath, relativePath);
-  if (!resolved.startsWith(groupDef.basePath)) {
-    throw new HttpError(403, 'Truy cập không hợp lệ');
+  let resolved: string;
+
+  if (groupDef.multiSource && relativePath.includes('::')) {
+    // For multiSource: path format is "basePath::fileName"
+    const [basePart, filePart] = relativePath.split('::');
+    resolved = path.resolve(basePart, filePart);
+  } else {
+    // Standard single-source path
+    resolved = path.resolve(groupDef.basePath, relativePath);
+    if (!resolved.startsWith(groupDef.basePath)) {
+      throw new HttpError(403, 'Truy cập không hợp lệ');
+    }
+  }
+
+  // Additional security check for multiSource paths
+  if (groupDef.multiSource) {
+    const isAllowed = groupDef.multiSource.some(src => resolved.startsWith(src.basePath));
+    if (!isAllowed) {
+      throw new HttpError(403, 'Truy cập không hợp lệ');
+    }
   }
 
   if (!fs.existsSync(resolved) || !fs.statSync(resolved).isFile()) {
