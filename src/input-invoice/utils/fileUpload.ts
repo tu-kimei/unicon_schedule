@@ -12,7 +12,22 @@ const getProjectRoot = () => {
 };
 
 const PROJECT_ROOT = getProjectRoot();
-const UPLOAD_DIR = path.join(PROJECT_ROOT, 'public', 'uploads', 'input-invoices');
+
+function resolveUploadDir() {
+  if (process.env.INPUT_INVOICE_UPLOAD_DIR) {
+    return process.env.INPUT_INVOICE_UPLOAD_DIR;
+  }
+
+  // Production static is served by nginx from /var/www/schedule.unicon.ltd
+  if (process.env.NODE_ENV === 'production') {
+    return '/var/www/schedule.unicon.ltd/uploads/input-invoices';
+  }
+
+  // Local dev fallback
+  return path.join(PROJECT_ROOT, 'public', 'uploads', 'input-invoices');
+}
+
+const UPLOAD_DIR = resolveUploadDir();
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const ALLOWED_MIME_TYPES = [
   'image/jpeg',
@@ -52,12 +67,21 @@ export const inputInvoiceUpload = multer({
 });
 
 export function filePathToUrl(filePath: string): string {
-  const publicIndex = filePath.indexOf('public');
-  if (publicIndex !== -1) {
-    const relativePath = filePath.substring(publicIndex + 6);
-    return relativePath.startsWith('/') ? relativePath : `/${relativePath}`;
+  const normalized = filePath.replace(/\\/g, '/');
+
+  // Production path mapping: /var/www/schedule.unicon.ltd/uploads/... -> /uploads/...
+  const prodBase = '/var/www/schedule.unicon.ltd';
+  if (normalized.startsWith(prodBase)) {
+    return normalized.substring(prodBase.length);
   }
-  return filePath;
+
+  // Dev path mapping: <repo>/public/uploads/... -> /uploads/...
+  const publicIndex = normalized.indexOf('/public/');
+  if (publicIndex !== -1) {
+    return normalized.substring(publicIndex + '/public'.length);
+  }
+
+  return normalized;
 }
 
 export function ensureInvoiceUploadDir(company: string, ym: string) {
