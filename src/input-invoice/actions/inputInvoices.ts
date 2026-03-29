@@ -110,9 +110,22 @@ export const createInputInvoice: CreateInputInvoice<CreatePayload, any> = async 
   });
 
   const started = Date.now();
+
+  // Resolve absolute file paths for local base64 encoding (production path)
+  const resolvedFilePaths = created.fileUrls.map((url: string) => {
+    if (process.env.NODE_ENV === 'production') {
+      // url = /uploads/input-invoices/company/YYYY-MM/filename.pdf
+      return `/var/www/schedule.unicon.ltd${url}`;
+    }
+    // Dev: <repo>/public/uploads/input-invoices/...
+    const projectRoot = process.cwd().replace(/\/.wasp\/out\/server.*$/, '');
+    return `${projectRoot}/public${url}`;
+  });
+
   const ocr = await parseInputInvoiceWith9RouterVision({
-    fileUrls: created.fileUrls,
+    fileUrls: created.fileUrls.map((url: string) => `https://schedule.unicon.ltd${url}`),
     fileNames: created.fileNames,
+    filePaths: resolvedFilePaths,
   });
 
   const extracted = ocr.data || {};
