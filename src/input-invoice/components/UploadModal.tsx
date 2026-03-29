@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { getSessionId } from 'wasp/client/api';
 import { Modal } from '../../debt/components/Modal';
 
 type Company = 'KHANH_HUY' | 'UNICON';
@@ -62,10 +63,17 @@ export const UploadModal = ({ isOpen, onClose, onUploadDone }: UploadModalProps)
       formData.append('company', company);
       files.forEach((f) => formData.append('files', f));
 
+      const sessionId = getSessionId();
+
       const res = await fetch('/api/input-invoices/upload', {
         method: 'POST',
         body: formData,
         credentials: 'include',
+        headers: sessionId
+          ? {
+              Authorization: `Bearer ${sessionId}`,
+            }
+          : undefined,
       });
 
       if (!res.ok) {

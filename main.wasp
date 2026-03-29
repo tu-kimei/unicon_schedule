@@ -646,7 +646,8 @@ action markAllNotificationsRead {
 api uploadInputInvoiceFilesApi {
   fn: import { uploadInputInvoiceFiles } from "@src/input-invoice/api/uploadFiles",
   httpRoute: (POST, "/api/input-invoices/upload"),
-  entities: [User]
+  entities: [User],
+  auth: true
 }
 
 route InputInvoicesRoute { path: "/accounting/input-invoices", to: InputInvoicesPage }
