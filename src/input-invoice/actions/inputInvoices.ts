@@ -3,6 +3,7 @@ import type {
   UpdateInputInvoice,
   ConfirmInputInvoice,
   RetryInputInvoiceOCR,
+  DeleteInputInvoice,
 } from 'wasp/server/operations';
 import { HttpError } from 'wasp/server';
 import { parseInputInvoiceWith9RouterVision } from '../services/ocr';
@@ -335,4 +336,22 @@ export const retryInputInvoiceOCR: RetryInputInvoiceOCR<{ id: string }, any> = a
   });
 
   return updated;
+};
+
+export const deleteInputInvoice: DeleteInputInvoice<{ id: string }, { success: boolean }> = async ({ id }, context) => {
+  assertPermission(context);
+
+  const existing = await context.entities.InputInvoice.findUnique({
+    where: { id },
+  });
+
+  if (!existing) {
+    throw new HttpError(404, 'Không tìm thấy chứng từ đầu vào');
+  }
+
+  await context.entities.InputInvoice.delete({
+    where: { id },
+  });
+
+  return { success: true };
 };

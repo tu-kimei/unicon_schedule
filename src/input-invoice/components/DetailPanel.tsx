@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { InputInvoiceRecord } from '../types';
-import { updateInputInvoice, confirmInputInvoice, retryInputInvoiceOCR } from 'wasp/client/operations';
+import { updateInputInvoice, confirmInputInvoice, retryInputInvoiceOCR, deleteInputInvoice } from 'wasp/client/operations';
 
 interface DetailPanelProps {
   invoice: InputInvoiceRecord | null;
@@ -86,6 +86,20 @@ export const DetailPanel = ({ invoice, onClose, onUpdate }: DetailPanelProps) =>
   const cancelEdit = () => {
     setForm(null);
     setEditing(false);
+  };
+
+  const handleDelete = async () => {
+    if (!window.confirm(`Xoá chứng từ này?\n\nHành động không thể hoàn tác.`)) return;
+    setSaving(true);
+    try {
+      await deleteInputInvoice({ id: invoice.id });
+      onClose();
+      onUpdate();
+    } catch (e: any) {
+      alert(`Lỗi xoá: ${e.message}`);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const saveEdit = async () => {
@@ -357,8 +371,17 @@ export const DetailPanel = ({ invoice, onClose, onUpdate }: DetailPanelProps) =>
         </div>
 
         <div className="hidden md:flex items-center justify-between px-6 py-4 border-t bg-gray-50">
-          <div className="text-xs text-gray-500">
-            {invoice.ocrTask && `OCR: ${invoice.ocrTask.provider} • ${invoice.ocrTask.retryCount} retries`}
+          <div className="flex items-center gap-3">
+            <div className="text-xs text-gray-500">
+              {invoice.ocrTask && `OCR: ${invoice.ocrTask.provider} • ${invoice.ocrTask.retryCount} retries`}
+            </div>
+            <button
+              onClick={handleDelete}
+              disabled={saving}
+              className="px-3 py-1.5 text-sm text-red-600 border border-red-200 rounded hover:bg-red-50 disabled:opacity-50"
+            >
+              🗑 Xoá
+            </button>
           </div>
           <div className="flex gap-2">
             {invoice.status === 'ERROR' && (
@@ -381,6 +404,13 @@ export const DetailPanel = ({ invoice, onClose, onUpdate }: DetailPanelProps) =>
 
         <div className="md:hidden fixed bottom-0 left-0 right-0 z-[55] border-t bg-white p-3 shadow-[0_-4px_12px_rgba(0,0,0,0.08)]">
           <div className="flex gap-2">
+            <button
+              onClick={handleDelete}
+              disabled={saving}
+              className="px-3 py-2 text-sm text-red-600 border border-red-200 rounded disabled:opacity-50"
+            >
+              🗑
+            </button>
             {invoice.status === 'ERROR' && (
               <button onClick={handleRetryOCR} disabled={saving} className="flex-1 px-3 py-2 text-sm bg-orange-600 text-white rounded disabled:opacity-50">
                 Retry OCR

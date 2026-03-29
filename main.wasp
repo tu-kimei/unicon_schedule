@@ -690,6 +690,11 @@ action retryInputInvoiceOCR {
   fn: import { retryInputInvoiceOCR } from "@src/input-invoice/actions/inputInvoices",
   entities: [InputInvoice, InputInvoiceOCRTask, InputVendor, User]
 }
+
+action deleteInputInvoice {
+  fn: import { deleteInputInvoice } from "@src/input-invoice/actions/inputInvoices",
+  entities: [InputInvoice, InputInvoiceOCRTask, InputVendor, User]
+}
 // #endregion Input Invoices
 
 // #region Fuel Logs
