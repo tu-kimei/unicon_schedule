@@ -769,3 +769,21 @@ page DriverDashboardPage {
 }
 
 // #endregion Driver Portal
+
+// #region Documentation
+route DocsRoute { path: "/docs", to: DocsPage }
+page DocsPage {
+  authRequired: true,
+  component: import { DocsPage } from "@src/docs/pages/DocsPage"
+}
+
+query getDocsList {
+  fn: import { getDocsList } from "@src/docs/queries/docs",
+  entities: [User]
+}
+
+query getDocContent {
+  fn: import { getDocContent } from "@src/docs/queries/docs",
+  entities: [User]
+}
+// #endregion Documentation
