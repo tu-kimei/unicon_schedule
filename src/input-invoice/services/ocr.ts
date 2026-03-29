@@ -299,6 +299,7 @@ export async function parseInputInvoiceWith9RouterVision(params: {
         messages,
         max_tokens: 2000,
         temperature: 0.1,
+        stream: false, // Explicitly request non-streaming
       }),
     });
 
@@ -313,8 +314,34 @@ export async function parseInputInvoiceWith9RouterVision(params: {
       };
     }
 
-    const result = await response.json();
-    const content = result.choices?.[0]?.message?.content || '';
+    // Handle both streaming and non-streaming responses
+    const contentType = response.headers.get('content-type') || '';
+    let content = '';
+    let usage: any = null;
+
+    if (contentType.includes('text/event-stream')) {
+      // SSE streaming — parse events
+      const text = await response.text();
+      const lines = text.split('\n');
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const dataStr = line.substring(6).trim();
+          if (dataStr && dataStr !== '[DONE]') {
+            try {
+              const chunk = JSON.parse(dataStr);
+              const delta = chunk.choices?.[0]?.delta?.content;
+              if (delta) content += delta;
+              if (chunk.usage) usage = chunk.usage;
+            } catch { /* skip parse errors */ }
+          }
+        }
+      }
+    } else {
+      // Regular JSON response
+      const result = await response.json();
+      content = result.choices?.[0]?.message?.content || '';
+      usage = result.usage || null;
+    }
 
     console.log('[OCR] Raw response content:', content.slice(0, 500));
 
@@ -371,7 +398,7 @@ export async function parseInputInvoiceWith9RouterVision(params: {
       confidence,
       raw: {
         model: ROUTER9_MODEL,
-        usage: result.usage,
+        usage,
         parsedFields: parsed,
       },
     };
