@@ -192,6 +192,10 @@ model User {
   createdInvoices       Invoice[]            @relation("InvoiceCreatedBy")
   createdPayments       DebtPayment[]        @relation("PaymentCreatedBy")
   notifications         Notification[]
+  
+  // InputInvoice relations
+  createdInputInvoices    InputInvoice[]      @relation("InputInvoiceCreatedBy")
+  confirmedInputInvoices  InputInvoice[]      @relation("InputInvoiceConfirmedBy")
 
   @@map("users")
 }
@@ -720,3 +724,168 @@ enum ReferenceType {
   REF_INVOICE
   REF_DOCUMENT
 }
+
+// ============================================================================
+// INPUT INVOICE ENUMS (Hoá đơn đầu vào)
+// ============================================================================
+
+enum InputInvoiceType {
+  EXPENSE
+  PURCHASE
+  SERVICE
+  FUEL
+  MAINTENANCE
+  UTILITIES
+  OTHER
+}
+
+enum InputInvoiceStatus {
+  PROCESSING
+  PENDING
+  CONFIRMED
+  ERROR
+}
+
+enum InputInvoiceOCRStatus {
+  PENDING
+  PROCESSING
+  SUCCESS
+  PARTIAL
+  FAILED
+}
+
+enum InputVendorStatus {
+  ACTIVE
+  INACTIVE
+}
+
+// ============================================================================
+// INPUT INVOICE MODELS
+// ============================================================================
+
+model InputVendor {
+  id                  String              @id @default(uuid())
+  
+  // Basic Info
+  name                String
+  taxCode             String?
+  email               String?
+  phone               String?
+  address             String?             @db.Text
+  
+  // Company
+  company             VehicleCompany
+  invoiceTypes        InputInvoiceType[]  @default([])
+  
+  // Status & Dates
+  status              InputVendorStatus   @default(ACTIVE)
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  
+  // Relations
+  inputInvoices       InputInvoice[]
+  
+  @@map("input_vendors")
+  @@index([company])
+  @@index([status])
+}
+
+model InputInvoice {
+  id                  String              @id @default(uuid())
+  
+  // Company & Vendor
+  company             VehicleCompany
+  vendorId            String?
+  invoiceType         InputInvoiceType
+  
+  // Invoice Info (PO-confirmed fields)
+  invoiceNumber       String?             // Số hoá đơn
+  invoiceSymbol       String?             // Ký hiệu hoá đơn
+  invoiceDate         DateTime?           // Ngày hoá đơn
+  
+  // Supplier Info
+  supplierName        String?             // Tên NCC
+  supplierTaxCode     String?             // MST NCC
+  
+  // Amount
+  subtotal            Decimal?            @db.Decimal(15, 2) // Tổng trước VAT
+  taxRate             Decimal?            @db.Decimal(5, 2)  // VAT %
+  taxAmount           Decimal?            @db.Decimal(15, 2) // Tiền VAT
+  totalAmount         Decimal?            @db.Decimal(15, 2) // Tổng thanh toán
+  currency            String              @default("VND")
+  
+  // Additional Details (PO optional fields)
+  description         String?             @db.Text   // Nội dung hàng hoá/dịch vụ
+  vehiclePlate        String?             // Biển số xe (optional)
+  buyerName           String?             // Tên người mua (optional)
+  notes               String?             @db.Text
+  
+  // OCR Pipeline
+  ocrStatus           InputInvoiceOCRStatus @default(PENDING)
+  ocrConfidence       Decimal?            @db.Decimal(5, 2)
+  ocrResult           Json?
+  ocrErrorMsg         String?             @db.Text
+  
+  // File Storage
+  fileUrls            String[]
+  fileNames           String[]
+  mimeTypes           String[]
+  fileSizes           Int[]
+  
+  // Status & Workflow
+  status              InputInvoiceStatus  @default(PROCESSING)
+  
+  // Confirm/Approval Info
+  confirmedById       String?
+  confirmedAt         DateTime?
+  
+  // Metadata
+  createdById         String
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  
+  // Relations
+  vendor              InputVendor?        @relation(fields: [vendorId], references: [id])
+  createdBy           User                @relation("InputInvoiceCreatedBy", fields: [createdById], references: [id])
+  confirmedBy         User?               @relation("InputInvoiceConfirmedBy", fields: [confirmedById], references: [id])
+  ocrTask             InputInvoiceOCRTask?
+  
+  @@map("input_invoices")
+  @@index([company, status])
+  @@index([company, invoiceDate])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model InputInvoiceOCRTask {
+  id                  String              @id @default(uuid())
+  inputInvoiceId      String              @unique
+  
+  // Task Info
+  provider            String              @default("9router_vision")
+  taskId              String?
+  
+  // Processing Timeline
+  startedAt           DateTime?
+  completedAt         DateTime?
+  processingTimeMs    Int?
+  
+  // Retry Logic
+  retryCount          Int                 @default(0)
+  maxRetries          Int                 @default(3)
+  lastRetryAt         DateTime?
+  nextRetryAt         DateTime?
+  
+  // Result
+  extractedData       Json?
+  rawResponse         Json?
+  
+  // Relations
+  inputInvoice        InputInvoice        @relation(fields: [inputInvoiceId], references: [id], onDelete: Cascade)
+  
+  @@map("input_invoice_ocr_tasks")
+  @@index([inputInvoiceId])
+}
+
+
+

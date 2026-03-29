@@ -185,6 +185,15 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                       <span>Hóa đơn</span>
                     </Link>
 
+                    {/* Input Invoices */}
+                    <Link to="/accounting/input-invoices" className={navLinkClass('/accounting/input-invoices')} onClick={onClose}>
+                      <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 8h10M7 12h10M7 16h6" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 3h7l5 5v13a1 1 0 01-1 1H7a2 2 0 01-2-2V5a2 2 0 012-2z" />
+                      </svg>
+                      <span>Hoá đơn đầu vào</span>
+                    </Link>
+
                     {/* Fuel & Repair Dashboard */}
                     <Link to="/dashboard/fuel-repair" className={navLinkClass('/dashboard/fuel-repair')} onClick={onClose}>
                       <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">

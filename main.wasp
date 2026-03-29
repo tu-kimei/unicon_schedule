@@ -642,6 +642,55 @@ action markAllNotificationsRead {
 
 // #endregion Notifications
 
+// #region Input Invoices
+api uploadInputInvoiceFilesApi {
+  fn: import { uploadInputInvoiceFiles } from "@src/input-invoice/api/uploadFiles",
+  httpRoute: (POST, "/api/input-invoices/upload"),
+  entities: [User]
+}
+
+route InputInvoicesRoute { path: "/accounting/input-invoices", to: InputInvoicesPage }
+page InputInvoicesPage {
+  authRequired: true,
+  component: import { InputInvoicesPage } from "@src/input-invoice/pages/InputInvoicesPage"
+}
+
+query getInputInvoices {
+  fn: import { getInputInvoices } from "@src/input-invoice/queries/inputInvoices",
+  entities: [InputInvoice, InputInvoiceOCRTask, InputVendor, User]
+}
+
+query getInputInvoice {
+  fn: import { getInputInvoice } from "@src/input-invoice/queries/inputInvoices",
+  entities: [InputInvoice, InputInvoiceOCRTask, InputVendor, User]
+}
+
+query exportInputInvoices {
+  fn: import { exportInputInvoices } from "@src/input-invoice/queries/inputInvoices",
+  entities: [InputInvoice, InputInvoiceOCRTask, InputVendor, User]
+}
+
+action createInputInvoice {
+  fn: import { createInputInvoice } from "@src/input-invoice/actions/inputInvoices",
+  entities: [InputInvoice, InputInvoiceOCRTask, InputVendor, User]
+}
+
+action updateInputInvoice {
+  fn: import { updateInputInvoice } from "@src/input-invoice/actions/inputInvoices",
+  entities: [InputInvoice, InputInvoiceOCRTask, InputVendor, User]
+}
+
+action confirmInputInvoice {
+  fn: import { confirmInputInvoice } from "@src/input-invoice/actions/inputInvoices",
+  entities: [InputInvoice, InputInvoiceOCRTask, InputVendor, User]
+}
+
+action retryInputInvoiceOCR {
+  fn: import { retryInputInvoiceOCR } from "@src/input-invoice/actions/inputInvoices",
+  entities: [InputInvoice, InputInvoiceOCRTask, InputVendor, User]
+}
+// #endregion Input Invoices
+
 // #region Fuel Logs
 route FuelLogsRoute { path: "/fuel", to: FuelLogsPage }
 page FuelLogsPage {
