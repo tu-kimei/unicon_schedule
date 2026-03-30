@@ -642,6 +642,130 @@ action markAllNotificationsRead {
 
 // #endregion Notifications
 
+// #region Input Invoices
+api uploadInputInvoiceFilesApi {
+  fn: import { uploadInputInvoiceFiles } from "@src/input-invoice/api/uploadFiles",
+  httpRoute: (POST, "/api/input-invoices/upload"),
+  entities: [User],
+  auth: true
+}
+
+route InputInvoicesRoute { path: "/accounting/input-invoices", to: InputInvoicesPage }
+page InputInvoicesPage {
+  authRequired: true,
+  component: import { InputInvoicesPage } from "@src/input-invoice/pages/InputInvoicesPage"
+}
+
+query getInputInvoices {
+  fn: import { getInputInvoices } from "@src/input-invoice/queries/inputInvoices",
+  entities: [InputInvoice, InputInvoiceOCRTask, InputVendor, User]
+}
+
+query getInputInvoice {
+  fn: import { getInputInvoice } from "@src/input-invoice/queries/inputInvoices",
+  entities: [InputInvoice, InputInvoiceOCRTask, InputVendor, User]
+}
+
+query exportInputInvoices {
+  fn: import { exportInputInvoices } from "@src/input-invoice/queries/inputInvoices",
+  entities: [InputInvoice, InputInvoiceOCRTask, InputVendor, User]
+}
+
+action createInputInvoice {
+  fn: import { createInputInvoice } from "@src/input-invoice/actions/inputInvoices",
+  entities: [InputInvoice, InputInvoiceOCRTask, InputVendor, User]
+}
+
+action updateInputInvoice {
+  fn: import { updateInputInvoice } from "@src/input-invoice/actions/inputInvoices",
+  entities: [InputInvoice, InputInvoiceOCRTask, InputVendor, User]
+}
+
+action confirmInputInvoice {
+  fn: import { confirmInputInvoice } from "@src/input-invoice/actions/inputInvoices",
+  entities: [InputInvoice, InputInvoiceOCRTask, InputVendor, User]
+}
+
+action retryInputInvoiceOCR {
+  fn: import { retryInputInvoiceOCR } from "@src/input-invoice/actions/inputInvoices",
+  entities: [InputInvoice, InputInvoiceOCRTask, InputVendor, User]
+}
+
+action deleteInputInvoice {
+  fn: import { deleteInputInvoice } from "@src/input-invoice/actions/inputInvoices",
+  entities: [InputInvoice, InputInvoiceOCRTask, InputVendor, User]
+}
+// #endregion Input Invoices
+
+// #region Fuel Logs
+route FuelLogsRoute { path: "/fuel", to: FuelLogsPage }
+page FuelLogsPage {
+  authRequired: true,
+  component: import { FuelLogsPage } from "@src/fuel/pages/FuelLogsPage"
+}
+
+query getFuelLogs {
+  fn: import { getFuelLogs } from "@src/server/fuel/operations",
+  entities: [User]
+}
+
+action updateFuelLogStatus {
+  fn: import { updateFuelLogStatus } from "@src/server/fuel/operations",
+  entities: [User]
+}
+
+action updateFuelLog {
+  fn: import { updateFuelLog } from "@src/server/fuel/operations",
+  entities: [User]
+}
+
+action deleteFuelLog {
+  fn: import { deleteFuelLog } from "@src/server/fuel/operations",
+  entities: [User]
+}
+// #endregion Fuel Logs
+
+// #region Repair Logs
+route RepairLogsRoute { path: "/repair", to: RepairLogsPage }
+page RepairLogsPage {
+  authRequired: true,
+  component: import { RepairLogsPage } from "@src/repair/pages/RepairLogsPage"
+}
+
+query getRepairLogs {
+  fn: import { getRepairLogs } from "@src/server/repair/operations",
+  entities: [User]
+}
+
+action updateRepairLogStatus {
+  fn: import { updateRepairLogStatus } from "@src/server/repair/operations",
+  entities: [User]
+}
+
+action updateRepairLog {
+  fn: import { updateRepairLog } from "@src/server/repair/operations",
+  entities: [User]
+}
+
+action deleteRepairLog {
+  fn: import { deleteRepairLog } from "@src/server/repair/operations",
+  entities: [User]
+}
+// #endregion Repair Logs
+
+// #region Fuel & Repair Dashboard
+route FuelRepairDashboardRoute { path: "/dashboard/fuel-repair", to: FuelRepairDashboardPage }
+page FuelRepairDashboardPage {
+  authRequired: true,
+  component: import { FuelRepairDashboardPage } from "@src/dashboard/pages/FuelRepairDashboardPage"
+}
+
+query getDashboardStats {
+  fn: import { getDashboardStats } from "@src/server/dashboard/operations",
+  entities: [User]
+}
+// #endregion Fuel & Repair Dashboard
+
 // #region Driver Portal
 
 route DriverDashboardRoute { path: "/driver", to: DriverDashboardPage }
@@ -651,3 +775,21 @@ page DriverDashboardPage {
 }
 
 // #endregion Driver Portal
+
+// #region Documentation
+route DocsRoute { path: "/docs", to: DocsPage }
+page DocsPage {
+  authRequired: true,
+  component: import { DocsPage } from "@src/docs/pages/DocsPage"
+}
+
+query getDocsList {
+  fn: import { getDocsList } from "@src/docs/queries/docs",
+  entities: [User]
+}
+
+query getDocContent {
+  fn: import { getDocContent } from "@src/docs/queries/docs",
+  entities: [User]
+}
+// #endregion Documentation

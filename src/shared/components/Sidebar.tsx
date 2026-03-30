@@ -184,6 +184,23 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                       </svg>
                       <span>Hóa đơn</span>
                     </Link>
+
+                    {/* Input Invoices */}
+                    <Link to="/accounting/input-invoices" className={navLinkClass('/accounting/input-invoices')} onClick={onClose}>
+                      <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 8h10M7 12h10M7 16h6" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 3h7l5 5v13a1 1 0 01-1 1H7a2 2 0 01-2-2V5a2 2 0 012-2z" />
+                      </svg>
+                      <span>Hoá đơn đầu vào</span>
+                    </Link>
+
+                    {/* Fuel & Repair Dashboard */}
+                    <Link to="/dashboard/fuel-repair" className={navLinkClass('/dashboard/fuel-repair')} onClick={onClose}>
+                      <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 13h8V3H3v10zm10 8h8V11h-8v10zM3 21h8v-6H3v6zm10-12h8V3h-8v6z" />
+                      </svg>
+                      <span>Dashboard Chi phí</span>
+                    </Link>
                   </>
                 )}
 
@@ -211,6 +228,25 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                   </>
                 )}
 
+                {/* Fuel Logs Section */}
+                {(user.role === 'ADMIN' || user.role === 'ACCOUNTING' || user.role === 'OPS') && (
+                  <>
+                    {sectionHeader('Quản lý Xe')}
+
+                    {/* Fuel Logs */}
+                    <Link to="/fuel" className={navLinkClass('/fuel')} onClick={onClose}>
+                      <span className="text-lg leading-none">⛽</span>
+                      <span>Phiếu Đổ Dầu</span>
+                    </Link>
+
+                    {/* Repair Logs */}
+                    <Link to="/repair" className={navLinkClass('/repair')} onClick={onClose}>
+                      <span className="text-lg leading-none">🔧</span>
+                      <span>Phiếu Sửa Chữa</span>
+                    </Link>
+                  </>
+                )}
+
                 {/* Admin Section */}
                 {user.role === 'ADMIN' && (
                   <>
@@ -222,6 +258,21 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                       </svg>
                       <span>Quản lý người dùng</span>
+                    </Link>
+                  </>
+                )}
+
+                {/* Docs Section (ADMIN, OPS, ACCOUNTING, DISPATCHER) */}
+                {(user.role === 'ADMIN' || user.role === 'OPS' || user.role === 'ACCOUNTING' || user.role === 'DISPATCHER') && (
+                  <>
+                    {sectionHeader('Tài liệu')}
+
+                    {/* Documentation */}
+                    <Link to="/docs" className={navLinkClass('/docs')} onClick={onClose}>
+                      <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                      </svg>
+                      <span>Tài liệu</span>
                     </Link>
                   </>
                 )}
