@@ -19,7 +19,7 @@ export const getShipmentDocuments = async (
   const { user } = context;
 
   if (!user) {
-    throw new HttpError(401, 'Unauthorized');
+    throw new HttpError(401, 'Chưa đăng nhập');
   }
 
   // Validate shipment exists
@@ -29,7 +29,7 @@ export const getShipmentDocuments = async (
   });
 
   if (!shipment) {
-    throw new HttpError(404, 'Shipment không tồn tại');
+    throw new HttpError(404, 'Không tìm thấy chuyến hàng');
   }
 
   // Customer users can only see their own shipments' documents
@@ -38,7 +38,7 @@ export const getShipmentDocuments = async (
       (u: any) => u.id === user.id
     );
     if (!isCustomerUser) {
-      throw new HttpError(403, 'Bạn chỉ có thể xem tài liệu của shipment mình');
+      throw new HttpError(403, 'Bạn chỉ có thể xem chứng từ của chuyến hàng mình');
     }
   }
 

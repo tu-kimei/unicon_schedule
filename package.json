@@ -10,7 +10,9 @@
     "verify:excel": "tsx scripts/verify-excel-structure.ts",
     "extract:json": "tsx scripts/extract-all-data-to-json.ts",
     "migrate:json": "tsx scripts/migrate-from-json.ts",
-    "check:migration": "tsx scripts/check-migration-status.ts"
+    "check:migration": "tsx scripts/check-migration-status.ts",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@prisma/client": "5.19.1",
@@ -43,6 +45,7 @@
     "tsx": "^4.21.0",
     "typescript": "5.8.2",
     "typescript-eslint": "^8.32.1",
-    "vite": "^7.0.6"
+    "vite": "^7.0.6",
+    "vitest": "^4.1.0"
   }
 }

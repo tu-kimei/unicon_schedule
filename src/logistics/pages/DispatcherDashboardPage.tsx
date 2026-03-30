@@ -1,27 +1,36 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from 'wasp/client/operations';
+import { RoleGuard } from '../../shared/components/RoleGuard';
 import {
   getPendingShipments,
   getAvailableVehicles,
   getAvailableDrivers,
   getAllCustomers,
-  createDispatch,
+  getDriverTasks,
+  createDriverTask,
   createAndDispatchShipment,
 } from 'wasp/client/operations';
 import { Dialog } from '../../shared/components/Dialog';
 import { Button } from '../../shared/components/Button';
 
+// ============================================================================
+// Types
+// ============================================================================
+
 interface Shipment {
   id: string;
   shipmentNumber: string;
+  shipmentType?: string | null;
   priority: string;
   currentStatus: string;
+  operationStatus?: string;
   createdByType?: string | null;
   plannedStartDate: string;
   plannedEndDate: string;
   specialInstructions?: string | null;
   containerNumber?: string | null;
   containerType?: string | null;
+  createdAt: string;
   stops: Array<{ locationName: string; stopType: string; address: string }>;
   customer: { id: string; name: string };
 }
@@ -33,11 +42,13 @@ interface Vehicle {
   status: string;
 }
 
-interface Driver {
+interface DriverItem {
   id: string;
   fullName: string;
   status: string;
   user: { fullName: string };
+  defaultTractor?: Vehicle | null;
+  defaultTrailer?: Vehicle | null;
 }
 
 interface CustomerItem {
@@ -46,50 +57,80 @@ interface CustomerItem {
   status: string;
 }
 
-const priorityOrder: Record<string, number> = {
-  URGENT: 4,
-  HIGH: 3,
-  NORMAL: 2,
-  LOW: 1,
+interface DriverTaskItem {
+  id: string;
+  driverId: string;
+  sequence: number;
+  status: string;
+  instructions?: string;
+  startedAt?: string;
+  completedAt?: string;
+  driver: { id: string; fullName: string; user: { fullName: string } };
+  shipment: {
+    id: string;
+    shipmentNumber: string;
+    shipmentType?: string;
+    customer: { name: string };
+    stops: Array<{ locationName: string; stopType: string }>;
+  };
+  tractor: { licensePlate: string };
+  trailer?: { licensePlate: string } | null;
+}
+
+// ============================================================================
+// Stop templates for quick dispatch
+// ============================================================================
+
+const STOP_TEMPLATES: Record<string, { stopType: string; stopCategory: string; label: string }[]> = {
+  EXPORT: [
+    { stopType: 'DEPOT', stopCategory: 'PICKUP_EMPTY', label: 'Lấy container rỗng' },
+    { stopType: 'PICKUP', stopCategory: 'WAREHOUSE_LOAD', label: 'Đóng hàng tại kho' },
+    { stopType: 'PORT', stopCategory: 'PORT_DELIVERY', label: 'Giao tại cảng' },
+  ],
+  IMPORT: [
+    { stopType: 'PORT', stopCategory: 'PORT_PICKUP', label: 'Lấy hàng tại cảng' },
+    { stopType: 'DROPOFF', stopCategory: 'WAREHOUSE_UNLOAD', label: 'Dỡ hàng tại kho' },
+    { stopType: 'DEPOT', stopCategory: 'RETURN_EMPTY', label: 'Trả container rỗng' },
+  ],
 };
+
+// ============================================================================
+// Main Page
+// ============================================================================
 
 export const DispatcherDashboardPage = () => {
   const [selectedShipment, setSelectedShipment] = useState<Shipment | null>(null);
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [showQuickDispatchModal, setShowQuickDispatchModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   // Fetch data
-  const {
-    data: pendingShipments,
-    isLoading: shipmentsLoading,
-    refetch: refetchShipments,
-  } = useQuery(getPendingShipments);
-  const {
-    data: availableVehicles,
-    isLoading: vehiclesLoading,
-    refetch: refetchVehicles,
-  } = useQuery(getAvailableVehicles);
-  const {
-    data: availableDrivers,
-    isLoading: driversLoading,
-    refetch: refetchDrivers,
-  } = useQuery(getAvailableDrivers);
+  const { data: pendingShipments, isLoading: shipmentsLoading, refetch: refetchShipments } = useQuery(getPendingShipments);
+  const { data: availableVehicles, isLoading: vehiclesLoading, refetch: refetchVehicles } = useQuery(getAvailableVehicles);
+  const { data: availableDrivers, isLoading: driversLoading, refetch: refetchDrivers } = useQuery(getAvailableDrivers);
   const { data: allCustomers } = useQuery(getAllCustomers);
+  const { data: allDriverTasks, refetch: refetchTasks } = useQuery(getDriverTasks, {});
 
-  // Separate customer requests from internal shipments
-  const customerRequests = useMemo(
-    () =>
-      (pendingShipments || []).filter(
-        (s: Shipment) => s.createdByType === 'CUSTOMER' && s.currentStatus === 'DRAFT'
-      ),
-    [pendingShipments]
-  );
+  // Today's active tasks per driver
+  const todayTasksByDriver = useMemo(() => {
+    const grouped: Record<string, DriverTaskItem[]> = {};
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
 
-  const internalPending = useMemo(
-    () =>
-      (pendingShipments || []).filter(
-        (s: Shipment) => !(s.createdByType === 'CUSTOMER' && s.currentStatus === 'DRAFT')
-      ),
+    (allDriverTasks || []).forEach((task: DriverTaskItem) => {
+      if (!grouped[task.driverId]) {
+        grouped[task.driverId] = [];
+      }
+      grouped[task.driverId].push(task);
+    });
+    return grouped;
+  }, [allDriverTasks]);
+
+  // All pending shipments (DRAFT/READY)
+  const allPending = useMemo(
+    () => (pendingShipments || []) as Shipment[],
     [pendingShipments]
   );
 
@@ -102,37 +143,47 @@ export const DispatcherDashboardPage = () => {
     refetchShipments();
     refetchVehicles();
     refetchDrivers();
+    refetchTasks();
   };
 
-  const handleAssignDispatch = async (vehicleId: string, driverId: string, notes: string) => {
+  const handleAssignDriverTask = async (data: {
+    driverId: string;
+    tractorId: string;
+    trailerId?: string;
+    instructions?: string;
+  }) => {
     if (!selectedShipment) return;
 
     try {
-      await createDispatch({
+      const driverTasks = todayTasksByDriver[data.driverId] || [];
+      const maxSeq = driverTasks.reduce((max, t) => Math.max(max, t.sequence), 0);
+
+      await createDriverTask({
         shipmentId: selectedShipment.id,
-        vehicleId,
-        driverId,
-        notes,
+        driverId: data.driverId,
+        tractorId: data.tractorId,
+        trailerId: data.trailerId,
+        sequence: maxSeq + 1,
+        instructions: data.instructions,
       });
 
       setShowAssignModal(false);
       setSelectedShipment(null);
+      setSuccessMessage('Phân công tài xế thành công!');
+      setTimeout(() => setSuccessMessage(null), 4000);
       refetchAll();
     } catch (error: any) {
-      console.error('Failed to assign dispatch:', error);
-      alert(error?.message || 'Failed to assign dispatch. Please try again.');
+      console.error('Failed to create driver task:', error);
+      alert(error?.message || 'Không thể phân công tài xế. Vui lòng thử lại.');
     }
   };
 
   const handleQuickDispatchSubmit = async (data: any) => {
-    try {
-      await createAndDispatchShipment(data);
-      setShowQuickDispatchModal(false);
-      refetchAll();
-    } catch (error: any) {
-      console.error('Failed to create quick dispatch:', error);
-      alert(error?.message || 'Failed to create quick dispatch. Please try again.');
-    }
+    await createAndDispatchShipment(data);
+    setShowQuickDispatchModal(false);
+    setSuccessMessage('Tạo và điều phối chuyến hàng thành công!');
+    setTimeout(() => setSuccessMessage(null), 4000);
+    refetchAll();
   };
 
   const isLoading = shipmentsLoading || vehiclesLoading || driversLoading;
@@ -143,9 +194,9 @@ export const DispatcherDashboardPage = () => {
         <div className="max-w-7xl mx-auto">
           <div className="animate-pulse">
             <div className="h-8 bg-gray-200 rounded mb-6"></div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="h-96 bg-gray-200 rounded"></div>
-              <div className="h-96 bg-gray-200 rounded"></div>
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+              <div className="lg:col-span-3 h-96 bg-gray-200 rounded"></div>
+              <div className="lg:col-span-2 h-96 bg-gray-200 rounded"></div>
             </div>
           </div>
         </div>
@@ -154,188 +205,170 @@ export const DispatcherDashboardPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Dispatcher Dashboard</h1>
-              <p className="text-gray-600">Assign vehicles and drivers to shipments</p>
-            </div>
-            <Button onClick={() => setShowQuickDispatchModal(true)}>
-              + Tao & Dispatch nhanh
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-6 py-6">
-        {/* Customer Requests Section */}
-        {customerRequests.length > 0 && (
-          <div className="bg-white rounded-lg shadow mb-6 border-l-4 border-amber-400">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <div className="flex items-center gap-2">
-                <h2 className="text-xl font-semibold text-gray-900">
-                  Yeu cau tu Khach hang ({customerRequests.length})
-                </h2>
-                <span className="px-2 py-1 bg-amber-100 text-amber-800 text-xs font-medium rounded">
-                  Yeu cau tu KH
-                </span>
-              </div>
-              <p className="text-sm text-gray-600 mt-1">
-                Shipments created by customers awaiting dispatch
-              </p>
-            </div>
-
-            <div className="px-6 py-4 max-h-72 overflow-y-auto">
-              <div className="space-y-3">
-                {customerRequests.map((shipment: Shipment) => (
-                  <ShipmentCard
-                    key={shipment.id}
-                    shipment={shipment}
-                    onClick={() => handleShipmentClick(shipment)}
-                    isCustomerRequest
-                  />
-                ))}
-              </div>
-            </div>
+    <RoleGuard allowedRoles={['ADMIN', 'DISPATCHER']}>
+      <div className="min-h-screen bg-gray-50">
+        {/* Success Toast */}
+        {successMessage && (
+          <div className="fixed top-4 right-4 z-50 bg-primary-600 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-2 animate-fade-in">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+            {successMessage}
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Pending Shipments */}
-          <div className="bg-white rounded-lg shadow">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-xl font-semibold text-gray-900">
-                Pending Shipments ({internalPending.length})
-              </h2>
-              <p className="text-sm text-gray-600 mt-1">Shipments ready for dispatch</p>
-            </div>
-
-            <div className="px-6 py-4 max-h-96 overflow-y-auto">
-              {internalPending.length > 0 ? (
-                <div className="space-y-3">
-                  {internalPending.map((shipment: Shipment) => (
-                    <ShipmentCard
-                      key={shipment.id}
-                      shipment={shipment}
-                      onClick={() => handleShipmentClick(shipment)}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <p className="text-gray-500">No pending shipments</p>
-                </div>
-              )}
+        {/* Header */}
+        <div className="bg-white shadow">
+          <div className="max-w-7xl mx-auto px-6 py-4">
+            <div className="flex justify-between items-center">
+              <div>
+                <h1 className="text-2xl font-heading font-bold text-gray-900">Bảng điều phối</h1>
+                <p className="text-gray-600 text-sm mt-1">Phân công tài xế và quản lý chuyến</p>
+              </div>
+              <Button
+                onClick={() => setShowQuickDispatchModal(true)}
+                className="cursor-pointer transition-colors duration-200"
+              >
+                + Tạo & Điều phối nhanh
+              </Button>
             </div>
           </div>
+        </div>
 
-          {/* Resources */}
-          <div className="space-y-6">
-            {/* Available Vehicles */}
-            <div className="bg-white rounded-lg shadow">
+        {/* Main 2-column layout: 60% / 40% */}
+        <div className="max-w-7xl mx-auto px-6 py-6">
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+
+            {/* Left side (60%): Chuyến chờ điều phối */}
+            <div className="lg:col-span-3 bg-white rounded-lg shadow">
               <div className="px-6 py-4 border-b border-gray-200">
                 <h2 className="text-xl font-semibold text-gray-900">
-                  Available Vehicles ({availableVehicles?.length || 0})
+                  Chuyến chờ điều phối ({allPending.length})
                 </h2>
+                <p className="text-sm text-gray-600 mt-1">Nhấn "Gán tài xế" để phân công</p>
               </div>
-
-              <div className="px-6 py-4 max-h-48 overflow-y-auto">
-                {availableVehicles && availableVehicles.length > 0 ? (
-                  <div className="space-y-2">
-                    {availableVehicles.map((vehicle: Vehicle) => (
-                      <div key={vehicle.id} className="flex justify-between items-center py-2">
-                        <div>
-                          <p className="font-medium">{vehicle.licensePlate}</p>
-                          <p className="text-sm text-gray-600">
-                            {vehicle.vehicleType.replace('_', ' ')}
-                          </p>
-                        </div>
-                        <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded">
-                          Available
-                        </span>
-                      </div>
+              <div className="px-6 py-4 max-h-[calc(100vh-220px)] overflow-y-auto">
+                {allPending.length > 0 ? (
+                  <div className="space-y-3">
+                    {allPending.map((shipment: Shipment) => (
+                      <PendingShipmentCard
+                        key={shipment.id}
+                        shipment={shipment}
+                        onAssign={() => handleShipmentClick(shipment)}
+                      />
                     ))}
                   </div>
                 ) : (
-                  <p className="text-gray-500 text-center py-4">No vehicles available</p>
+                  <div className="text-center py-12">
+                    <svg className="w-12 h-12 mx-auto text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <p className="text-gray-500">Không có chuyến chờ điều phối</p>
+                  </div>
                 )}
               </div>
             </div>
 
-            {/* Available Drivers */}
-            <div className="bg-white rounded-lg shadow">
+            {/* Right side (40%): Danh sách tài xế */}
+            <div className="lg:col-span-2 bg-white rounded-lg shadow">
               <div className="px-6 py-4 border-b border-gray-200">
                 <h2 className="text-xl font-semibold text-gray-900">
-                  Available Drivers ({availableDrivers?.length || 0})
+                  Danh sách tài xế
                 </h2>
               </div>
-
-              <div className="px-6 py-4 max-h-48 overflow-y-auto">
-                {availableDrivers && availableDrivers.length > 0 ? (
+              <div className="px-4 py-4 max-h-[calc(100vh-220px)] overflow-y-auto">
+                {(availableDrivers || []).length > 0 ? (
                   <div className="space-y-2">
-                    {availableDrivers.map((driver: Driver) => (
-                      <div key={driver.id} className="flex justify-between items-center py-2">
-                        <div>
-                          <p className="font-medium">{driver.fullName}</p>
-                          <p className="text-sm text-gray-600">{driver.user?.fullName}</p>
+                    {(availableDrivers as DriverItem[] || []).map((driver) => {
+                      const driverTasks = todayTasksByDriver[driver.id] || [];
+                      const activeTasks = driverTasks.filter(
+                        (t) => t.status === 'PENDING' || t.status === 'IN_PROGRESS'
+                      );
+                      const isAvailable = activeTasks.length === 0;
+
+                      return (
+                        <div
+                          key={driver.id}
+                          className="flex items-center justify-between px-4 py-3 rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors duration-200"
+                        >
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium text-gray-900 truncate">
+                                {driver.fullName}
+                              </span>
+                              {driver.defaultTractor && (
+                                <span className="text-xs text-gray-500">
+                                  ({driver.defaultTractor.licensePlate})
+                                </span>
+                              )}
+                            </div>
+                            {driverTasks.length > 0 && (
+                              <p className="text-xs text-gray-500 mt-0.5 truncate">
+                                {driverTasks.map(t => t.shipment.shipmentNumber).join(', ')}
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex-shrink-0 ml-2">
+                            {isAvailable ? (
+                              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                Rảnh
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                Đang chạy ({activeTasks.length} chuyến)
+                              </span>
+                            )}
+                          </div>
                         </div>
-                        <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded">
-                          Active
-                        </span>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 ) : (
-                  <p className="text-gray-500 text-center py-4">No drivers available</p>
+                  <div className="text-center py-12">
+                    <p className="text-gray-500">Không có tài xế</p>
+                  </div>
                 )}
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Dispatch Assignment Modal */}
-      {showAssignModal && selectedShipment && (
-        <DispatchModal
-          shipment={selectedShipment}
-          vehicles={availableVehicles || []}
-          drivers={availableDrivers || []}
-          onAssign={handleAssignDispatch}
-          onClose={() => {
-            setShowAssignModal(false);
-            setSelectedShipment(null);
-          }}
+        {/* Assign Driver Task Modal */}
+        {showAssignModal && selectedShipment && (
+          <AssignDriverTaskModal
+            shipment={selectedShipment}
+            vehicles={(availableVehicles || []) as Vehicle[]}
+            drivers={(availableDrivers || []) as DriverItem[]}
+            onAssign={handleAssignDriverTask}
+            onClose={() => {
+              setShowAssignModal(false);
+              setSelectedShipment(null);
+            }}
+          />
+        )}
+
+        {/* Quick Dispatch Modal */}
+        <QuickDispatchModal
+          open={showQuickDispatchModal}
+          onClose={() => setShowQuickDispatchModal(false)}
+          onSubmit={handleQuickDispatchSubmit}
+          customers={(allCustomers || []) as CustomerItem[]}
+          vehicles={(availableVehicles || []) as Vehicle[]}
+          drivers={(availableDrivers || []) as DriverItem[]}
         />
-      )}
-
-      {/* Quick Dispatch Modal */}
-      <QuickDispatchModal
-        open={showQuickDispatchModal}
-        onClose={() => setShowQuickDispatchModal(false)}
-        onSubmit={handleQuickDispatchSubmit}
-        customers={allCustomers || []}
-        vehicles={availableVehicles || []}
-        drivers={availableDrivers || []}
-      />
-    </div>
+      </div>
+    </RoleGuard>
   );
 };
 
 // ============================================================================
-// Shipment Card Component
+// Pending Shipment Card
 // ============================================================================
 
-interface ShipmentCardProps {
+interface PendingShipmentCardProps {
   shipment: Shipment;
-  onClick: () => void;
-  isCustomerRequest?: boolean;
+  onAssign: () => void;
 }
 
-const ShipmentCard = ({ shipment, onClick, isCustomerRequest }: ShipmentCardProps) => {
+const PendingShipmentCard = ({ shipment, onAssign }: PendingShipmentCardProps) => {
   const formatDate = (dateStr: string) => {
     try {
       return new Date(dateStr).toLocaleDateString('vi-VN', {
@@ -349,85 +382,96 @@ const ShipmentCard = ({ shipment, onClick, isCustomerRequest }: ShipmentCardProp
   };
 
   return (
-    <div
-      onClick={onClick}
-      className="border border-gray-200 rounded-lg p-4 cursor-pointer hover:bg-gray-50 transition-colors"
-    >
+    <div className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors duration-200">
       <div className="flex justify-between items-start mb-2">
-        <div>
-          <div className="flex items-center gap-2">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2 flex-wrap">
             <h3 className="font-medium text-gray-900">{shipment.shipmentNumber}</h3>
-            {isCustomerRequest && (
-              <span className="px-2 py-0.5 bg-amber-100 text-amber-800 text-xs font-medium rounded">
-                Yeu cau tu KH
+            {shipment.shipmentType && (
+              <span className={`px-2 py-0.5 text-xs font-medium rounded ${
+                shipment.shipmentType === 'EXPORT'
+                  ? 'bg-green-100 text-green-800'
+                  : 'bg-purple-100 text-purple-800'
+              }`}>
+                {shipment.shipmentType === 'EXPORT' ? 'Xuất' : 'Nhập'}
               </span>
             )}
           </div>
-          <p className="text-sm text-gray-600">{shipment.customer?.name}</p>
+          <p className="text-sm text-gray-600 mt-0.5">{shipment.customer?.name}</p>
         </div>
-        <PriorityBadge priority={shipment.priority} />
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onAssign();
+          }}
+          className="px-3 py-1.5 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg cursor-pointer transition-colors duration-200 flex-shrink-0"
+        >
+          Gán tài xế
+        </button>
       </div>
-
-      <div className="text-sm text-gray-600 space-y-1">
-        <p>
-          {formatDate(shipment.plannedStartDate)} - {formatDate(shipment.plannedEndDate)}
-        </p>
-        <p>{shipment.stops.length} stops</p>
-        <p className="truncate">
-          {shipment.stops
-            .slice(0, 2)
-            .map((stop) => stop.locationName)
-            .join(' -> ')}
-          {shipment.stops.length > 2 && '...'}
-        </p>
+      <div className="text-sm text-gray-500 flex items-center gap-3 flex-wrap">
+        <span>{shipment.stops.length} điểm dừng</span>
+        <span>{formatDate(shipment.createdAt || shipment.plannedStartDate)}</span>
       </div>
     </div>
   );
 };
 
 // ============================================================================
-// Priority Badge
+// Assign Driver Task Modal (simplified)
 // ============================================================================
 
-const PriorityBadge = ({ priority }: { priority: string }) => {
-  const styles: Record<string, string> = {
-    URGENT: 'bg-red-100 text-red-800',
-    HIGH: 'bg-orange-100 text-orange-800',
-    NORMAL: 'bg-blue-100 text-blue-800',
-    LOW: 'bg-gray-100 text-gray-800',
-  };
-
-  return (
-    <span className={`px-2 py-1 text-xs rounded font-medium ${styles[priority] || styles.NORMAL}`}>
-      {priority}
-    </span>
-  );
-};
-
-// ============================================================================
-// Dispatch Assignment Modal (existing shipment -> assign vehicle + driver)
-// ============================================================================
-
-interface DispatchModalProps {
+interface AssignDriverTaskModalProps {
   shipment: Shipment;
   vehicles: Vehicle[];
-  drivers: Driver[];
-  onAssign: (vehicleId: string, driverId: string, notes: string) => Promise<void>;
+  drivers: DriverItem[];
+  onAssign: (data: { driverId: string; tractorId: string; trailerId?: string; instructions?: string }) => Promise<void>;
   onClose: () => void;
 }
 
-const DispatchModal = ({ shipment, vehicles, drivers, onAssign, onClose }: DispatchModalProps) => {
-  const [selectedVehicle, setSelectedVehicle] = useState('');
+const AssignDriverTaskModal = ({ shipment, vehicles, drivers, onAssign, onClose }: AssignDriverTaskModalProps) => {
   const [selectedDriver, setSelectedDriver] = useState('');
-  const [notes, setNotes] = useState('');
+  const [selectedTractor, setSelectedTractor] = useState('');
+  const [selectedTrailer, setSelectedTrailer] = useState('');
+  const [instructions, setInstructions] = useState('');
   const [isAssigning, setIsAssigning] = useState(false);
 
-  const handleAssign = async () => {
-    if (!selectedVehicle || !selectedDriver) return;
+  const tractors = vehicles.filter(v => v.vehicleType === 'TRACTOR');
+  const trailers = vehicles.filter(v => v.vehicleType === 'TRAILER');
 
+  // When driver changes, auto-fill default vehicles
+  const handleDriverChange = (driverId: string) => {
+    setSelectedDriver(driverId);
+    if (driverId) {
+      const driver = drivers.find(d => d.id === driverId);
+      if (driver?.defaultTractor) {
+        setSelectedTractor(driver.defaultTractor.id);
+      } else {
+        setSelectedTractor('');
+      }
+      if (driver?.defaultTrailer) {
+        setSelectedTrailer(driver.defaultTrailer.id);
+      } else {
+        setSelectedTrailer('');
+      }
+    } else {
+      setSelectedTractor('');
+      setSelectedTrailer('');
+    }
+  };
+
+  const selectedDriverObj = drivers.find(d => d.id === selectedDriver);
+
+  const handleAssign = async () => {
+    if (!selectedTractor || !selectedDriver) return;
     setIsAssigning(true);
     try {
-      await onAssign(selectedVehicle, selectedDriver, notes);
+      await onAssign({
+        driverId: selectedDriver,
+        tractorId: selectedTractor,
+        trailerId: selectedTrailer || undefined,
+        instructions: instructions || undefined,
+      });
     } catch (error) {
       // Error handled in parent
     } finally {
@@ -439,83 +483,100 @@ const DispatchModal = ({ shipment, vehicles, drivers, onAssign, onClose }: Dispa
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
         <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900">Assign Dispatch</h2>
+          <h2 className="text-xl font-semibold text-gray-900">Phân công tài xế</h2>
+          <p className="text-sm text-gray-500 mt-1">
+            {shipment.shipmentNumber} - {shipment.customer?.name}
+          </p>
         </div>
 
         <div className="px-6 py-4 space-y-4">
-          {/* Shipment Info */}
-          <div className="bg-gray-50 rounded-lg p-3">
-            <div className="flex items-center gap-2 mb-1">
-              <h3 className="font-medium text-gray-900">{shipment.shipmentNumber}</h3>
-              <PriorityBadge priority={shipment.priority} />
-              {shipment.createdByType === 'CUSTOMER' && (
-                <span className="px-2 py-0.5 bg-amber-100 text-amber-800 text-xs rounded">
-                  KH
-                </span>
-              )}
-            </div>
-            <p className="text-sm text-gray-600">{shipment.customer?.name}</p>
-            <p className="text-sm text-gray-600">{shipment.stops.length} stops</p>
-          </div>
-
-          {/* Vehicle Selection */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Vehicle</label>
-            <select
-              value={selectedVehicle}
-              onChange={(e) => setSelectedVehicle(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2"
-            >
-              <option value="">Select Vehicle</option>
-              {vehicles.map((vehicle) => (
-                <option key={vehicle.id} value={vehicle.id}>
-                  {vehicle.licensePlate} - {vehicle.vehicleType.replace('_', ' ')}
-                </option>
-              ))}
-            </select>
-          </div>
-
           {/* Driver Selection */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Driver</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Tài xế <span className="text-red-500">*</span>
+            </label>
             <select
               value={selectedDriver}
-              onChange={(e) => setSelectedDriver(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2"
+              onChange={(e) => handleDriverChange(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 cursor-pointer transition-colors duration-200"
             >
-              <option value="">Select Driver</option>
+              <option value="">-- Chọn tài xế --</option>
               {drivers.map((driver) => (
                 <option key={driver.id} value={driver.id}>
-                  {driver.fullName}
+                  {driver.fullName}{driver.defaultTractor ? ` - ${driver.defaultTractor.licensePlate}` : ''}
                 </option>
               ))}
             </select>
           </div>
 
-          {/* Notes */}
+          {/* Vehicle info (auto-filled from driver defaults) */}
+          {selectedDriver && (
+            <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Đầu kéo <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={selectedTractor}
+                  onChange={(e) => setSelectedTractor(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 cursor-pointer transition-colors duration-200"
+                >
+                  <option value="">-- Chọn đầu kéo --</option>
+                  {tractors.map((v) => (
+                    <option key={v.id} value={v.id}>{v.licensePlate}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Rơ moóc
+                </label>
+                <select
+                  value={selectedTrailer}
+                  onChange={(e) => setSelectedTrailer(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 cursor-pointer transition-colors duration-200"
+                >
+                  <option value="">-- Không chọn --</option>
+                  {trailers.map((v) => (
+                    <option key={v.id} value={v.id}>{v.licensePlate}</option>
+                  ))}
+                </select>
+              </div>
+
+              {selectedDriverObj?.defaultTractor && (
+                <p className="text-xs text-gray-500">
+                  Xe mặc định của tài xế. Thay đổi nếu cần.
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Instructions */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Notes (Optional)
+              Ghi chú
             </label>
             <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
+              value={instructions}
+              onChange={(e) => setInstructions(e.target.value)}
               className="w-full border border-gray-300 rounded-lg px-3 py-2"
-              rows={3}
-              placeholder="Special instructions for the driver..."
+              rows={2}
+              placeholder="Ghi chú cho tài xế..."
             />
           </div>
         </div>
 
         <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
-          <Button variant="ghost" onClick={onClose} disabled={isAssigning}>
-            Cancel
+          <Button variant="ghost" onClick={onClose} disabled={isAssigning} className="cursor-pointer transition-colors duration-200">
+            Hủy
           </Button>
           <Button
             onClick={handleAssign}
-            disabled={!selectedVehicle || !selectedDriver || isAssigning}
+            disabled={!selectedTractor || !selectedDriver || isAssigning}
+            className="cursor-pointer transition-colors duration-200"
           >
-            {isAssigning ? 'Assigning...' : 'Assign Dispatch'}
+            {isAssigning ? 'Đang phân công...' : 'Phân công'}
           </Button>
         </div>
       </div>
@@ -524,7 +585,7 @@ const DispatchModal = ({ shipment, vehicles, drivers, onAssign, onClose }: Dispa
 };
 
 // ============================================================================
-// Quick Dispatch Modal (create shipment + dispatch in one step)
+// Quick Dispatch Modal (simplified - 5 fields)
 // ============================================================================
 
 interface QuickDispatchModalProps {
@@ -533,28 +594,8 @@ interface QuickDispatchModalProps {
   onSubmit: (data: any) => Promise<void>;
   customers: CustomerItem[];
   vehicles: Vehicle[];
-  drivers: Driver[];
+  drivers: DriverItem[];
 }
-
-interface StopFormData {
-  stopType: string;
-  locationName: string;
-  address: string;
-  contactPerson: string;
-  contactPhone: string;
-  plannedArrival: string;
-  plannedDeparture: string;
-}
-
-const emptyStop = (): StopFormData => ({
-  stopType: 'PICKUP',
-  locationName: '',
-  address: '',
-  contactPerson: '',
-  contactPhone: '',
-  plannedArrival: '',
-  plannedDeparture: '',
-});
 
 const QuickDispatchModal = ({
   open,
@@ -565,38 +606,52 @@ const QuickDispatchModal = ({
   drivers,
 }: QuickDispatchModalProps) => {
   const [customerId, setCustomerId] = useState('');
-  const [priority, setPriority] = useState('NORMAL');
-  const [plannedStartDate, setPlannedStartDate] = useState('');
-  const [plannedEndDate, setPlannedEndDate] = useState('');
-  const [containerNumber, setContainerNumber] = useState('');
-  const [containerType, setContainerType] = useState('');
-  const [specialInstructions, setSpecialInstructions] = useState('');
-  const [stops, setStops] = useState<StopFormData[]>([
-    { ...emptyStop(), stopType: 'PICKUP' },
-    { ...emptyStop(), stopType: 'DROPOFF' },
-  ]);
-  const [vehicleId, setVehicleId] = useState('');
+  const [shipmentType, setShipmentType] = useState<'EXPORT' | 'IMPORT'>('EXPORT');
+  const [selectedDate, setSelectedDate] = useState(() => {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+  });
   const [driverId, setDriverId] = useState('');
-  const [dispatchNotes, setDispatchNotes] = useState('');
+  const [tractorId, setTractorId] = useState('');
+  const [trailerId, setTrailerId] = useState('');
+  const [containerNumber, setContainerNumber] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const activeCustomers = (customers || []).filter((c: CustomerItem) => c.status === 'ACTIVE');
+  const activeCustomers = (customers || []).filter((c) => c.status === 'ACTIVE');
+  const tractors = vehicles.filter((v) => v.vehicleType === 'TRACTOR');
+  const trailers = vehicles.filter((v) => v.vehicleType === 'TRAILER');
+
+  // When driver changes, auto-fill default vehicles
+  const handleDriverChange = (newDriverId: string) => {
+    setDriverId(newDriverId);
+    if (newDriverId) {
+      const driver = drivers.find(d => d.id === newDriverId);
+      if (driver?.defaultTractor) {
+        setTractorId(driver.defaultTractor.id);
+      } else {
+        setTractorId('');
+      }
+      if (driver?.defaultTrailer) {
+        setTrailerId(driver.defaultTrailer.id);
+      } else {
+        setTrailerId('');
+      }
+    } else {
+      setTractorId('');
+      setTrailerId('');
+    }
+  };
 
   const resetForm = () => {
     setCustomerId('');
-    setPriority('NORMAL');
-    setPlannedStartDate('');
-    setPlannedEndDate('');
-    setContainerNumber('');
-    setContainerType('');
-    setSpecialInstructions('');
-    setStops([
-      { ...emptyStop(), stopType: 'PICKUP' },
-      { ...emptyStop(), stopType: 'DROPOFF' },
-    ]);
-    setVehicleId('');
+    setShipmentType('EXPORT');
+    setSelectedDate(new Date().toISOString().split('T')[0]);
     setDriverId('');
-    setDispatchNotes('');
+    setTractorId('');
+    setTrailerId('');
+    setContainerNumber('');
+    setSubmitError(null);
   };
 
   const handleClose = () => {
@@ -604,356 +659,218 @@ const QuickDispatchModal = ({
     onClose();
   };
 
-  const updateStop = (index: number, field: keyof StopFormData, value: string) => {
-    const newStops = [...stops];
-    newStops[index] = { ...newStops[index], [field]: value };
-    setStops(newStops);
-  };
-
-  const addStop = () => {
-    setStops([...stops, { ...emptyStop(), stopType: 'DROPOFF' }]);
-  };
-
-  const removeStop = (index: number) => {
-    if (stops.length <= 2) return;
-    setStops(stops.filter((_, i) => i !== index));
-  };
-
-  const isValid =
-    customerId &&
-    plannedStartDate &&
-    plannedEndDate &&
-    vehicleId &&
-    driverId &&
-    stops.every((s) => s.locationName && s.address && s.plannedArrival && s.plannedDeparture);
+  const isValid = customerId && selectedDate && driverId && tractorId;
 
   const handleSubmit = async () => {
     if (!isValid) return;
 
     setIsSubmitting(true);
+    setSubmitError(null);
     try {
+      const startOfDay = new Date(selectedDate);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(selectedDate);
+      endOfDay.setHours(23, 59, 59, 999);
+
+      const template = STOP_TEMPLATES[shipmentType];
+
       await onSubmit({
         customerId,
-        priority,
-        plannedStartDate: new Date(plannedStartDate),
-        plannedEndDate: new Date(plannedEndDate),
+        shipmentType,
+        priority: 'NORMAL',
+        plannedStartDate: startOfDay,
+        plannedEndDate: endOfDay,
         containerNumber: containerNumber || undefined,
-        containerType: containerType || undefined,
-        specialInstructions: specialInstructions || undefined,
-        stops: stops.map((s, i) => ({
+        stops: template.map((t, i) => ({
           sequence: i + 1,
-          stopType: s.stopType,
-          locationName: s.locationName,
-          address: s.address,
-          contactPerson: s.contactPerson || undefined,
-          contactPhone: s.contactPhone || undefined,
-          plannedArrival: new Date(s.plannedArrival),
-          plannedDeparture: new Date(s.plannedDeparture),
+          stopType: t.stopType,
+          stopCategory: t.stopCategory,
+          locationName: '',
+          address: '',
+          plannedArrival: startOfDay,
+          plannedDeparture: endOfDay,
         })),
-        vehicleId,
+        tractorId,
+        trailerId: trailerId || undefined,
         driverId,
-        dispatchNotes: dispatchNotes || undefined,
       });
       resetForm();
-    } catch (error) {
-      // Error handled in parent
+    } catch (error: any) {
+      const msg = error?.message || error?.data?.message || 'Không thể tạo điều phối. Vui lòng thử lại.';
+      setSubmitError(msg);
+      console.error('Quick dispatch error:', error);
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const selectedDriverObj = drivers.find(d => d.id === driverId);
+
   return (
     <Dialog open={open} onClose={handleClose} closeOnClickOutside={false}>
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-lg shadow-xl max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div className="px-6 py-4 border-b border-gray-200 sticky top-0 bg-white z-10">
-          <h2 className="text-xl font-semibold text-gray-900">Tao & Dispatch nhanh</h2>
+          <h2 className="text-xl font-semibold text-gray-900">Tạo & Điều phối nhanh</h2>
           <p className="text-sm text-gray-600 mt-1">
-            Create a new shipment and assign dispatch in one step
+            Tạo chuyến hàng mới và phân công trong một bước
           </p>
         </div>
 
-        <div className="px-6 py-4 space-y-6">
-          {/* Customer & Priority */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Khach hang <span className="text-red-500">*</span>
-              </label>
-              <select
-                value={customerId}
-                onChange={(e) => setCustomerId(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2"
-              >
-                <option value="">-- Chon khach hang --</option>
-                {activeCustomers.map((c: CustomerItem) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Do uu tien
-              </label>
-              <select
-                value={priority}
-                onChange={(e) => setPriority(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2"
-              >
-                <option value="LOW">Low</option>
-                <option value="NORMAL">Normal</option>
-                <option value="HIGH">High</option>
-                <option value="URGENT">Urgent</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Planned Dates */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Ngay bat dau <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="datetime-local"
-                value={plannedStartDate}
-                onChange={(e) => setPlannedStartDate(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Ngay ket thuc <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="datetime-local"
-                value={plannedEndDate}
-                onChange={(e) => setPlannedEndDate(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2"
-              />
-            </div>
-          </div>
-
-          {/* Container Info */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                So container
-              </label>
-              <input
-                type="text"
-                value={containerNumber}
-                onChange={(e) => setContainerNumber(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                placeholder="e.g. MSKU1234567"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Loai container
-              </label>
-              <select
-                value={containerType}
-                onChange={(e) => setContainerType(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2"
-              >
-                <option value="">-- Chon loai --</option>
-                <option value="CONTAINER_20FT">Container 20ft</option>
-                <option value="CONTAINER_40FT">Container 40ft</option>
-                <option value="CONTAINER_40HC">Container 40ft HC</option>
-                <option value="CONTAINER_45FT">Container 45ft</option>
-                <option value="FLATBED">Flatbed</option>
-                <option value="TANK">Tank</option>
-                <option value="REFRIGERATED">Refrigerated</option>
-                <option value="OPEN_TOP">Open Top</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Special Instructions */}
+        <div className="px-6 py-4 space-y-5">
+          {/* 1. Khách hàng */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Yeu cau dac biet
+              Khách hàng <span className="text-red-500">*</span>
             </label>
-            <textarea
-              value={specialInstructions}
-              onChange={(e) => setSpecialInstructions(e.target.value)}
+            <select
+              value={customerId}
+              onChange={(e) => setCustomerId(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 cursor-pointer transition-colors duration-200"
+            >
+              <option value="">-- Chọn khách hàng --</option>
+              {activeCustomers.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* 2. Loại vận chuyển */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Loại vận chuyển <span className="text-red-500">*</span>
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setShipmentType('EXPORT')}
+                className={`p-3 rounded-lg border-2 text-center cursor-pointer transition-colors duration-200 ${
+                  shipmentType === 'EXPORT'
+                    ? 'border-primary-600 bg-primary-50 text-primary-700'
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                <div className="font-medium">Hàng xuất</div>
+                <div className="text-xs text-gray-500 mt-1">Lấy rỗng &rarr; Kho &rarr; Cảng</div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setShipmentType('IMPORT')}
+                className={`p-3 rounded-lg border-2 text-center cursor-pointer transition-colors duration-200 ${
+                  shipmentType === 'IMPORT'
+                    ? 'border-primary-600 bg-primary-50 text-primary-700'
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                <div className="font-medium">Hàng nhập</div>
+                <div className="text-xs text-gray-500 mt-1">Cảng &rarr; Kho &rarr; Trả rỗng</div>
+              </button>
+            </div>
+          </div>
+
+          {/* 3. Ngày */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Ngày <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
               className="w-full border border-gray-300 rounded-lg px-3 py-2"
-              rows={2}
-              placeholder="Ghi chu yeu cau dac biet..."
             />
           </div>
 
-          {/* Stops */}
-          <div>
-            <div className="flex justify-between items-center mb-3">
-              <label className="block text-sm font-medium text-gray-700">
-                Diem dung <span className="text-red-500">*</span>
-              </label>
-              <button
-                type="button"
-                onClick={addStop}
-                className="text-sm text-blue-600 hover:text-blue-800 font-medium"
-              >
-                + Them diem dung
-              </button>
-            </div>
-            <div className="space-y-4">
-              {stops.map((stop, index) => (
-                <div key={index} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                  <div className="flex justify-between items-center mb-3">
-                    <h4 className="text-sm font-medium text-gray-700">
-                      Diem #{index + 1}
-                    </h4>
-                    <div className="flex items-center gap-2">
-                      <select
-                        value={stop.stopType}
-                        onChange={(e) => updateStop(index, 'stopType', e.target.value)}
-                        className="border border-gray-300 rounded px-2 py-1 text-sm"
-                      >
-                        <option value="PICKUP">Pickup</option>
-                        <option value="DROPOFF">Dropoff</option>
-                        <option value="DEPOT">Depot</option>
-                        <option value="PORT">Port</option>
-                      </select>
-                      {stops.length > 2 && (
-                        <button
-                          type="button"
-                          onClick={() => removeStop(index)}
-                          className="text-red-500 hover:text-red-700 text-sm"
-                        >
-                          Xoa
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div>
-                      <input
-                        type="text"
-                        value={stop.locationName}
-                        onChange={(e) => updateStop(index, 'locationName', e.target.value)}
-                        className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
-                        placeholder="Ten dia diem *"
-                      />
-                    </div>
-                    <div>
-                      <input
-                        type="text"
-                        value={stop.address}
-                        onChange={(e) => updateStop(index, 'address', e.target.value)}
-                        className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
-                        placeholder="Dia chi *"
-                      />
-                    </div>
-                    <div>
-                      <input
-                        type="text"
-                        value={stop.contactPerson}
-                        onChange={(e) => updateStop(index, 'contactPerson', e.target.value)}
-                        className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
-                        placeholder="Nguoi lien he"
-                      />
-                    </div>
-                    <div>
-                      <input
-                        type="text"
-                        value={stop.contactPhone}
-                        onChange={(e) => updateStop(index, 'contactPhone', e.target.value)}
-                        className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
-                        placeholder="So dien thoai"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs text-gray-500 mb-1">Den *</label>
-                      <input
-                        type="datetime-local"
-                        value={stop.plannedArrival}
-                        onChange={(e) => updateStop(index, 'plannedArrival', e.target.value)}
-                        className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs text-gray-500 mb-1">Di *</label>
-                      <input
-                        type="datetime-local"
-                        value={stop.plannedDeparture}
-                        onChange={(e) => updateStop(index, 'plannedDeparture', e.target.value)}
-                        className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
-                      />
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Vehicle & Driver Assignment */}
-          <div className="border-t border-gray-200 pt-4">
-            <h3 className="text-sm font-semibold text-gray-700 mb-3">Phan cong</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Xe <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={vehicleId}
-                  onChange={(e) => setVehicleId(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                >
-                  <option value="">-- Chon xe --</option>
-                  {vehicles.map((v) => (
-                    <option key={v.id} value={v.id}>
-                      {v.licensePlate} - {v.vehicleType.replace('_', ' ')}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Tai xe <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={driverId}
-                  onChange={(e) => setDriverId(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                >
-                  <option value="">-- Chon tai xe --</option>
-                  {drivers.map((d) => (
-                    <option key={d.id} value={d.id}>
-                      {d.fullName}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          </div>
-
-          {/* Dispatch Notes */}
+          {/* 4. Tài xế */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Ghi chu dispatch
+              Tài xế <span className="text-red-500">*</span>
             </label>
-            <textarea
-              value={dispatchNotes}
-              onChange={(e) => setDispatchNotes(e.target.value)}
+            <select
+              value={driverId}
+              onChange={(e) => handleDriverChange(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 cursor-pointer transition-colors duration-200"
+            >
+              <option value="">-- Chọn tài xế --</option>
+              {drivers.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.fullName}{d.defaultTractor ? ` (${d.defaultTractor.licensePlate})` : ''}
+                </option>
+              ))}
+            </select>
+
+            {/* Auto-filled vehicle info */}
+            {driverId && (
+              <div className="mt-2 bg-gray-50 rounded-lg p-3 space-y-2">
+                <div className="flex items-center gap-2">
+                  <label className="text-xs text-gray-600 w-20">Đầu kéo:</label>
+                  <select
+                    value={tractorId}
+                    onChange={(e) => setTractorId(e.target.value)}
+                    className="flex-1 border border-gray-300 rounded px-2 py-1 text-sm cursor-pointer transition-colors duration-200"
+                  >
+                    <option value="">-- Chọn --</option>
+                    {tractors.map((v) => (
+                      <option key={v.id} value={v.id}>{v.licensePlate}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex items-center gap-2">
+                  <label className="text-xs text-gray-600 w-20">Rơ moóc:</label>
+                  <select
+                    value={trailerId}
+                    onChange={(e) => setTrailerId(e.target.value)}
+                    className="flex-1 border border-gray-300 rounded px-2 py-1 text-sm cursor-pointer transition-colors duration-200"
+                  >
+                    <option value="">-- Không chọn --</option>
+                    {trailers.map((v) => (
+                      <option key={v.id} value={v.id}>{v.licensePlate}</option>
+                    ))}
+                  </select>
+                </div>
+                {selectedDriverObj?.defaultTractor && (
+                  <p className="text-xs text-gray-400">
+                    Xe mặc định của tài xế. Thay đổi nếu cần.
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* 5. Số container */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Số container
+            </label>
+            <input
+              type="text"
+              value={containerNumber}
+              onChange={(e) => setContainerNumber(e.target.value)}
               className="w-full border border-gray-300 rounded-lg px-3 py-2"
-              rows={2}
-              placeholder="Ghi chu cho tai xe..."
+              placeholder="VD: MSKU1234567"
             />
           </div>
         </div>
 
+        {/* Error Message */}
+        {submitError && (
+          <div className="mx-6 mb-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-sm text-red-800">{submitError}</p>
+          </div>
+        )}
+
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3 sticky bottom-0 bg-white">
-          <Button variant="ghost" onClick={handleClose} disabled={isSubmitting}>
-            Huy
-          </Button>
-          <Button onClick={handleSubmit} disabled={!isValid || isSubmitting}>
-            {isSubmitting ? 'Dang tao...' : 'Tao & Dispatch'}
-          </Button>
+        <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between sticky bottom-0 bg-white">
+          <div className="text-xs text-gray-400">
+            {!isValid && 'Vui lòng điền đầy đủ các trường bắt buộc (*)'}
+          </div>
+          <div className="flex space-x-3">
+            <Button variant="ghost" onClick={handleClose} disabled={isSubmitting} className="cursor-pointer transition-colors duration-200">
+              Hủy
+            </Button>
+            <Button onClick={handleSubmit} disabled={!isValid || isSubmitting} className="cursor-pointer transition-colors duration-200">
+              {isSubmitting ? 'Đang tạo...' : 'Tạo & Điều phối'}
+            </Button>
+          </div>
         </div>
       </div>
     </Dialog>

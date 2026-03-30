@@ -153,7 +153,7 @@ export const CustomerFormModal = ({
               value={formData.address}
               onChange={(e) => handleChange('address', e.target.value)}
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
               placeholder="Địa chỉ công ty..."
             />
           </div>
@@ -169,13 +169,13 @@ export const CustomerFormModal = ({
                 min="1"
                 value={formData.paymentTermDays}
                 onChange={(e) => handleChange('paymentTermDays', parseInt(e.target.value))}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                 required
               />
               <select
                 value={formData.paymentTermType}
                 onChange={(e) => handleChange('paymentTermType', e.target.value as PaymentTermType)}
-                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
                 <option value="DAYS">Ngày</option>
                 <option value="MONTHS">Tháng</option>
@@ -211,7 +211,7 @@ export const CustomerFormModal = ({
                 type="checkbox"
                 checked={formData.hasVATInvoice}
                 onChange={(e) => handleChange('hasVATInvoice', e.target.checked)}
-                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
               />
               <span className="text-sm font-medium text-gray-700">Có xuất HĐ VAT</span>
             </label>
@@ -244,7 +244,7 @@ export const CustomerFormModal = ({
                   value={formData.taxAddress}
                   onChange={(e) => handleChange('taxAddress', e.target.value)}
                   rows={2}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                   placeholder="Địa chỉ trên hóa đơn..."
                 />
               </div>

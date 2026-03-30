@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from 'wasp/client/operations';
 import { getAllUsers, updateUserStatus, deleteUser } from 'wasp/client/operations';
+import { RoleGuard } from '../../shared/components/RoleGuard';
 import { RoleBadge } from '../components/RoleBadge';
 import { UserStatusBadge } from '../components/UserStatusBadge';
 import { UserTypeBadge } from '../components/UserTypeBadge';
@@ -76,195 +77,197 @@ export function UsersListPage() {
   }
 
   return (
-    <div className="p-8">
-      {/* Header */}
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Quản lý Users</h1>
-          <p className="mt-2 text-sm text-gray-600">
-            Quản lý tài khoản, phân quyền và permissions
-          </p>
-        </div>
-        <button
-          onClick={() => setIsCreateModalOpen(true)}
-          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-2"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          Tạo User mới
-        </button>
-      </div>
-
-      {/* Create User Modal */}
-      <CreateUserModal
-        isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
-        onSuccess={() => refetch()}
-      />
-
-      {/* Summary Cards */}
-      {summary && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-white p-4 rounded-lg shadow">
-            <div className="text-sm text-gray-600">Tổng Users</div>
-            <div className="text-2xl font-bold text-gray-900">{summary.totalUsers}</div>
-          </div>
-          <div className="bg-white p-4 rounded-lg shadow">
-            <div className="text-sm text-gray-600">Đang hoạt động</div>
-            <div className="text-2xl font-bold text-green-600">{summary.activeUsers}</div>
-          </div>
-          <div className="bg-white p-4 rounded-lg shadow">
-            <div className="text-sm text-gray-600">Nội bộ</div>
-            <div className="text-2xl font-bold text-blue-600">{summary.internalUsers}</div>
-          </div>
-          <div className="bg-white p-4 rounded-lg shadow">
-            <div className="text-sm text-gray-600">Khách hàng</div>
-            <div className="text-2xl font-bold text-orange-600">{summary.customerUsers}</div>
-          </div>
-        </div>
-      )}
-
-      {/* Tabs */}
-      <div className="mb-6">
-        <div className="border-b border-gray-200">
-          <nav className="-mb-px flex space-x-8">
-            <button
-              onClick={() => {
-                setActiveTab('INTERNAL');
-                setRoleFilter('');
-              }}
-              className={`${
-                activeTab === 'INTERNAL'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-            >
-              👤 Users Nội bộ
-              {summary && (
-                <span className="ml-2 bg-blue-100 text-blue-600 py-0.5 px-2 rounded-full text-xs">
-                  {summary.internalUsers}
-                </span>
-              )}
-            </button>
-            <button
-              onClick={() => {
-                setActiveTab('CUSTOMER');
-                setRoleFilter('');
-              }}
-              className={`${
-                activeTab === 'CUSTOMER'
-                  ? 'border-orange-500 text-orange-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-            >
-              🏢 Users Khách hàng
-              {summary && (
-                <span className="ml-2 bg-orange-100 text-orange-600 py-0.5 px-2 rounded-full text-xs">
-                  {summary.customerUsers}
-                </span>
-              )}
-            </button>
-          </nav>
-        </div>
-      </div>
-
-      {/* Filters */}
-      <div className="bg-white p-4 rounded-lg shadow mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Search */}
+    <RoleGuard allowedRoles={['ADMIN']}>
+      <div className="p-8">
+        {/* Header */}
+        <div className="mb-6 flex items-center justify-between">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Tìm kiếm
-            </label>
-            <input
-              type="text"
-              placeholder="Email hoặc tên..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+            <h1 className="text-3xl font-heading font-bold text-gray-900">Quản lý Users</h1>
+            <p className="mt-2 text-sm text-gray-600">
+              Quản lý tài khoản, phân quyền và permissions
+            </p>
           </div>
+          <button
+            onClick={() => setIsCreateModalOpen(true)}
+            className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 flex items-center gap-2"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Tạo User mới
+          </button>
+        </div>
 
-          {/* Role Filter - Only for Internal tab */}
-          {activeTab === 'INTERNAL' && (
+        {/* Create User Modal */}
+        <CreateUserModal
+          isOpen={isCreateModalOpen}
+          onClose={() => setIsCreateModalOpen(false)}
+          onSuccess={() => refetch()}
+        />
+
+        {/* Summary Cards */}
+        {summary && (
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div className="bg-white p-4 rounded-lg shadow">
+              <div className="text-sm text-gray-600">Tổng Users</div>
+              <div className="text-2xl font-heading font-bold text-gray-900">{summary.totalUsers}</div>
+            </div>
+            <div className="bg-white p-4 rounded-lg shadow">
+              <div className="text-sm text-gray-600">Đang hoạt động</div>
+              <div className="text-2xl font-bold text-green-600">{summary.activeUsers}</div>
+            </div>
+            <div className="bg-white p-4 rounded-lg shadow">
+              <div className="text-sm text-gray-600">Nội bộ</div>
+              <div className="text-2xl font-bold text-primary-600">{summary.internalUsers}</div>
+            </div>
+            <div className="bg-white p-4 rounded-lg shadow">
+              <div className="text-sm text-gray-600">Khách hàng</div>
+              <div className="text-2xl font-bold text-orange-600">{summary.customerUsers}</div>
+            </div>
+          </div>
+        )}
+
+        {/* Tabs */}
+        <div className="mb-6">
+          <div className="border-b border-gray-200">
+            <nav className="-mb-px flex space-x-8">
+              <button
+                onClick={() => {
+                  setActiveTab('INTERNAL');
+                  setRoleFilter('');
+                }}
+                className={`${
+                  activeTab === 'INTERNAL'
+                    ? 'border-primary-500 text-primary-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+              >
+                👤 Users Nội bộ
+                {summary && (
+                  <span className="ml-2 bg-blue-100 text-primary-600 py-0.5 px-2 rounded-full text-xs">
+                    {summary.internalUsers}
+                  </span>
+                )}
+              </button>
+              <button
+                onClick={() => {
+                  setActiveTab('CUSTOMER');
+                  setRoleFilter('');
+                }}
+                className={`${
+                  activeTab === 'CUSTOMER'
+                    ? 'border-orange-500 text-orange-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+              >
+                🏢 Users Khách hàng
+                {summary && (
+                  <span className="ml-2 bg-orange-100 text-orange-600 py-0.5 px-2 rounded-full text-xs">
+                    {summary.customerUsers}
+                  </span>
+                )}
+              </button>
+            </nav>
+          </div>
+        </div>
+
+        {/* Filters */}
+        <div className="bg-white p-4 rounded-lg shadow mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Search */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Vai trò
+                Tìm kiếm
               </label>
-              <select
-                value={roleFilter}
-                onChange={(e) => setRoleFilter(e.target.value as UserRole | '')}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">Tất cả vai trò</option>
-                <option value="ADMIN">Admin</option>
-                <option value="ACCOUNTING">Kế toán</option>
-                <option value="OPS">Vận hành</option>
-                <option value="DISPATCHER">Điều phối</option>
-                <option value="DRIVER">Tài xế</option>
-              </select>
+              <input
+                type="text"
+                placeholder="Email hoặc tên..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
             </div>
-          )}
 
-          {/* Role Filter - Only for Customer tab */}
-          {activeTab === 'CUSTOMER' && (
+            {/* Role Filter - Only for Internal tab */}
+            {activeTab === 'INTERNAL' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Vai trò
+                </label>
+                <select
+                  value={roleFilter}
+                  onChange={(e) => setRoleFilter(e.target.value as UserRole | '')}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                >
+                  <option value="">Tất cả vai trò</option>
+                  <option value="ADMIN">Admin</option>
+                  <option value="ACCOUNTING">Kế toán</option>
+                  <option value="OPS">Vận hành</option>
+                  <option value="DISPATCHER">Điều phối</option>
+                  <option value="DRIVER">Tài xế</option>
+                </select>
+              </div>
+            )}
+
+            {/* Role Filter - Only for Customer tab */}
+            {activeTab === 'CUSTOMER' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Vai trò
+                </label>
+                <select
+                  value={roleFilter}
+                  onChange={(e) => setRoleFilter(e.target.value as UserRole | '')}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                >
+                  <option value="">Tất cả vai trò</option>
+                  <option value="CUSTOMER_OWNER">Chủ hàng</option>
+                  <option value="CUSTOMER_OPS">Vận hành KH</option>
+                </select>
+              </div>
+            )}
+
+            {/* Status Filter */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Vai trò
+                Trạng thái
               </label>
               <select
-                value={roleFilter}
-                onChange={(e) => setRoleFilter(e.target.value as UserRole | '')}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={statusFilter === '' ? '' : statusFilter ? 'true' : 'false'}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setStatusFilter(val === '' ? '' : val === 'true');
+                }}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
-                <option value="">Tất cả vai trò</option>
-                <option value="CUSTOMER_OWNER">Chủ hàng</option>
-                <option value="CUSTOMER_OPS">Vận hành KH</option>
+                <option value="">Tất cả</option>
+                <option value="true">Đang hoạt động</option>
+                <option value="false">Vô hiệu hóa</option>
               </select>
             </div>
-          )}
-
-          {/* Status Filter */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Trạng thái
-            </label>
-            <select
-              value={statusFilter === '' ? '' : statusFilter ? 'true' : 'false'}
-              onChange={(e) => {
-                const val = e.target.value;
-                setStatusFilter(val === '' ? '' : val === 'true');
-              }}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">Tất cả</option>
-              <option value="true">Đang hoạt động</option>
-              <option value="false">Vô hiệu hóa</option>
-            </select>
           </div>
         </div>
-      </div>
 
-      {/* Content based on active tab */}
-      {isLoading ? (
-        <div className="bg-white rounded-lg shadow p-8 text-center text-gray-500">
-          Đang tải danh sách users...
-        </div>
-      ) : activeTab === 'INTERNAL' ? (
-        <InternalUsersTable
-          users={users}
-          onToggleStatus={handleToggleStatus}
-          onDelete={handleDeleteUser}
-        />
-      ) : (
-        <CustomerUsersView
-          customerGroups={customerUsersByCustomer}
-          onToggleStatus={handleToggleStatus}
-          onDelete={handleDeleteUser}
-        />
-      )}
-    </div>
+        {/* Content based on active tab */}
+        {isLoading ? (
+          <div className="bg-white rounded-lg shadow p-8 text-center text-gray-500">
+            Đang tải danh sách users...
+          </div>
+        ) : activeTab === 'INTERNAL' ? (
+          <InternalUsersTable
+            users={users}
+            onToggleStatus={handleToggleStatus}
+            onDelete={handleDeleteUser}
+          />
+        ) : (
+          <CustomerUsersView
+            customerGroups={customerUsersByCustomer}
+            onToggleStatus={handleToggleStatus}
+            onDelete={handleDeleteUser}
+          />
+        )}
+      </div>
+    </RoleGuard>
   );
 }
 
@@ -336,7 +339,7 @@ function InternalUsersTable({
                   <div className="flex justify-end gap-2">
                     <Link
                       to={`/admin/users/${user.id}`}
-                      className="text-blue-600 hover:text-blue-900"
+                      className="text-primary-600 hover:text-primary-700"
                     >
                       Sửa
                     </Link>
@@ -490,7 +493,7 @@ function CustomerUsersView({
                           <div className="flex justify-end gap-2">
                             <Link
                               to={`/admin/users/${user.id}`}
-                              className="text-blue-600 hover:text-blue-900"
+                              className="text-primary-600 hover:text-primary-700"
                             >
                               Sửa
                             </Link>

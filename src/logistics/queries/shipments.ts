@@ -19,6 +19,16 @@ export const getAllShipments = async (args: any, context: any) => {
           }
         }
       },
+      driverTasks: {
+        include: {
+          driver: {
+            include: { user: true }
+          },
+          tractor: true,
+          trailer: true,
+        },
+        orderBy: { sequence: 'asc' }
+      },
       statusEvents: {
         orderBy: { createdAt: 'desc' },
         take: 5 // Latest 5 events
@@ -54,6 +64,16 @@ export const getShipment = async ({ id }: { id: string }, context: any) => {
             }
           }
         }
+      },
+      driverTasks: {
+        include: {
+          driver: {
+            include: { user: true }
+          },
+          tractor: true,
+          trailer: true,
+        },
+        orderBy: { sequence: 'asc' }
       },
       statusEvents: {
         orderBy: { createdAt: 'desc' }

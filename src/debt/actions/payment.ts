@@ -15,24 +15,24 @@ export const markDebtAsPaid: MarkDebtAsPaid<MarkDebtAsPaidInput, Debt> = async (
   context
 ) => {
   if (!context.user) {
-    throw new HttpError(401, 'Not authenticated');
+    throw new HttpError(401, 'Chưa đăng nhập');
   }
 
   const { user } = context;
 
   if (!['ADMIN', 'ACCOUNTING'].includes(user.role)) {
-    throw new HttpError(403, 'Only ADMIN and ACCOUNTING can mark debts as paid');
+    throw new HttpError(403, 'Chỉ ADMIN và ACCOUNTING mới có thể đánh dấu công nợ đã thanh toán');
   }
 
   const existingDebt = await context.entities.Debt.findUnique({
     where: { id: args.id },
   });
 
-  if (!existingDebt) throw new HttpError(404, 'Debt not found');
-  if (existingDebt.deletedAt) throw new HttpError(400, 'Cannot update deleted debt');
-  if (existingDebt.status === 'PAID') throw new HttpError(400, 'Debt is already paid');
-  if (existingDebt.status === 'CANCELLED') throw new HttpError(400, 'Cannot mark cancelled debt as paid');
-  if (args.paidAmount <= 0) throw new HttpError(400, 'Paid amount must be greater than 0');
+  if (!existingDebt) throw new HttpError(404, 'Không tìm thấy công nợ');
+  if (existingDebt.deletedAt) throw new HttpError(400, 'Không thể cập nhật công nợ đã xóa');
+  if (existingDebt.status === 'PAID') throw new HttpError(400, 'Công nợ đã được thanh toán');
+  if (existingDebt.status === 'CANCELLED') throw new HttpError(400, 'Không thể đánh dấu công nợ đã hủy là đã thanh toán');
+  if (args.paidAmount <= 0) throw new HttpError(400, 'Số tiền thanh toán phải lớn hơn 0');
 
   const debtAmount = Number(existingDebt.amount);
   const previouslyPaid = Number(existingDebt.paidAmount || 0);
@@ -46,7 +46,7 @@ export const markDebtAsPaid: MarkDebtAsPaid<MarkDebtAsPaidInput, Debt> = async (
   }
 
   if (!args.paidDate || isNaN(new Date(args.paidDate).getTime())) {
-    throw new HttpError(400, 'Invalid paid date');
+    throw new HttpError(400, 'Ngày thanh toán không hợp lệ');
   }
 
   const isFullyPaid = Math.abs(totalPaid - debtAmount) < 0.01;

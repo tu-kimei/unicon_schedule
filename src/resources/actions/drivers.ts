@@ -29,6 +29,8 @@ type UpdateDriverInput = {
   licenseImages?: string[];
   licenseExpiry?: string;
   status?: DriverStatus;
+  defaultTractorId?: string | null;
+  defaultTrailerId?: string | null;
 };
 
 type DeleteDriverInput = {
@@ -41,14 +43,14 @@ type DeleteDriverInput = {
 
 export const createDriver = async (args: CreateDriverInput, context: any) => {
   if (!context.user) {
-    throw new HttpError(401, 'Not authenticated');
+    throw new HttpError(401, 'Chưa đăng nhập');
   }
 
   const { user } = context;
 
   // Check permissions
   if (!['ADMIN', 'OPS', 'DISPATCHER'].includes(user.role)) {
-    throw new HttpError(403, 'Only ADMIN, OPS, and DISPATCHER can create drivers');
+    throw new HttpError(403, 'Chỉ ADMIN, OPS và DISPATCHER mới có thể tạo tài xế');
   }
 
   // Validate userId exists and is not already a driver
@@ -58,11 +60,11 @@ export const createDriver = async (args: CreateDriverInput, context: any) => {
   });
 
   if (!existingUser) {
-    throw new HttpError(404, 'User not found');
+    throw new HttpError(404, 'Không tìm thấy người dùng');
   }
 
   if (existingUser.driver) {
-    throw new HttpError(400, 'User is already a driver');
+    throw new HttpError(400, 'Người dùng đã là tài xế');
   }
 
   // Create driver
@@ -89,14 +91,14 @@ export const createDriver = async (args: CreateDriverInput, context: any) => {
 
 export const updateDriver = async (args: UpdateDriverInput, context: any) => {
   if (!context.user) {
-    throw new HttpError(401, 'Not authenticated');
+    throw new HttpError(401, 'Chưa đăng nhập');
   }
 
   const { user } = context;
 
   // Check permissions
   if (!['ADMIN', 'OPS', 'DISPATCHER'].includes(user.role)) {
-    throw new HttpError(403, 'Only ADMIN, OPS, and DISPATCHER can update drivers');
+    throw new HttpError(403, 'Chỉ ADMIN, OPS và DISPATCHER mới có thể cập nhật tài xế');
   }
 
   // Get existing driver
@@ -105,7 +107,7 @@ export const updateDriver = async (args: UpdateDriverInput, context: any) => {
   });
 
   if (!existingDriver) {
-    throw new HttpError(404, 'Driver not found');
+    throw new HttpError(404, 'Không tìm thấy tài xế');
   }
 
   // Build update data
@@ -118,6 +120,8 @@ export const updateDriver = async (args: UpdateDriverInput, context: any) => {
   if (args.licenseImages !== undefined) updateData.licenseImages = args.licenseImages;
   if (args.licenseExpiry !== undefined) updateData.licenseExpiry = new Date(args.licenseExpiry);
   if (args.status !== undefined) updateData.status = args.status;
+  if (args.defaultTractorId !== undefined) updateData.defaultTractorId = args.defaultTractorId;
+  if (args.defaultTrailerId !== undefined) updateData.defaultTrailerId = args.defaultTrailerId;
 
   // Update driver
   const updatedDriver = await context.entities.Driver.update({
@@ -134,14 +138,14 @@ export const updateDriver = async (args: UpdateDriverInput, context: any) => {
 
 export const deleteDriver = async (args: DeleteDriverInput, context: any) => {
   if (!context.user) {
-    throw new HttpError(401, 'Not authenticated');
+    throw new HttpError(401, 'Chưa đăng nhập');
   }
 
   const { user } = context;
 
   // Check permissions
   if (!['ADMIN'].includes(user.role)) {
-    throw new HttpError(403, 'Only ADMIN can delete drivers');
+    throw new HttpError(403, 'Chỉ quản trị viên mới có thể xóa tài xế');
   }
 
   // Get existing driver
@@ -153,12 +157,12 @@ export const deleteDriver = async (args: DeleteDriverInput, context: any) => {
   });
 
   if (!existingDriver) {
-    throw new HttpError(404, 'Driver not found');
+    throw new HttpError(404, 'Không tìm thấy tài xế');
   }
 
   // Check if driver has dispatches
   if (existingDriver.dispatches.length > 0) {
-    throw new HttpError(400, 'Cannot delete driver with existing dispatches');
+    throw new HttpError(400, 'Không thể xóa tài xế đã có chuyến điều phối');
   }
 
   // Delete driver

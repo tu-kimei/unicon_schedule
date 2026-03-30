@@ -119,7 +119,7 @@ export function CreateUserModal({ isOpen, onClose, onSuccess }: CreateUserModalP
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="user@example.com"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
               required
               disabled={isSubmitting}
             />
@@ -135,7 +135,7 @@ export function CreateUserModal({ isOpen, onClose, onSuccess }: CreateUserModalP
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               placeholder="Nguyễn Văn A"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
               required
               minLength={2}
               disabled={isSubmitting}
@@ -152,7 +152,7 @@ export function CreateUserModal({ isOpen, onClose, onSuccess }: CreateUserModalP
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Tối thiểu 8 ký tự"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
               required
               minLength={8}
               disabled={isSubmitting}
@@ -169,7 +169,7 @@ export function CreateUserModal({ isOpen, onClose, onSuccess }: CreateUserModalP
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="Nhập lại mật khẩu"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
               required
               minLength={8}
               disabled={isSubmitting}
@@ -193,7 +193,7 @@ export function CreateUserModal({ isOpen, onClose, onSuccess }: CreateUserModalP
                   setRole('CUSTOMER_OPS');
                 }
               }}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
               disabled={isSubmitting}
             >
               <option value="INTERNAL">Nội bộ</option>
@@ -209,7 +209,7 @@ export function CreateUserModal({ isOpen, onClose, onSuccess }: CreateUserModalP
             <select
               value={role}
               onChange={(e) => setRole(e.target.value as UserRole)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
               disabled={isSubmitting}
             >
               {userType === 'INTERNAL' ? (
@@ -238,7 +238,7 @@ export function CreateUserModal({ isOpen, onClose, onSuccess }: CreateUserModalP
               <select
                 value={customerId}
                 onChange={(e) => setCustomerId(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                 required
                 disabled={isSubmitting}
               >
