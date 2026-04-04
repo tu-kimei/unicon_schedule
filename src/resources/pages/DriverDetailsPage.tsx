@@ -7,6 +7,7 @@ import { Button } from '../../shared/components/Button';
 import { Tag } from '../../shared/components/Tag';
 import { DriverFormModal, type DriverFormData } from '../components/DriverFormModal';
 import { ImageGallery } from '../../debt/components/ImageGallery';
+import { VehicleSelect } from '../../shared/components/VehicleSelect';
 
 export const DriverDetailsPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -243,31 +244,25 @@ export const DriverDetailsPage = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Đầu kéo mặc định
                   </label>
-                  <select
+                  <VehicleSelect
                     value={defaultTractorId || ''}
-                    onChange={(e) => setDefaultTractorId(e.target.value || null)}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 cursor-pointer transition-colors duration-200"
-                  >
-                    <option value="">-- Chưa chọn --</option>
-                    {tractors.map((v: any) => (
-                      <option key={v.id} value={v.id}>{v.licensePlate}</option>
-                    ))}
-                  </select>
+                    onChange={(id) => setDefaultTractorId(id || null)}
+                    vehicles={tractors}
+                    defaultTypeFilter="TRACTOR"
+                    placeholder="-- Chưa chọn đầu kéo --"
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Rơ moóc mặc định
                   </label>
-                  <select
+                  <VehicleSelect
                     value={defaultTrailerId || ''}
-                    onChange={(e) => setDefaultTrailerId(e.target.value || null)}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 cursor-pointer transition-colors duration-200"
-                  >
-                    <option value="">-- Chưa chọn --</option>
-                    {trailers.map((v: any) => (
-                      <option key={v.id} value={v.id}>{v.licensePlate}</option>
-                    ))}
-                  </select>
+                    onChange={(id) => setDefaultTrailerId(id || null)}
+                    vehicles={trailers}
+                    defaultTypeFilter="TRAILER"
+                    placeholder="-- Chưa chọn mooc --"
+                  />
                 </div>
               </div>
               <div className="mt-4 flex justify-end">

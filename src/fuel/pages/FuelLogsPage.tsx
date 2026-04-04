@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useQuery, useAction } from 'wasp/client/operations';
 import { getFuelLogs, updateFuelLogStatus, updateFuelLog, deleteFuelLog, getAllVehicles, getAllDrivers } from 'wasp/client/operations';
+import { CurrencyInput } from '../../shared/components/CurrencyInput';
+import { VehicleSelect } from '../../shared/components/VehicleSelect';
 
 interface FuelLog {
   id: string;
@@ -354,13 +356,7 @@ export const FuelLogsPage = () => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">🚛 Chọn xe *</label>
-                <select value={approveForm.vehicleId} onChange={e => setApproveForm(f => ({ ...f, vehicleId: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                  <option value="">-- Chọn xe --</option>
-                  {vehicleList.map((v: any) => (
-                    <option key={v.id} value={v.id}>{v.licensePlate} {v.vehicleName ? `(${v.vehicleName})` : ''}</option>
-                  ))}
-                </select>
+                <VehicleSelect value={approveForm.vehicleId} onChange={v => setApproveForm(f => ({ ...f, vehicleId: v || '' }))} vehicles={vehicleList} />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">👤 Chọn tài xế *</label>
@@ -422,13 +418,7 @@ export const FuelLogsPage = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">🚛 Xe (chọn từ DS) *</label>
-                  <select value={editForm.vehicleId} onChange={e => onVehicleChange(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                    <option value="">-- Chọn xe --</option>
-                    {vehicleList.map((v: any) => (
-                      <option key={v.id} value={v.id}>{v.licensePlate} {v.vehicleName ? `(${v.vehicleName})` : ''}</option>
-                    ))}
-                  </select>
+                  <VehicleSelect value={editForm.vehicleId} onChange={(v) => onVehicleChange(v || '')} vehicles={vehicleList} />
                   {!editForm.vehicleId && editForm.licensePlate && (
                     <div className="text-xs text-orange-600 mt-1">⚠️ OCR: "{editForm.licensePlate}" — chưa khớp xe trong DB</div>
                   )}
@@ -461,14 +451,14 @@ export const FuelLogsPage = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">💰 Đơn giá (đ/L)</label>
-                  <input type="number" step="1" value={editForm.unitPrice} onChange={e => setEditForm(f => ({ ...f, unitPrice: e.target.value }))} onBlur={recalcTotal}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
+                  <CurrencyInput value={editForm.unitPrice} onChange={e => setEditForm(f => ({ ...f, unitPrice: e }))} onBlur={recalcTotal}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg" suffix="/L" />
                   <div className="text-xs text-blue-500 mt-1">{parseFloat(editForm.unitPrice) ? fmtVND(editForm.unitPrice) + '/L' : ''}</div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">💵 Thành tiền</label>
-                  <input type="number" step="1" value={editForm.totalAmount} onChange={e => setEditForm(f => ({ ...f, totalAmount: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
+                  <CurrencyInput value={editForm.totalAmount} onChange={e => setEditForm(f => ({ ...f, totalAmount: e }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg" suffix="đ" />
                   <div className="text-xs text-green-600 font-medium mt-1">{parseFloat(editForm.totalAmount) ? fmtVND(editForm.totalAmount) : ''}</div>
                 </div>
               </div>

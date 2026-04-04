@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useQuery, useAction } from 'wasp/client/operations';
 import { getRepairLogs, updateRepairLogStatus, updateRepairLog, deleteRepairLog, getAllVehicles, getAllDrivers } from 'wasp/client/operations';
+import { CurrencyInput } from '../../shared/components/CurrencyInput';
+import { VehicleSelect } from '../../shared/components/VehicleSelect';
 
 interface RepairLog {
   id: string;
@@ -299,11 +301,7 @@ export const RepairLogsPage = () => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">🚛 Chọn xe *</label>
-                <select value={approveForm.vehicleId} onChange={e => setApproveForm(f => ({ ...f, vehicleId: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500">
-                  <option value="">-- Chọn xe --</option>
-                  {vehicleList.map((v: any) => <option key={v.id} value={v.id}>{v.licensePlate} {v.vehicleName ? `(${v.vehicleName})` : ''}</option>)}
-                </select>
+                <VehicleSelect value={approveForm.vehicleId} onChange={v => setApproveForm(f => ({ ...f, vehicleId: v || '' }))} vehicles={vehicleList} />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">👤 Chọn tài xế *</label>
@@ -356,10 +354,7 @@ export const RepairLogsPage = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">🚛 Xe (chọn từ DS) *</label>
-                  <select value={editForm.vehicleId} onChange={e => onVehicleChange(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500">
-                    <option value="">-- Chọn xe --</option>
-                    {vehicleList.map((v: any) => <option key={v.id} value={v.id}>{v.licensePlate} {v.vehicleName ? `(${v.vehicleName})` : ''}</option>)}
-                  </select>
+                  <VehicleSelect value={editForm.vehicleId} onChange={(v) => onVehicleChange(v || '')} vehicles={vehicleList} />
                   {!editForm.vehicleId && editForm.licensePlate && <div className="text-xs text-orange-600 mt-1">⚠️ OCR: "{editForm.licensePlate}" — chưa khớp xe trong DB</div>}
                 </div>
                 <div>
@@ -397,7 +392,8 @@ export const RepairLogsPage = () => {
                   {editForm.items.map((item, i) => (
                     <div key={i} className="flex gap-2 items-center">
                       <input type="text" placeholder="Tên hạng mục" value={item.name} onChange={e => { const newItems = [...editForm.items]; newItems[i].name = e.target.value; setEditForm(f => ({ ...f, items: newItems })); }} className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm" />
-                      <input type="number" placeholder="Số tiền" value={item.amount} onChange={e => { const newItems = [...editForm.items]; newItems[i].amount = e.target.value; setEditForm(f => ({ ...f, items: newItems })); }} className="w-32 px-3 py-2 border border-gray-300 rounded-lg text-sm" />
+<<<<<<< HEAD
+                      <CurrencyInput placeholder="Số tiền" value={item.amount} onChange={e => { const newItems = [...editForm.items]; newItems[i].amount = e; setEditForm(f => ({ ...f, items: newItems })); }} className="w-32 px-3 py-2 border border-gray-300 rounded-lg text-sm" suffix="đ" />
                       <button onClick={() => setEditForm(f => ({ ...f, items: f.items.filter((_, idx) => idx !== i) }))} className="text-red-500 hover:text-red-700">✕</button>
                     </div>
                   ))}
@@ -406,7 +402,8 @@ export const RepairLogsPage = () => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">💵 Tổng tiền</label>
-                <input type="number" step="1" value={editForm.totalAmount} onChange={e => setEditForm(f => ({ ...f, totalAmount: e.target.value }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
+<<<<<<< HEAD
+                <CurrencyInput value={editForm.totalAmount} onChange={e => setEditForm(f => ({ ...f, totalAmount: e }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg" suffix="đ" />
                 <div className="text-xs text-green-600 font-medium mt-1">{parseFloat(editForm.totalAmount) ? fmtVND(editForm.totalAmount) : ''}</div>
               </div>
               <div>
