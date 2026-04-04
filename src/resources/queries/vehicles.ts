@@ -7,7 +7,7 @@ import { HttpError } from 'wasp/server';
 
 export const getAllVehicles = async (_args: void, context: any) => {
   if (!context.user) {
-    throw new HttpError(401, 'Not authenticated');
+    throw new HttpError(401, 'Chưa đăng nhập');
   }
 
   // Fetch all vehicles
@@ -48,7 +48,7 @@ type GetVehicleInput = {
 
 export const getVehicle = async (args: GetVehicleInput, context: any) => {
   if (!context.user) {
-    throw new HttpError(401, 'Not authenticated');
+    throw new HttpError(401, 'Chưa đăng nhập');
   }
 
   const vehicle = await context.entities.Vehicle.findUnique({
@@ -56,7 +56,7 @@ export const getVehicle = async (args: GetVehicleInput, context: any) => {
   });
 
   if (!vehicle) {
-    throw new HttpError(404, 'Vehicle not found');
+    throw new HttpError(404, 'Không tìm thấy phương tiện');
   }
 
   return vehicle;

@@ -6,11 +6,11 @@ export const getMyShipments = async (args: any, context: any) => {
 
   // Validate user is customer
   if (user.userType !== 'CUSTOMER') {
-    throw new HttpError(403, 'Only customer users can access this endpoint');
+    throw new HttpError(403, 'Chỉ tài khoản khách hàng mới có thể truy cập');
   }
 
   if (!user.customerId) {
-    throw new HttpError(400, 'User is not linked to a customer');
+    throw new HttpError(400, 'Tài khoản chưa được liên kết với khách hàng');
   }
 
   // Get shipments for this customer
@@ -47,6 +47,20 @@ export const getMyShipments = async (args: any, context: any) => {
           }
         }
       },
+      driverTasks: {
+        include: {
+          driver: {
+            include: {
+              user: {
+                select: { fullName: true, email: true }
+              }
+            }
+          },
+          tractor: true,
+          trailer: true,
+        },
+        orderBy: { sequence: 'asc' }
+      },
       statusEvents: {
         orderBy: { createdAt: 'desc' },
         take: 5
@@ -68,11 +82,11 @@ export const getMyShipmentDetails = async ({ id }: { id: string }, context: any)
 
   // Validate user is customer
   if (user.userType !== 'CUSTOMER') {
-    throw new HttpError(403, 'Only customer users can access this endpoint');
+    throw new HttpError(403, 'Chỉ tài khoản khách hàng mới có thể truy cập');
   }
 
   if (!user.customerId) {
-    throw new HttpError(400, 'User is not linked to a customer');
+    throw new HttpError(400, 'Tài khoản chưa được liên kết với khách hàng');
   }
 
   const shipment = await context.entities.Shipment.findUnique({
@@ -106,6 +120,20 @@ export const getMyShipmentDetails = async ({ id }: { id: string }, context: any)
           }
         }
       },
+      driverTasks: {
+        include: {
+          driver: {
+            include: {
+              user: {
+                select: { fullName: true, email: true, phone: true }
+              }
+            }
+          },
+          tractor: true,
+          trailer: true,
+        },
+        orderBy: { sequence: 'asc' }
+      },
       statusEvents: {
         orderBy: { createdAt: 'desc' }
       },
@@ -116,12 +144,12 @@ export const getMyShipmentDetails = async ({ id }: { id: string }, context: any)
   });
 
   if (!shipment) {
-    throw new HttpError(404, 'Shipment not found');
+    throw new HttpError(404, 'Không tìm thấy chuyến hàng');
   }
 
   // Verify customer owns this shipment
   if (shipment.customerId !== user.customerId) {
-    throw new HttpError(403, 'You do not have permission to view this shipment');
+    throw new HttpError(403, 'Bạn không có quyền xem chuyến hàng này');
   }
 
   return shipment;
@@ -133,11 +161,11 @@ export const getMyShipmentStats = async (args: any, context: any) => {
 
   // Validate user is customer
   if (user.userType !== 'CUSTOMER') {
-    throw new HttpError(403, 'Only customer users can access this endpoint');
+    throw new HttpError(403, 'Chỉ tài khoản khách hàng mới có thể truy cập');
   }
 
   if (!user.customerId) {
-    throw new HttpError(400, 'User is not linked to a customer');
+    throw new HttpError(400, 'Tài khoản chưa được liên kết với khách hàng');
   }
 
   // Get counts by status
@@ -162,6 +190,28 @@ export const getMyShipmentStats = async (args: any, context: any) => {
     })
   ]);
 
+  // Get counts by operationStatus
+  const [opDraft, opPending, opDispatched, opInTransit, opDelivered, opCancelled] = await Promise.all([
+    context.entities.Shipment.count({
+      where: { customerId: user.customerId, operationStatus: 'DRAFT', deletedAt: null }
+    }),
+    context.entities.Shipment.count({
+      where: { customerId: user.customerId, operationStatus: 'PENDING', deletedAt: null }
+    }),
+    context.entities.Shipment.count({
+      where: { customerId: user.customerId, operationStatus: 'DISPATCHED', deletedAt: null }
+    }),
+    context.entities.Shipment.count({
+      where: { customerId: user.customerId, operationStatus: 'IN_TRANSIT', deletedAt: null }
+    }),
+    context.entities.Shipment.count({
+      where: { customerId: user.customerId, operationStatus: 'DELIVERED', deletedAt: null }
+    }),
+    context.entities.Shipment.count({
+      where: { customerId: user.customerId, operationStatus: 'CANCELLED', deletedAt: null }
+    }),
+  ]);
+
   return {
     total,
     draft,
@@ -169,6 +219,14 @@ export const getMyShipmentStats = async (args: any, context: any) => {
     assigned,
     inTransit,
     completed,
-    active: assigned + inTransit // Shipments đang vận chuyển
+    active: assigned + inTransit, // Shipments đang vận chuyển
+    byOperationStatus: {
+      draft: opDraft,
+      pending: opPending,
+      dispatched: opDispatched,
+      inTransit: opInTransit,
+      delivered: opDelivered,
+      cancelled: opCancelled,
+    }
   };
 };

@@ -22,14 +22,14 @@ export const uploadDebtInvoiceImages: UploadDebtInvoiceImages<
   { urls: string[] }
 > = async (args, context) => {
   if (!context.user) {
-    throw new HttpError(401, 'Not authenticated');
+    throw new HttpError(401, 'Chưa đăng nhập');
   }
 
   const { user } = context;
 
   // Check permissions
   if (!['ADMIN', 'ACCOUNTING'].includes(user.role)) {
-    throw new HttpError(403, 'Only ADMIN and ACCOUNTING can upload invoice images');
+    throw new HttpError(403, 'Chỉ ADMIN và ACCOUNTING mới có thể tải ảnh hóa đơn lên');
   }
 
   // Get existing debt
@@ -38,16 +38,16 @@ export const uploadDebtInvoiceImages: UploadDebtInvoiceImages<
   });
 
   if (!debt) {
-    throw new HttpError(404, 'Debt not found');
+    throw new HttpError(404, 'Không tìm thấy công nợ');
   }
 
   if (debt.deletedAt) {
-    throw new HttpError(400, 'Cannot update deleted debt');
+    throw new HttpError(400, 'Không thể cập nhật công nợ đã xóa');
   }
 
   // Validate URLs
   if (!args.imageUrls || args.imageUrls.length === 0) {
-    throw new HttpError(400, 'At least one image URL is required');
+    throw new HttpError(400, 'Cần ít nhất một đường dẫn ảnh');
   }
 
   // Update debt with new images (append to existing)
@@ -74,14 +74,14 @@ export const uploadDebtPaymentProofImages: UploadDebtPaymentProofImages<
   { urls: string[] }
 > = async (args, context) => {
   if (!context.user) {
-    throw new HttpError(401, 'Not authenticated');
+    throw new HttpError(401, 'Chưa đăng nhập');
   }
 
   const { user } = context;
 
   // Check permissions
   if (!['ADMIN', 'ACCOUNTING'].includes(user.role)) {
-    throw new HttpError(403, 'Only ADMIN and ACCOUNTING can upload payment proof images');
+    throw new HttpError(403, 'Chỉ ADMIN và ACCOUNTING mới có thể tải ảnh chứng từ thanh toán lên');
   }
 
   // Get existing debt
@@ -90,16 +90,16 @@ export const uploadDebtPaymentProofImages: UploadDebtPaymentProofImages<
   });
 
   if (!debt) {
-    throw new HttpError(404, 'Debt not found');
+    throw new HttpError(404, 'Không tìm thấy công nợ');
   }
 
   if (debt.deletedAt) {
-    throw new HttpError(400, 'Cannot update deleted debt');
+    throw new HttpError(400, 'Không thể cập nhật công nợ đã xóa');
   }
 
   // Validate URLs
   if (!args.imageUrls || args.imageUrls.length === 0) {
-    throw new HttpError(400, 'At least one image URL is required');
+    throw new HttpError(400, 'Cần ít nhất một đường dẫn ảnh');
   }
 
   // Update debt with new images (append to existing)

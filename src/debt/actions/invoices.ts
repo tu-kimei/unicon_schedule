@@ -68,14 +68,14 @@ async function generateInvoiceNumber(context: any): Promise<string> {
 
 export const createInvoice: CreateInvoice<CreateInvoiceInput, Invoice> = async (args, context) => {
   if (!context.user) {
-    throw new HttpError(401, 'Not authenticated');
+    throw new HttpError(401, 'Chưa đăng nhập');
   }
 
   const { user } = context;
 
   // Check permissions
   if (!['ADMIN', 'ACCOUNTING'].includes(user.role)) {
-    throw new HttpError(403, 'Only ADMIN and ACCOUNTING can create invoices');
+    throw new HttpError(403, 'Chỉ ADMIN và ACCOUNTING mới có thể tạo hóa đơn');
   }
 
   // Validate customer exists
@@ -84,7 +84,7 @@ export const createInvoice: CreateInvoice<CreateInvoiceInput, Invoice> = async (
   });
 
   if (!customer) {
-    throw new HttpError(404, 'Customer not found');
+    throw new HttpError(404, 'Không tìm thấy khách hàng');
   }
 
   // Validate shipment if provided
@@ -93,13 +93,13 @@ export const createInvoice: CreateInvoice<CreateInvoiceInput, Invoice> = async (
       where: { id: args.shipmentId },
     });
     if (!shipment) {
-      throw new HttpError(404, 'Shipment not found');
+      throw new HttpError(404, 'Không tìm thấy chuyến hàng');
     }
   }
 
   // Validate charge IDs
   if (!args.chargeIds || args.chargeIds.length === 0) {
-    throw new HttpError(400, 'At least one charge is required');
+    throw new HttpError(400, 'Cần ít nhất một khoản phí');
   }
 
   // Fetch charges and validate they exist and are not already invoiced
@@ -113,13 +113,13 @@ export const createInvoice: CreateInvoice<CreateInvoiceInput, Invoice> = async (
   });
 
   if (charges.length !== args.chargeIds.length) {
-    throw new HttpError(400, 'One or more charges not found');
+    throw new HttpError(400, 'Một hoặc nhiều khoản phí không tìm thấy');
   }
 
   // Check if any charge is already linked to an invoice
   const alreadyInvoiced = charges.filter((c: any) => c.invoiceItem !== null);
   if (alreadyInvoiced.length > 0) {
-    throw new HttpError(400, 'One or more charges are already linked to an invoice');
+    throw new HttpError(400, 'Một hoặc nhiều khoản phí đã được liên kết với hóa đơn');
   }
 
   // Calculate totals
@@ -192,14 +192,14 @@ export const updateInvoiceStatus: UpdateInvoiceStatus<UpdateInvoiceStatusInput, 
   context
 ) => {
   if (!context.user) {
-    throw new HttpError(401, 'Not authenticated');
+    throw new HttpError(401, 'Chưa đăng nhập');
   }
 
   const { user } = context;
 
   // Check permissions
   if (!['ADMIN', 'ACCOUNTING'].includes(user.role)) {
-    throw new HttpError(403, 'Only ADMIN and ACCOUNTING can update invoice status');
+    throw new HttpError(403, 'Chỉ ADMIN và ACCOUNTING mới có thể cập nhật trạng thái hóa đơn');
   }
 
   // Get existing invoice
@@ -208,7 +208,7 @@ export const updateInvoiceStatus: UpdateInvoiceStatus<UpdateInvoiceStatusInput, 
   });
 
   if (!existingInvoice) {
-    throw new HttpError(404, 'Invoice not found');
+    throw new HttpError(404, 'Không tìm thấy hóa đơn');
   }
 
   // Prepare update data
@@ -260,14 +260,14 @@ export const deleteInvoice: DeleteInvoice<DeleteInvoiceInput, { message: string;
   context
 ) => {
   if (!context.user) {
-    throw new HttpError(401, 'Not authenticated');
+    throw new HttpError(401, 'Chưa đăng nhập');
   }
 
   const { user } = context;
 
   // Check permissions
   if (!['ADMIN', 'ACCOUNTING'].includes(user.role)) {
-    throw new HttpError(403, 'Only ADMIN and ACCOUNTING can delete invoices');
+    throw new HttpError(403, 'Chỉ ADMIN và ACCOUNTING mới có thể xóa hóa đơn');
   }
 
   // Get existing invoice
@@ -279,12 +279,12 @@ export const deleteInvoice: DeleteInvoice<DeleteInvoiceInput, { message: string;
   });
 
   if (!existingInvoice) {
-    throw new HttpError(404, 'Invoice not found');
+    throw new HttpError(404, 'Không tìm thấy hóa đơn');
   }
 
   // Only DRAFT invoices can be deleted
   if (existingInvoice.status !== 'DRAFT') {
-    throw new HttpError(400, 'Only DRAFT invoices can be deleted');
+    throw new HttpError(400, 'Chỉ hóa đơn ở trạng thái Nháp mới có thể xóa');
   }
 
   // Delete invoice items first (this unlinks charges)

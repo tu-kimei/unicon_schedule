@@ -32,14 +32,14 @@ type GetDebtInput = {
 
 export const getAllDebts: GetAllDebts<GetAllDebtsInput, any> = async (args, context) => {
   if (!context.user) {
-    throw new HttpError(401, 'Not authenticated');
+    throw new HttpError(401, 'Chưa đăng nhập');
   }
 
   const { user } = context;
 
   // Check permissions
   if (!['ADMIN', 'ACCOUNTING', 'OPS'].includes(user.role)) {
-    throw new HttpError(403, 'You do not have permission to view debts');
+    throw new HttpError(403, 'Bạn không có quyền xem công nợ');
   }
 
   const {
@@ -154,14 +154,14 @@ export const getAllDebts: GetAllDebts<GetAllDebtsInput, any> = async (args, cont
 
 export const getDebt: GetDebt<GetDebtInput, any> = async (args, context) => {
   if (!context.user) {
-    throw new HttpError(401, 'Not authenticated');
+    throw new HttpError(401, 'Chưa đăng nhập');
   }
 
   const { user } = context;
 
   // Check permissions
   if (!['ADMIN', 'ACCOUNTING', 'OPS'].includes(user.role)) {
-    throw new HttpError(403, 'You do not have permission to view debts');
+    throw new HttpError(403, 'Bạn không có quyền xem công nợ');
   }
 
   const debt = await context.entities.Debt.findUnique({
@@ -181,11 +181,11 @@ export const getDebt: GetDebt<GetDebtInput, any> = async (args, context) => {
   });
 
   if (!debt) {
-    throw new HttpError(404, 'Debt not found');
+    throw new HttpError(404, 'Không tìm thấy công nợ');
   }
 
   if (debt.deletedAt) {
-    throw new HttpError(404, 'Debt has been deleted');
+    throw new HttpError(404, 'Công nợ đã bị xóa');
   }
 
   // Add computed fields

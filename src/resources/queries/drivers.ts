@@ -7,12 +7,14 @@ import { HttpError } from 'wasp/server';
 
 export const getAllDrivers = async (_args: void, context: any) => {
   if (!context.user) {
-    throw new HttpError(401, 'Not authenticated');
+    throw new HttpError(401, 'Chưa đăng nhập');
   }
 
   const drivers = await context.entities.Driver.findMany({
     include: {
       user: true,
+      defaultTractor: true,
+      defaultTrailer: true,
       dispatches: {
         select: { id: true },
       },
@@ -39,18 +41,20 @@ type GetDriverInput = {
 
 export const getDriver = async (args: GetDriverInput, context: any) => {
   if (!context.user) {
-    throw new HttpError(401, 'Not authenticated');
+    throw new HttpError(401, 'Chưa đăng nhập');
   }
 
   const driver = await context.entities.Driver.findUnique({
     where: { id: args.id },
     include: {
       user: true,
+      defaultTractor: true,
+      defaultTrailer: true,
     },
   });
 
   if (!driver) {
-    throw new HttpError(404, 'Driver not found');
+    throw new HttpError(404, 'Không tìm thấy tài xế');
   }
 
   return driver;

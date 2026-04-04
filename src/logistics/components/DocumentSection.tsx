@@ -234,7 +234,7 @@ export const DocumentSection = ({ shipmentId }: DocumentSectionProps) => {
         {canUpload && (
           <button
             onClick={() => setShowUploadModal(true)}
-            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+            className="inline-flex items-center px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 transition-colors"
           >
             <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -287,7 +287,7 @@ export const DocumentSection = ({ shipmentId }: DocumentSectionProps) => {
                               href={doc.filePath}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-sm font-medium text-blue-600 hover:text-blue-800 truncate block"
+                              className="text-sm font-medium text-primary-600 hover:text-primary-700 truncate block"
                             >
                               {doc.fileName}
                             </a>
@@ -377,7 +377,7 @@ export const DocumentSection = ({ shipmentId }: DocumentSectionProps) => {
                 <select
                   value={uploadType}
                   onChange={(e) => setUploadType(e.target.value as DocumentType)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-primary-500 focus:border-primary-500"
                 >
                   {ALL_DOCUMENT_TYPES.map((type) => (
                     <option key={type} value={type}>
@@ -396,7 +396,7 @@ export const DocumentSection = ({ shipmentId }: DocumentSectionProps) => {
                   value={uploadNotes}
                   onChange={(e) => setUploadNotes(e.target.value)}
                   rows={2}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-primary-500 focus:border-primary-500"
                   placeholder="Ghi chu ve tai lieu..."
                 />
               </div>
@@ -407,7 +407,7 @@ export const DocumentSection = ({ shipmentId }: DocumentSectionProps) => {
                   Chon file <span className="text-red-500">*</span>
                 </label>
                 <label
-                  className={`flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 p-6 transition-colors hover:border-blue-500 hover:bg-gray-50 ${
+                  className={`flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 p-6 transition-colors hover:border-primary-500 hover:bg-gray-50 ${
                     uploading ? 'cursor-not-allowed opacity-50' : ''
                   }`}
                 >

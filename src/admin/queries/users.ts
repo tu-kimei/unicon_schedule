@@ -30,14 +30,14 @@ type GetUserInput = {
 
 export const getAllUsers: GetAllUsers<GetAllUsersInput, any> = async (args, context) => {
   if (!context.user) {
-    throw new HttpError(401, 'Not authenticated');
+    throw new HttpError(401, 'Chưa đăng nhập');
   }
 
   const { user } = context;
 
   // Check permissions - Only ADMIN can view all users
   if (user.role !== 'ADMIN') {
-    throw new HttpError(403, 'Only ADMIN can view all users');
+    throw new HttpError(403, 'Chỉ quản trị viên mới có thể xem tất cả người dùng');
   }
 
   const {
@@ -144,7 +144,7 @@ export const getAllUsers: GetAllUsers<GetAllUsersInput, any> = async (args, cont
 
 export const getUser: GetUser<GetUserInput, any> = async (args, context) => {
   if (!context.user) {
-    throw new HttpError(401, 'Not authenticated');
+    throw new HttpError(401, 'Chưa đăng nhập');
   }
 
   const { user } = context;
@@ -152,7 +152,7 @@ export const getUser: GetUser<GetUserInput, any> = async (args, context) => {
   // Check permissions
   // ADMIN can view any user, others can only view themselves
   if (user.role !== 'ADMIN' && user.id !== args.id) {
-    throw new HttpError(403, 'You can only view your own profile');
+    throw new HttpError(403, 'Bạn chỉ có thể xem hồ sơ của mình');
   }
 
   const targetUser = await context.entities.User.findUnique({
@@ -189,7 +189,7 @@ export const getUser: GetUser<GetUserInput, any> = async (args, context) => {
   });
 
   if (!targetUser) {
-    throw new HttpError(404, 'User not found');
+    throw new HttpError(404, 'Không tìm thấy người dùng');
   }
 
   return targetUser;
