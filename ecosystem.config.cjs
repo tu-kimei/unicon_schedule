@@ -14,7 +14,7 @@ module.exports = {
       name: 'unicon-schedule',
       script: '/bin/bash',
       args: './start.sh',
-      cwd: '/home/kimei-user/workspace/unicon_schedule/.wasp/build/server',
+      cwd: '/root/.openclaw/workspace/unicon_schedule/.wasp/build/server',
       interpreter: 'none',
       
       // Fork mode for bash script
@@ -39,8 +39,8 @@ module.exports = {
       },
       
       // Logging
-      error_file: '/home/kimei-user/logs/unicon/error.log',
-      out_file: '/home/kimei-user/logs/unicon/out.log',
+      error_file: '/root/logs/unicon/error.log',
+      out_file: '/root/logs/unicon/out.log',
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
       merge_logs: true,
       
