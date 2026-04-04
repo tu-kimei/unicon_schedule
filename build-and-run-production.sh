@@ -30,7 +30,7 @@ node --version
 echo ""
 
 # Go to project root
-cd /home/kimei-user/workspace/unicon_schedule
+cd /root/.openclaw/workspace/unicon_schedule
 
 # Step 1: Build
 echo -e "${YELLOW}🏗️  Step 1: Building Wasp project...${NC}"
