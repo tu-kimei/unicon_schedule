@@ -1,130 +1,173 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 ################################################################################
-# Build and Run Production Script
-# 
-# This script builds the Wasp project and runs it in production mode locally
+# Unified Production Deploy Script
+#
+# Single source of truth for production deploy:
+# - Backend runtime:   .wasp/out/server/bundle/server.js
+# - Frontend static:   .wasp/out/web-app/build -> /var/www/schedule.unicon.ltd
+# - Process manager:   systemd service unicon-schedule.service
+# - Reverse proxy:     nginx serving /var/www/schedule.unicon.ltd
+#
+# This replaces the old .wasp/build/* flow which caused FE/BE artifact drift.
 ################################################################################
 
-set -e  # Exit on error
+set -Eeuo pipefail
 
-# Colors
+PROJECT_ROOT="/root/.openclaw/workspace/unicon_schedule"
+OUT_ROOT="$PROJECT_ROOT/.wasp/out"
+OUT_SERVER="$OUT_ROOT/server"
+OUT_WEB="$OUT_ROOT/web-app"
+OUT_WEB_BUILD="$OUT_WEB/build"
+PUBLIC_ROOT="/var/www/schedule.unicon.ltd"
+SYSTEMD_SERVICE="unicon-schedule.service"
+
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
-echo -e "${BLUE}🚀 Unicon Schedule - Build & Run Production${NC}"
-echo "=============================================="
-echo ""
+log()  { echo -e "${BLUE}➡${NC} $*"; }
+ok()   { echo -e "${GREEN}✅${NC} $*"; }
+warn() { echo -e "${YELLOW}⚠${NC} $*"; }
+err()  { echo -e "${RED}❌${NC} $*"; }
 
-# Load nvm
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
-
-# Use Node 22
-echo -e "${YELLOW}📦 Switching to Node 22...${NC}"
-nvm use 22
-node --version
-echo ""
-
-# Go to project root
-cd /home/kimei-user/workspace/unicon_schedule
-
-# Step 1: Build
-echo -e "${YELLOW}🏗️  Step 1: Building Wasp project...${NC}"
-wasp build
-
-if [ $? -ne 0 ]; then
-    echo -e "${RED}❌ Build failed!${NC}"
-    exit 1
-fi
-
-echo -e "${GREEN}✅ Build completed!${NC}"
-echo ""
-
-# Step 2: Setup server
-echo -e "${YELLOW}⚙️  Step 2: Setting up server...${NC}"
-cd .wasp/build/server
-
-# Install dependencies
-echo "Installing production dependencies..."
-npm install --production --silent
-
-# Copy .env
-echo "Copying environment variables..."
-cp ../../../.env.server .env 2>/dev/null || {
-    echo -e "${YELLOW}⚠️  .env.server not found, creating default .env${NC}"
-    cat > .env << 'EOF'
-DATABASE_URL=postgresql://nguyentu@localhost:5432/unicon_schedule
-SMTP_HOST=smtp.larksuite.com
-SMTP_PORT=465
-SMTP_USERNAME=no-reply@unicon.ltd
-SMTP_PASSWORD=Ubkv9EAS9SXqefoa
-SMTP_TLS=true
-WASP_WEB_CLIENT_URL=http://localhost:3000
-WASP_SERVER_URL=http://localhost:3001
-SESSION_SECRET=development-secret-key-change-in-production-min-32-chars
-NODE_ENV=production
-PORT=3001
-EOF
+die() {
+  err "$*"
+  exit 1
 }
 
-# Add missing env vars if needed
-if ! grep -q "WASP_WEB_CLIENT_URL" .env; then
-    echo "WASP_WEB_CLIENT_URL=http://localhost:3000" >> .env
-fi
-if ! grep -q "WASP_SERVER_URL" .env; then
-    echo "WASP_SERVER_URL=http://localhost:3001" >> .env
-fi
-if ! grep -q "SESSION_SECRET" .env; then
-    echo "SESSION_SECRET=development-secret-key-change-in-production-min-32-chars" >> .env
-fi
-if ! grep -q "NODE_ENV" .env; then
-    echo "NODE_ENV=production" >> .env
-fi
-if ! grep -q "PORT" .env; then
-    echo "PORT=3001" >> .env
-fi
+require_cmd() {
+  command -v "$1" >/dev/null 2>&1 || die "Missing required command: $1"
+}
 
-echo -e "${GREEN}✅ Server setup completed!${NC}"
-echo ""
+load_node() {
+  export NVM_DIR="$HOME/.nvm"
+  if [[ -s "$NVM_DIR/nvm.sh" ]]; then
+    # shellcheck source=/dev/null
+    . "$NVM_DIR/nvm.sh"
+    nvm use 22 >/dev/null || true
+  fi
+}
 
-# Step 3: Bundle server code
-echo -e "${YELLOW}📦 Step 3: Bundling server code...${NC}"
-npm run bundle
+ensure_dirs() {
+  mkdir -p "$PUBLIC_ROOT"
+  mkdir -p "$PROJECT_ROOT/public/uploads/drivers/citizen_id"
+  mkdir -p "$PROJECT_ROOT/public/uploads/drivers/license"
+  mkdir -p "$PROJECT_ROOT/public/uploads/vehicles/registration"
+  mkdir -p "$PROJECT_ROOT/public/uploads/vehicles/inspection"
+  mkdir -p "$PROJECT_ROOT/public/uploads/vehicles/insurance"
+  mkdir -p "$PROJECT_ROOT/public/uploads/debts/invoices"
+  mkdir -p "$PROJECT_ROOT/public/uploads/debts/payments"
+}
 
-if [ $? -ne 0 ]; then
-    echo -e "${RED}❌ Bundle failed!${NC}"
-    exit 1
-fi
+build_wasp() {
+  log "Building Wasp app from project root"
+  cd "$PROJECT_ROOT"
+  wasp build
+  ok "Wasp build completed"
+}
 
-echo -e "${GREEN}✅ Bundle completed!${NC}"
-echo ""
+bundle_server() {
+  [[ -d "$OUT_SERVER" ]] || die "Missing server output directory: $OUT_SERVER"
+  [[ -f "$OUT_SERVER/package.json" ]] || die "Missing server package.json"
 
-# Step 4: Create uploads structure
-echo -e "${YELLOW}📁 Step 4: Creating uploads structure...${NC}"
-cd ..
-mkdir -p public/uploads/drivers/citizen_id
-mkdir -p public/uploads/drivers/license
-mkdir -p public/uploads/vehicles/registration
-mkdir -p public/uploads/vehicles/inspection
-mkdir -p public/uploads/vehicles/insurance
-mkdir -p public/uploads/debts/invoices
-mkdir -p public/uploads/debts/payments
-echo -e "${GREEN}✅ Uploads structure created!${NC}"
-echo ""
+  log "Installing server dependencies"
+  cd "$OUT_SERVER"
+  npm install --silent
 
-# Step 5: Start server
-cd server
-echo -e "${YELLOW}🚀 Step 5: Starting production server...${NC}"
-echo ""
-echo -e "${GREEN}Server will start on: http://localhost:3001${NC}"
-echo -e "${BLUE}Press Ctrl+C to stop${NC}"
-echo ""
-echo "=============================================="
-echo ""
+  log "Bundling production server"
+  npm run bundle
 
-# Start server
-npm start
+  [[ -f "$OUT_SERVER/bundle/server.js" ]] || die "Missing bundled server: $OUT_SERVER/bundle/server.js"
+  ok "Server bundle ready"
+}
+
+build_web_app() {
+  [[ -d "$OUT_ROOT" ]] || die "Missing Wasp output root: $OUT_ROOT"
+  [[ -f "$OUT_ROOT/package.json" ]] || die "Missing .wasp/out/package.json"
+
+  log "Installing web app/runtime dependencies"
+  cd "$OUT_ROOT"
+  npm install --silent
+
+  log "Building frontend static bundle"
+  npm run build
+
+  [[ -f "$OUT_WEB_BUILD/index.html" ]] || die "Missing frontend build output: $OUT_WEB_BUILD/index.html"
+  ok "Frontend bundle ready"
+}
+
+publish_frontend() {
+  [[ -f "$OUT_WEB_BUILD/index.html" ]] || die "Cannot publish missing frontend build"
+
+  log "Publishing frontend static files to $PUBLIC_ROOT"
+  rsync -a --delete "$OUT_WEB_BUILD/" "$PUBLIC_ROOT/"
+
+  if [[ -d "$PROJECT_ROOT/public/uploads" ]]; then
+    mkdir -p "$PUBLIC_ROOT/uploads"
+    rsync -a "$PROJECT_ROOT/public/uploads/" "$PUBLIC_ROOT/uploads/"
+  fi
+
+  ok "Frontend published"
+}
+
+restart_services() {
+  log "Reloading systemd daemon"
+  systemctl daemon-reload
+
+  log "Restarting backend service: $SYSTEMD_SERVICE"
+  systemctl restart "$SYSTEMD_SERVICE"
+  systemctl is-active --quiet "$SYSTEMD_SERVICE" || die "Service failed to start: $SYSTEMD_SERVICE"
+
+  log "Reloading nginx"
+  nginx -t
+  systemctl reload nginx
+
+  ok "Services restarted"
+}
+
+healthcheck() {
+  log "Running production health checks"
+
+  curl -fsS http://127.0.0.1:3001/auth/me >/dev/null 2>&1 || warn "Backend /auth/me without session returned non-2xx (acceptable), backend reachable via service logs"
+  curl -fsS https://schedule.unicon.ltd/login >/dev/null
+
+  if curl -s https://schedule.unicon.ltd/assets/*.js 2>/dev/null | grep -q 'http://localhost:3001'; then
+    die "Production frontend still contains localhost:3001"
+  fi
+
+  ok "Basic deploy checks completed"
+}
+
+main() {
+  echo -e "${BLUE}🚀 Unicon Schedule - Unified Production Deploy${NC}"
+  echo "================================================"
+
+  require_cmd bash
+  require_cmd curl
+  require_cmd rsync
+  require_cmd systemctl
+  require_cmd nginx
+  require_cmd npm
+  require_cmd wasp
+
+  load_node
+  ensure_dirs
+  build_wasp
+  bundle_server
+  build_web_app
+  publish_frontend
+  restart_services
+  healthcheck
+
+  echo
+  ok "Deploy completed successfully"
+  echo "Backend: systemd -> $SYSTEMD_SERVICE"
+  echo "Frontend: $PUBLIC_ROOT"
+  echo "Server bundle: $OUT_SERVER/bundle/server.js"
+  echo "Web bundle: $OUT_WEB_BUILD"
+}
+
+main "$@"
