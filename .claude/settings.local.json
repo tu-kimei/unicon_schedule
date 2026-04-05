@@ -32,7 +32,8 @@
       "Bash(python3 scripts/search.py \"kanban board drag drop cards columns\" --domain ux -n 5)",
       "Bash(python3 scripts/search.py \"kanban board dashboard\" --stack react -n 5)",
       "Bash(npx tsc:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ]
   },
   "disabledMcpjsonServers": [
