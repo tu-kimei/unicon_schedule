@@ -25,7 +25,7 @@ module.exports = {
       env: {
         NODE_ENV: 'production',
         PORT: 3001,
-        DATABASE_URL: 'postgresql://unicon_user:Unicon%402025@localhost:5432/unicon_schedule',
+        DATABASE_URL: 'postgresql://unicon_user:Unicon@2026@localhost:5432/unicon_schedule',
         JWT_SECRET: '83cf484036e941c954c31e97ccfcccce1abe33b090471f94dbc6c28d11905338',
         SESSION_SECRET: 'XujtuyM76kpC8cmrfw_yBLPUAMTja7p3qcu1d8pl07U',
         SMTP_HOST: 'smtp.larksuite.com',
@@ -33,8 +33,9 @@ module.exports = {
         SMTP_USERNAME: 'no-reply@unicon.ltd',
         SMTP_PASSWORD: 'Ubkv9EAS9SXqefoa',
         SMTP_TLS: true,
-        WASP_WEB_CLIENT_URL: 'https://tuctuc.kimei.dev',
-        WASP_SERVER_URL: 'https://tuctuc.kimei.dev',
+        WASP_WEB_CLIENT_URL: 'https://schedule.unicon.ltd',
+        WASP_SERVER_URL: 'https://schedule.unicon.ltd',
+        REACT_APP_API_URL: 'https://schedule.unicon.ltd',
         UPLOAD_DIR: './uploads',
       },
       
