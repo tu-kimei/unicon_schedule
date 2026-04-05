@@ -1,11 +1,12 @@
 /**
- * PM2 Ecosystem Configuration for Unicon Schedule
- * 
- * Usage:
- *   pm2 start ecosystem.config.js
- *   pm2 restart ecosystem.config.js
- *   pm2 stop ecosystem.config.js
- *   pm2 delete ecosystem.config.js
+ * LEGACY PM2 CONFIG - DO NOT USE FOR PRODUCTION DEPLOY
+ *
+ * Production runtime is systemd service `unicon-schedule.service` with
+ * backend from `.wasp/out/server/bundle/server.js` and frontend published
+ * to `/var/www/schedule.unicon.ltd`.
+ *
+ * This file is kept only for reference / fallback local experiments.
+ * Use `build-and-run-production.sh` for real production deploys.
  */
 
 module.exports = {
