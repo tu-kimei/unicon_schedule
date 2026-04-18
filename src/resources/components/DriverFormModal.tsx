@@ -11,7 +11,7 @@ type DriverStatus = 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
 interface DriverFormModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: DriverFormData) => void;
+  onSubmit: (data: DriverFormData) => void | Promise<void>;
   initialData?: DriverFormData;
   isEdit?: boolean;
 }
@@ -28,6 +28,18 @@ export interface DriverFormData {
   status: DriverStatus;
 }
 
+const buildInitialForm = (initialData?: DriverFormData): DriverFormData => ({
+  userId: initialData?.userId ?? '',
+  fullName: initialData?.fullName ?? '',
+  phone: initialData?.phone ?? '',
+  citizenIdImages: initialData?.citizenIdImages ?? [],
+  birthYear: initialData?.birthYear,
+  hometown: initialData?.hometown ?? '',
+  licenseImages: initialData?.licenseImages ?? [],
+  licenseExpiry: initialData?.licenseExpiry ?? '',
+  status: initialData?.status ?? 'ACTIVE',
+});
+
 export const DriverFormModal = ({
   isOpen,
   onClose,
@@ -35,28 +47,23 @@ export const DriverFormModal = ({
   initialData,
   isEdit = false,
 }: DriverFormModalProps) => {
-  const [formData, setFormData] = useState<DriverFormData>({
-    userId: initialData?.userId || '',
-    fullName: initialData?.fullName || '',
-    phone: initialData?.phone || '',
-    citizenIdImages: initialData?.citizenIdImages || [],
-    birthYear: initialData?.birthYear,
-    hometown: initialData?.hometown || '',
-    licenseImages: initialData?.licenseImages || [],
-    licenseExpiry: initialData?.licenseExpiry || '',
-    status: initialData?.status || 'ACTIVE',
-  });
+  const [formData, setFormData] = useState<DriverFormData>(() => buildInitialForm(initialData));
 
   // Local file storage (not uploaded yet)
   const [citizenIdFiles, setCitizenIdFiles] = useState<File[]>([]);
   const [licenseFiles, setLicenseFiles] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
 
+  // Reset form state every time the modal transitions to open so the user
+  // always sees the latest server data (refetched after the previous save)
+  // and no stale edits/previews leak across openings.
   useEffect(() => {
-    if (initialData) {
-      setFormData(initialData);
+    if (isOpen) {
+      setFormData(buildInitialForm(initialData));
+      setCitizenIdFiles([]);
+      setLicenseFiles([]);
     }
-  }, [initialData]);
+  }, [isOpen]);
 
   const uploadFiles = async (files: File[], type: 'citizen_id' | 'license'): Promise<string[]> => {
     if (files.length === 0) return [];
@@ -114,21 +121,26 @@ export const DriverFormModal = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validate that at least one image exists for each required field
     const totalCitizenIdImages = formData.citizenIdImages.length + citizenIdFiles.length;
     const totalLicenseImages = formData.licenseImages.length + licenseFiles.length;
-    
+
     if (totalCitizenIdImages === 0) {
       alert('Vui lòng tải lên ít nhất 1 hình CCCD');
       return;
     }
-    
+
     if (totalLicenseImages === 0) {
       alert('Vui lòng tải lên ít nhất 1 hình bằng lái');
       return;
     }
-    
+
+    if (!formData.licenseExpiry) {
+      alert('Vui lòng chọn ngày hết hạn bằng lái');
+      return;
+    }
+
     setIsUploading(true);
 
     try {
@@ -139,16 +151,20 @@ export const DriverFormModal = ({
       ]);
 
       // Merge with existing images (for edit mode)
-      const finalData = {
+      const finalData: DriverFormData = {
         ...formData,
         citizenIdImages: [...formData.citizenIdImages, ...citizenIdUrls],
         licenseImages: [...formData.licenseImages, ...licenseUrls],
       };
 
-      onSubmit(finalData);
-    } catch (error) {
-      console.error('Upload error:', error);
-      alert('Tải ảnh lên thất bại. Vui lòng thử lại.');
+      await onSubmit(finalData);
+    } catch (error: any) {
+      console.error('Upload/save error:', error);
+      const msg =
+        error?.data?.message ||
+        error?.message ||
+        'Tải ảnh lên hoặc lưu thất bại. Vui lòng thử lại.';
+      alert(msg);
     } finally {
       setIsUploading(false);
     }
@@ -283,7 +299,7 @@ export const DriverFormModal = ({
           onChange={setCitizenIdFiles}
           existingImages={formData.citizenIdImages}
           onRemoveExisting={handleRemoveExistingCitizenId}
-          required={!isEdit} // Only required for new drivers
+          required
           maxFiles={4}
         />
 
@@ -294,7 +310,7 @@ export const DriverFormModal = ({
           onChange={setLicenseFiles}
           existingImages={formData.licenseImages}
           onRemoveExisting={handleRemoveExistingLicense}
-          required={!isEdit} // Only required for new drivers
+          required
           maxFiles={4}
         />
 

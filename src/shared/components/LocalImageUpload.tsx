@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { twJoin } from "tailwind-merge";
 
 interface LocalImageUploadProps {
@@ -22,13 +22,24 @@ export function LocalImageUpload({
   maxFiles = 5,
   required = false,
 }: LocalImageUploadProps) {
-  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
-  
-  // Calculate total images (existing + new)
+  // Derive previews from value so they stay in sync when parent resets the list.
+  const previewUrls = useMemo(
+    () => value.map((file) => URL.createObjectURL(file)),
+    [value],
+  );
+
+  useEffect(() => {
+    return () => {
+      previewUrls.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [previewUrls]);
+
   const totalImages = existingImages.length + value.length;
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
+    // Reset input so re-selecting the same file still fires onChange.
+    e.target.value = "";
     if (files.length === 0) return;
 
     if (totalImages + files.length > maxFiles) {
@@ -36,30 +47,11 @@ export function LocalImageUpload({
       return;
     }
 
-    // Create preview URLs
-    const newPreviewUrls = await Promise.all(
-      files.map((file) => {
-        return new Promise<string>((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result as string);
-          reader.readAsDataURL(file);
-        });
-      })
-    );
-
-    const updatedFiles = [...value, ...files];
-    const updatedPreviews = [...previewUrls, ...newPreviewUrls];
-    
-    setPreviewUrls(updatedPreviews);
-    onChange?.(updatedFiles);
+    onChange?.([...value, ...files]);
   };
 
   const handleRemove = (index: number) => {
-    const newFiles = value.filter((_, i) => i !== index);
-    const newPreviews = previewUrls.filter((_, i) => i !== index);
-    
-    setPreviewUrls(newPreviews);
-    onChange?.(newFiles);
+    onChange?.(value.filter((_, i) => i !== index));
   };
 
   return (
@@ -67,7 +59,6 @@ export function LocalImageUpload({
       {label && (
         <label className="mb-1 block text-sm font-medium text-gray-700">
           {label}
-          {required && <span className="text-red-500"> *</span>}
           {required && <span className="text-red-500"> *</span>}
         </label>
       )}

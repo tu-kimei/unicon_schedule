@@ -14,29 +14,23 @@ export const DriversListPage = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingDriver, setEditingDriver] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('ACTIVE');
 
   const { data: drivers, isLoading, error, refetch } = useQuery(getAllDrivers);
 
   const handleCreateDriver = async (data: DriverFormData) => {
-    try {
-      await createDriver(data);
-      setIsCreateModalOpen(false);
-      refetch();
-    } catch (err: any) {
-      alert('Lỗi: ' + err.message);
-    }
+    await createDriver(data);
+    setIsCreateModalOpen(false);
+    refetch();
   };
 
   const handleEditDriver = async (data: DriverFormData) => {
     if (!editingDriver) return;
-    try {
-      await updateDriver({ id: editingDriver.id, ...data });
-      setEditingDriver(null);
-      refetch();
-    } catch (err: any) {
-      alert('Lỗi: ' + err.message);
-    }
+    // userId cannot change on update; strip to avoid confusing the payload
+    const { userId: _userId, ...updatable } = data;
+    await updateDriver({ id: editingDriver.id, ...updatable });
+    setEditingDriver(null);
+    refetch();
   };
 
   const handleDeleteDriver = async (e: React.MouseEvent, id: string, fullName: string) => {

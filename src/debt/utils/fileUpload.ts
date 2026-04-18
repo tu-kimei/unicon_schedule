@@ -18,7 +18,46 @@ const getProjectRoot = () => {
 };
 
 const PROJECT_ROOT = getProjectRoot();
-const UPLOAD_DIR = path.join(PROJECT_ROOT, 'public', 'uploads', 'debts');
+
+// Production static is served by nginx from /var/www/schedule.unicon.ltd.
+// In dev we keep files under the project so Vite can serve them from public/.
+function resolveUploadsRoot(): string {
+  if (process.env.UPLOADS_ROOT) return process.env.UPLOADS_ROOT;
+  if (process.env.NODE_ENV === 'production') {
+    return '/var/www/schedule.unicon.ltd/uploads';
+  }
+  return path.join(PROJECT_ROOT, 'public', 'uploads');
+}
+
+export const UPLOADS_ROOT = resolveUploadsRoot();
+const UPLOAD_DIR = path.join(UPLOADS_ROOT, 'debts');
+
+// One-time backfill: in production we historically wrote to <repo>/public/uploads.
+// Copy any files from there into the nginx-served UPLOADS_ROOT if they're
+// missing, so legacy records keep resolving after the path migration.
+(function backfillFromLegacyPublic() {
+  try {
+    const legacyRoot = path.join(PROJECT_ROOT, 'public', 'uploads');
+    if (legacyRoot === UPLOADS_ROOT) return;
+    if (!fs.existsSync(legacyRoot)) return;
+    if (!fs.existsSync(UPLOADS_ROOT)) fs.mkdirSync(UPLOADS_ROOT, { recursive: true });
+    const walk = (src: string, dst: string) => {
+      for (const entry of fs.readdirSync(src, { withFileTypes: true })) {
+        const s = path.join(src, entry.name);
+        const d = path.join(dst, entry.name);
+        if (entry.isDirectory()) {
+          if (!fs.existsSync(d)) fs.mkdirSync(d, { recursive: true });
+          walk(s, d);
+        } else if (entry.isFile() && !fs.existsSync(d)) {
+          fs.copyFileSync(s, d);
+        }
+      }
+    };
+    walk(legacyRoot, UPLOADS_ROOT);
+  } catch (err) {
+    console.warn('legacy uploads backfill failed:', err);
+  }
+})();
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_MIME_TYPES = [
   'image/jpeg',
@@ -101,24 +140,30 @@ function getCurrentMonth(): string {
  * Convert file path to URL
  */
 export function filePathToUrl(filePath: string): string {
-  // Extract path after 'public/'
-  const publicIndex = filePath.indexOf('public');
-  if (publicIndex !== -1) {
-    const relativePath = filePath.substring(publicIndex + 6); // 'public'.length = 6
-    return relativePath.startsWith('/') ? relativePath : '/' + relativePath;
+  const normalized = filePath.replace(/\\/g, '/');
+
+  // Production path mapping: /var/www/schedule.unicon.ltd/uploads/... -> /uploads/...
+  const prodBase = '/var/www/schedule.unicon.ltd';
+  if (normalized.startsWith(prodBase)) {
+    return normalized.substring(prodBase.length);
   }
-  
-  // Fallback: just return the path
-  return filePath;
+
+  // Dev path mapping: <repo>/public/uploads/... -> /uploads/...
+  const publicIndex = normalized.indexOf('/public/');
+  if (publicIndex !== -1) {
+    return normalized.substring(publicIndex + '/public'.length);
+  }
+
+  return normalized;
 }
 
 /**
  * Convert URL to file path
  */
 export function urlToFilePath(url: string): string {
-  // Add 'public/' prefix
-  const filePath = path.join(PROJECT_ROOT, 'public', url);
-  return filePath;
+  // Strip leading '/uploads' and resolve under the configured uploads root
+  const rel = url.startsWith('/uploads/') ? url.substring('/uploads/'.length) : url.replace(/^\//, '');
+  return path.join(UPLOADS_ROOT, rel);
 }
 
 /**

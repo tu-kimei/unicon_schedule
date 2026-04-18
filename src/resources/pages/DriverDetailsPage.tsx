@@ -49,13 +49,11 @@ export const DriverDetailsPage = () => {
   };
 
   const handleEdit = async (data: DriverFormData) => {
-    try {
-      await updateDriver({ id: id!, ...data });
-      setIsEditMode(false);
-      refetch();
-    } catch (err: any) {
-      alert('Lỗi: ' + err.message);
-    }
+    // userId cannot change on update; strip to avoid confusing the payload
+    const { userId: _userId, ...updatable } = data;
+    await updateDriver({ id: id!, ...updatable });
+    setIsEditMode(false);
+    refetch();
   };
 
   const handleDelete = async () => {

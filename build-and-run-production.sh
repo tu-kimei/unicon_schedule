@@ -1,173 +1,70 @@
-#!/usr/bin/env bash
-
-################################################################################
-# Unified Production Deploy Script
+#!/bin/bash
 #
-# Single source of truth for production deploy:
-# - Backend runtime:   .wasp/out/server/bundle/server.js
-# - Frontend static:   .wasp/out/web-app/build -> /var/www/schedule.unicon.ltd
-# - Process manager:   systemd service unicon-schedule.service
-# - Reverse proxy:     nginx serving /var/www/schedule.unicon.ltd
+# Rebuild + redeploy unicon-schedule (Wasp 0.21+).
+# Idempotent. Must run as root.
 #
-# This replaces the old .wasp/build/* flow which caused FE/BE artifact drift.
-################################################################################
+# Flow:
+#   1. Stop systemd service, free port 3001
+#   2. wasp build           -> .wasp/out/{db,server,src,...}
+#   3. npm install at root  -> fills workspace devDeps (@types/*, @tsconfig/*)
+#   4. bundle server        -> .wasp/out/server/bundle/server.js
+#   5. vite build           -> .wasp/out/web-app/build/
+#   6. rsync to nginx root  -> /var/www/schedule.unicon.ltd/
+#   7. prisma migrate deploy
+#   8. systemctl start + nginx reload
 
-set -Eeuo pipefail
+set -euo pipefail
 
-PROJECT_ROOT="/root/.openclaw/workspace/unicon_schedule"
-OUT_ROOT="$PROJECT_ROOT/.wasp/out"
-OUT_SERVER="$OUT_ROOT/server"
-OUT_WEB="$OUT_ROOT/web-app"
-OUT_WEB_BUILD="$OUT_WEB/build"
-PUBLIC_ROOT="/var/www/schedule.unicon.ltd"
-SYSTEMD_SERVICE="unicon-schedule.service"
+PROJECT_DIR=/root/.openclaw/workspace/unicon_schedule
+WEB_ROOT=/var/www/schedule.unicon.ltd
+ENV_FILE="$PROJECT_DIR/.env.server"
+SERVICE=unicon-schedule.service
 
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m'
+red()   { printf '\033[0;31m%s\033[0m\n' "$*"; }
+green() { printf '\033[0;32m%s\033[0m\n' "$*"; }
+blue()  { printf '\033[0;34m%s\033[0m\n' "$*"; }
 
-log()  { echo -e "${BLUE}➡${NC} $*"; }
-ok()   { echo -e "${GREEN}✅${NC} $*"; }
-warn() { echo -e "${YELLOW}⚠${NC} $*"; }
-err()  { echo -e "${RED}❌${NC} $*"; }
+if [[ $EUID -ne 0 ]]; then
+    red "Must run as root."
+    exit 1
+fi
 
-die() {
-  err "$*"
-  exit 1
-}
+cd "$PROJECT_DIR"
 
-require_cmd() {
-  command -v "$1" >/dev/null 2>&1 || die "Missing required command: $1"
-}
+blue "==> [1/8] Stop systemd + free port 3001"
+systemctl stop "$SERVICE" 2>/dev/null || true
+if pid=$(ss -ltnp 2>/dev/null | awk '/:3001 /{print $NF}' | grep -oP 'pid=\K[0-9]+' | head -1); then
+    [[ -n "$pid" ]] && { kill "$pid" 2>/dev/null || true; sleep 2; }
+fi
 
-load_node() {
-  export NVM_DIR="$HOME/.nvm"
-  if [[ -s "$NVM_DIR/nvm.sh" ]]; then
-    # shellcheck source=/dev/null
-    . "$NVM_DIR/nvm.sh"
-    nvm use 22 >/dev/null || true
-  fi
-}
+blue "==> [2/8] wasp build"
+wasp build
 
-ensure_dirs() {
-  mkdir -p "$PUBLIC_ROOT"
-  mkdir -p "$PROJECT_ROOT/public/uploads/drivers/citizen_id"
-  mkdir -p "$PROJECT_ROOT/public/uploads/drivers/license"
-  mkdir -p "$PROJECT_ROOT/public/uploads/vehicles/registration"
-  mkdir -p "$PROJECT_ROOT/public/uploads/vehicles/inspection"
-  mkdir -p "$PROJECT_ROOT/public/uploads/vehicles/insurance"
-  mkdir -p "$PROJECT_ROOT/public/uploads/debts/invoices"
-  mkdir -p "$PROJECT_ROOT/public/uploads/debts/payments"
-}
+blue "==> [3/8] npm install (root workspace, incl. devDeps)"
+npm install --no-audit --no-fund
 
-build_wasp() {
-  log "Building Wasp app from project root"
-  cd "$PROJECT_ROOT"
-  wasp build
-  ok "Wasp build completed"
-}
+blue "==> [4/8] Bundle server"
+( cd .wasp/out/server && npm run bundle )
 
-bundle_server() {
-  [[ -d "$OUT_SERVER" ]] || die "Missing server output directory: $OUT_SERVER"
-  [[ -f "$OUT_SERVER/package.json" ]] || die "Missing server package.json"
+blue "==> [5/8] Build frontend (vite) + pre-compress"
+REACT_APP_API_URL=https://schedule.unicon.ltd npx vite build
+find .wasp/out/web-app/build -type f \
+    \( -name '*.js' -o -name '*.css' -o -name '*.html' -o -name '*.svg' -o -name '*.json' -o -name '*.map' \) \
+    -exec gzip -9 -k -f {} +
 
-  log "Installing server dependencies"
-  cd "$OUT_SERVER"
-  npm install --silent
+blue "==> [6/8] Deploy to $WEB_ROOT"
+mkdir -p "$WEB_ROOT"
+rsync -a --delete --exclude uploads .wasp/out/web-app/build/ "$WEB_ROOT/"
 
-  log "Bundling production server"
-  npm run bundle
+blue "==> [7/8] Prisma migrate deploy"
+set -a; source "$ENV_FILE"; set +a
+npx prisma migrate deploy --schema=.wasp/out/db/schema.prisma
 
-  [[ -f "$OUT_SERVER/bundle/server.js" ]] || die "Missing bundled server: $OUT_SERVER/bundle/server.js"
-  ok "Server bundle ready"
-}
+blue "==> [8/8] Start service + reload nginx"
+systemctl start "$SERVICE"
+sleep 3
+systemctl is-active --quiet "$SERVICE" || { red "Service failed to start"; systemctl status "$SERVICE" --no-pager | head -20; exit 1; }
+sudo nginx -t && sudo systemctl reload nginx
 
-build_web_app() {
-  [[ -d "$OUT_ROOT" ]] || die "Missing Wasp output root: $OUT_ROOT"
-  [[ -f "$OUT_ROOT/package.json" ]] || die "Missing .wasp/out/package.json"
-
-  log "Installing web app/runtime dependencies"
-  cd "$OUT_ROOT"
-  npm install --silent
-
-  log "Building frontend static bundle"
-  npm run build
-
-  [[ -f "$OUT_WEB_BUILD/index.html" ]] || die "Missing frontend build output: $OUT_WEB_BUILD/index.html"
-  ok "Frontend bundle ready"
-}
-
-publish_frontend() {
-  [[ -f "$OUT_WEB_BUILD/index.html" ]] || die "Cannot publish missing frontend build"
-
-  log "Publishing frontend static files to $PUBLIC_ROOT"
-  rsync -a --delete "$OUT_WEB_BUILD/" "$PUBLIC_ROOT/"
-
-  if [[ -d "$PROJECT_ROOT/public/uploads" ]]; then
-    mkdir -p "$PUBLIC_ROOT/uploads"
-    rsync -a "$PROJECT_ROOT/public/uploads/" "$PUBLIC_ROOT/uploads/"
-  fi
-
-  ok "Frontend published"
-}
-
-restart_services() {
-  log "Reloading systemd daemon"
-  systemctl daemon-reload
-
-  log "Restarting backend service: $SYSTEMD_SERVICE"
-  systemctl restart "$SYSTEMD_SERVICE"
-  systemctl is-active --quiet "$SYSTEMD_SERVICE" || die "Service failed to start: $SYSTEMD_SERVICE"
-
-  log "Reloading nginx"
-  nginx -t
-  systemctl reload nginx
-
-  ok "Services restarted"
-}
-
-healthcheck() {
-  log "Running production health checks"
-
-  curl -fsS http://127.0.0.1:3001/auth/me >/dev/null 2>&1 || warn "Backend /auth/me without session returned non-2xx (acceptable), backend reachable via service logs"
-  curl -fsS https://schedule.unicon.ltd/login >/dev/null
-
-  if curl -s https://schedule.unicon.ltd/assets/*.js 2>/dev/null | grep -q 'http://localhost:3001'; then
-    die "Production frontend still contains localhost:3001"
-  fi
-
-  ok "Basic deploy checks completed"
-}
-
-main() {
-  echo -e "${BLUE}🚀 Unicon Schedule - Unified Production Deploy${NC}"
-  echo "================================================"
-
-  require_cmd bash
-  require_cmd curl
-  require_cmd rsync
-  require_cmd systemctl
-  require_cmd nginx
-  require_cmd npm
-  require_cmd wasp
-
-  load_node
-  ensure_dirs
-  build_wasp
-  bundle_server
-  build_web_app
-  publish_frontend
-  restart_services
-  healthcheck
-
-  echo
-  ok "Deploy completed successfully"
-  echo "Backend: systemd -> $SYSTEMD_SERVICE"
-  echo "Frontend: $PUBLIC_ROOT"
-  echo "Server bundle: $OUT_SERVER/bundle/server.js"
-  echo "Web bundle: $OUT_WEB_BUILD"
-}
-
-main "$@"
+green "==> Done. Service active, nginx reloaded."
+systemctl status "$SERVICE" --no-pager | head -5

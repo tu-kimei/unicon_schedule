@@ -1,5 +1,5 @@
 import type { UploadFilesApi } from 'wasp/server/api';
-import { upload, filePathToUrl } from '../utils/fileUpload';
+import { upload, filePathToUrl, UPLOADS_ROOT } from '../utils/fileUpload';
 import fs from 'fs';
 import path from 'path';
 
@@ -91,53 +91,33 @@ export const uploadFiles: UploadFilesApi = (req, res, context) => {
       
       console.log(`Category: ${category}, Upload type: ${uploadType}, Month: ${debtMonth}`);
 
-      // Move files to organized directories
+      // Move files to organized directories (under the configured uploads root)
       const urls: string[] = [];
 
       for (const file of files) {
         let targetDir: string;
-        
-        // Determine target directory based on category
+
         if (category === 'debts') {
-          // Debts: /uploads/debts/invoices/2026-02/ or /uploads/debts/payments/2026-02/
-          targetDir = path.join(
-            path.dirname(file.path).replace('/debts', ''), // Remove /debts from temp path
-            'debts',
-            uploadType,
-            debtMonth
-          );
+          // /uploads/debts/invoices/2026-02/ or /uploads/debts/payments/2026-02/
+          targetDir = path.join(UPLOADS_ROOT, 'debts', uploadType, debtMonth);
         } else if (category === 'drivers') {
-          // Drivers: /uploads/drivers/citizen_id/ or /uploads/drivers/license/
-          targetDir = path.join(
-            path.dirname(file.path).replace('/debts', ''), // Remove /debts from temp path
-            'drivers',
-            uploadType
-          );
+          // /uploads/drivers/citizen_id/ or /uploads/drivers/license/
+          targetDir = path.join(UPLOADS_ROOT, 'drivers', uploadType);
         } else if (category === 'vehicles') {
-          // Vehicles: /uploads/vehicles/registration/, /inspection/, /insurance/
-          targetDir = path.join(
-            path.dirname(file.path).replace('/debts', ''), // Remove /debts from temp path
-            'vehicles',
-            uploadType
-          );
+          // /uploads/vehicles/registration/, /inspection/, /insurance/
+          targetDir = path.join(UPLOADS_ROOT, 'vehicles', uploadType);
         } else {
-          // Fallback to old behavior
-          targetDir = path.join(
-            path.dirname(file.path),
-            uploadType,
-            debtMonth
-          );
+          targetDir = path.join(UPLOADS_ROOT, uploadType, debtMonth);
         }
-        
+
         if (!fs.existsSync(targetDir)) {
           fs.mkdirSync(targetDir, { recursive: true });
         }
 
-        // Move file to target directory
+        // Move file from multer temp location into the final target directory
         const targetPath = path.join(targetDir, path.basename(file.path));
         fs.renameSync(file.path, targetPath);
-        
-        // Convert to URL
+
         const url = filePathToUrl(targetPath);
         console.log(`File: ${file.originalname} -> ${url}`);
         urls.push(url);

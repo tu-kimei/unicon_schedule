@@ -15,7 +15,7 @@ export const VehiclesListPage = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('IN_USE');
   const [companyFilter, setCompanyFilter] = useState<CompanyFilter>('ALL');
 
   const { data: vehicles, isLoading, error, refetch } = useQuery(getAllVehicles);

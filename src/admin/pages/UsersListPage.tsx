@@ -14,7 +14,7 @@ type TabType = 'INTERNAL' | 'CUSTOMER';
 export function UsersListPage() {
   const [activeTab, setActiveTab] = useState<TabType>('INTERNAL');
   const [roleFilter, setRoleFilter] = useState<UserRole | ''>('');
-  const [statusFilter, setStatusFilter] = useState<boolean | ''>('');
+  const [statusFilter, setStatusFilter] = useState<boolean | ''>(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
